@@ -2,11 +2,12 @@ class Board {
   constructor() {
     this.cells = [];
     this.cellSize = 50;
+    this.width = 10 * this.cellSize;
+    this.height = 8 * this.cellSize;
     for (let i = 0; i < 10 * 8; i++) {
-      this.cells.push(new Cell(i, this.cellSize));
-    }
-    for (let cell of this.cells) {
+      const cell = new Cell(i, this.cellSize);
       cell.board = this;
+      this.cells.push(cell);
     }
     this.players = [];
     this.players.push(new Player("Default", color(0, 0, 0), this));
@@ -21,7 +22,8 @@ class Board {
       W: { x: 1, y: 0 },
     };
     this.waitingForPopup = false;
-    this.popupFunc = null;
+    this.popupDrawFunc = null;
+    this.popupClickFunc = null; //bool function() -> true = ha cliccato sul popup
   }
 
   addPlayer(name) {
@@ -99,9 +101,9 @@ class Board {
       return;
     }
 
-    if (cell.isOccupied()) 
+    if (cell.isOccupied())
       throw new Error("Cell (${x},${y}) is occupied");
-    if (!["N", "E", "S", "W"].includes(rot)) 
+    if (!["N", "E", "S", "W"].includes(rot))
       throw new Error("nice rot");
 
     const newPiece = (() => {
@@ -125,6 +127,7 @@ class Board {
     }
     this.pieces.push(newPiece);
     player.pieces.push(newPiece);
+    newPiece.board = this;
     return newPiece;
   }
 
@@ -159,11 +162,43 @@ class Board {
     return { x: x + 1, y: 8 - y };
   }
 
+  fireLaser() {
+    //FIRE LASER
+    if (
+      this.activePlayer.name != "Default" &&
+      this.activePlayer.laserPos != null
+    ) {
+      let laserPos = this.activePlayer.laserPos;
+      let laserCell = this.getCell(laserPos.pos.x, laserPos.pos.y);
+      this.laser(laserCell, laserPos.rot);
+      this.endTurn();
+    }
+  }
+
   mouseSelect() {
     if (this.waitingForPopup) {
-      //vedi se ha cliccato su una delle direzioni di rot
-      //se sì, ruota il pezzo
-      //se no, disattiva il popup
+      let c = { x: mouseX, y: mouseY };
+      if (this.popupClickFunc) {
+        let popupClick = this.popupClickFunc(c);
+        this.waitingForPopup = false;
+        this.popupDrawFunc = null;
+        for (let cell of this.cells) {
+          cell.highlight = false;
+          cell.selected = false;
+        }
+        this.selected = null;
+        if (popupClick) this.fireLaser();
+      } else {
+        print("☠️ No popup click function defined");
+        this.waitingForPopup = false;
+        this.popupDrawFunc = null;
+        for (let cell of this.cells) {
+          cell.highlight = false;
+          cell.selected = false;
+        }
+        this.selected = null;
+        return;
+      }
     } else {
       let coord = this.pointedCoordinates();
       if (isInsideMap(coord)) this.selectCell(coord.x, coord.y);
@@ -176,22 +211,29 @@ class Board {
     let c = this.pointedCoordinates();
     if (isInsideMap(c)) {
       let target = this.getCell(c.x, c.y);
-
+      let piece = this.getSelectedCell().piece;
       if (target === this.getSelectedCell()) {
         //Stessa casella
         if (!this.getSelectedCell().highlight) {
           print("Error, cell was not selected");
           return;
         }
+        
         //Gestisci popup
-        let popupFunc =
-            this.getSelectedCell().piece.getRotationPopup();
-        this.waitingForPopup = true;
+        this.popupDrawFunc =
+          piece.getRotationPopup();
+        if (!this.popupDrawFunc) print(`Warning: no popupDrawFunc defined for ${piece.type} class`)
+
+        this.popupClickFunc =
+          piece.getPopupClickFunc();
+        if (!this.popupClickFunc) print(`Warning: no popupClickFunc defined for ${piece.type} class`)
+
+        if (this.popupClickFunc && this.popupDrawFunc)
+          this.waitingForPopup = true;
         return;
       } else {
         //Altra casella
         if (target.highlight) {
-          let piece = this.getSelectedCell().piece;
           piece.move(target);
         } else return;
       }
@@ -202,16 +244,7 @@ class Board {
       }
       this.selected = null;
 
-      //FIRE LASER
-      if (
-        this.activePlayer.name != "Default" &&
-        this.activePlayer.laserPos != null
-      ) {
-        let laserPos = this.activePlayer.laserPos;
-        let laserCell = this.getCell(laserPos.pos.x, laserPos.pos.y);
-        this.laser(laserCell, laserPos.rot);
-        this.endTurn();
-      }
+      this.fireLaser();
     }
   }
 
@@ -253,8 +286,8 @@ class Board {
         line(x1, y1, x2, y2);
       }
     }
-    if(this.popupFunc){
-      this.popupFunc();
+    if (this.popupDrawFunc) {
+      this.popupDrawFunc();
     }
   }
 }

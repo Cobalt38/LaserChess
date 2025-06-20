@@ -13,7 +13,7 @@ function setup() {
   board.addPiece("king", player1, 6, 1, "N");
   board.addPiece("king", player2, 5, 8, "S");
   board.addPiece("switch", player1, 10, 5, "W");
-  board.addPiece("switch", player1, 9, 5, "N");
+  board.addPiece("switch", player1, 2, 2, "N");
   board.addPiece("switch", player1, 8, 5, "S");
   //board.laser(board.getCell(8,1), "N");
   board.start();

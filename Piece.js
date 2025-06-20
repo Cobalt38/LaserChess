@@ -32,6 +32,10 @@ class Piece {
       S: PI,
       W: -PI / 2,
     };
+    this.board = null;
+    this.cell = null; // Cell where the piece is placed
+    this.rot = null; // Initial rotation
+    this.popupBounds = null; // corner(x,y) + size
   }
 
   selectionRoutine() { }
@@ -50,6 +54,7 @@ class Piece {
   }
 
   getRotationPopup() { }
+  getPopupClickFunc() { }
 }
 
 class Laser extends Piece {
@@ -73,6 +78,8 @@ class Switch extends Piece {
   constructor(_player) {
     super("Switch", _player);
   }
+
+
   reflect(dir) {
     const isSlash = this.rot === "E" || this.rot === "W";
 
@@ -92,6 +99,8 @@ class Switch extends Piece {
 
     return mirrorMap[dir];
   }
+
+
   show() {
     const isSlash = this.rot === "E" || this.rot === "W";
     push();
@@ -114,49 +123,103 @@ class Switch extends Piece {
     }
     pop();
   }
+
+
   getRotationPopup() {
+    let popupSize = { x: 100, y: 50 };
+    let cellPos = {
+      x: this.cell.x * this.cell.size,
+      y: this.cell.y * this.cell.size,
+    };
+    let cellSize = this.cell.size;
+    let w = this.board.width;
+    let h = this.board.height;
+
+    let corner;
+    if (cellPos.x <= w / 2) {
+      if (cellPos.y <= h / 2) {
+        corner = { x: cellPos.x + cellSize / 2, y: cellPos.y + cellSize / 2 };
+      } else {
+        corner = { x: cellPos.x + cellSize / 2, y: cellPos.y - popupSize.y / 2 };
+      }
+    } else {
+      if (cellPos.y <= h / 2) {
+        corner = {
+          x: cellPos.x - popupSize.x + cellSize / 2,
+          y: cellPos.y + cellSize / 2,
+        };
+      } else {
+        corner = {
+          x: cellPos.x - popupSize.x + cellSize / 2,
+          y: cellPos.y - popupSize.y + cellSize / 2,
+        };
+      }
+    }
+
+    const bounds = {
+      x: corner.x,
+      y: corner.y,
+      w: popupSize.x,
+      h: popupSize.y,
+    };
+
+    this.popupBounds = bounds;
+
+    // La funzione anonima restituita usa i valori precalcolati
     return () => {
       push();
-      let corner, dir;
-      let popupSize = { x: 150, y: 100 };
-      let cellPos = {
-        x: this.cell.x * this.cell.size,
-        y: this.cell.y * this.cell.size,
-      };
-      let cellSize = this.cell.size;
-      if (cellPos.x <= width / 2) {
-        if (cellPos.y <= height / 2) {
-          //quadrante NW
-          corner = {
-            x: cellPos.x + cellSize / 2,
-            y: cellPos.y + cellSize / 2
-          };
-        } else {
-          //quadrante SW
-          corner = {
-            x: cellPos.x + cellSize / 2,
-            y: cellPos.y - popupSize.y / 2,
-          };
-        }
-      } else {
-        if (cellPos.y <= height / 2) {
-          // Quadrante NE
-          corner = {
-            x: cellPos.x - popupSize.x - cellSize / 2,
-            y: cellPos.y + cellSize / 2,
-          };
-        } else {
-          // Quadrante SE
-          corner = {
-            x: cellPos.x - popupSize.x - cellSize / 2,
-            y: cellPos.y - popupSize.y - cellSize / 2,
-          };
-        }
-      }
-      rect(corner.x, corner.y, corner.x + popupSize.x, corner.y + popupSize.y);
+      rectMode(CORNER);
+      fill(200, 200, 200, 150);
+      stroke(0);
+      strokeWeight(1)
+      rect(corner.x, corner.y, popupSize.x, popupSize.y);
+      line(
+        corner.x + popupSize.x / 2,
+        corner.y,
+        corner.x + popupSize.x / 2,
+        corner.y + popupSize.y
+      );
+      fill(color(200, 10, 10));
+      triangle(
+        corner.x + 10,
+        corner.y + popupSize.y / 2,
+        corner.x + popupSize.x / 2 - 10,
+        corner.y + 10,
+        corner.x + popupSize.x / 2 - 10,
+        corner.y + popupSize.y - 10
+      );
+      triangle(
+        corner.x + popupSize.x - 10,
+        corner.y + popupSize.y / 2,
+        corner.x + popupSize.x / 2 + 10,
+        corner.y + 10,
+        corner.x + popupSize.x / 2 + 10,
+        corner.y + popupSize.y - 10
+      );
       pop();
     };
   }
+
+
+  getPopupClickFunc() {
+    return () => {
+      if (!this.popupBounds) {
+        print("☠️ No popup bounds");
+        return;
+      }
+      let c = { x: mouseX, y: mouseY };
+      if (
+        c.x >= this.popupBounds.x &&
+        c.x <= this.popupBounds.x + this.popupBounds.w &&
+        c.y >= this.popupBounds.y &&
+        c.y <= this.popupBounds.y + this.popupBounds.h
+      ) {
+        this.rot = (this.rot === "N" || this.rot === "S") ? "E" : "N";
+        return true;
+      }
+    };
+  }
+
 }
 
 class King extends Piece {
