@@ -17,13 +17,25 @@ class Board {
     this.pieces = [];
     this.dirObj = {
       N: { x: 0, y: 1 },
-      E: { x: -1, y: 0 },
+      E: { x: 1, y: 0 },
       S: { x: 0, y: -1 },
-      W: { x: 1, y: 0 },
+      W: { x: -1, y: 0 },
     };
     this.waitingForPopup = false;
     this.popupDrawFunc = null;
     this.popupClickFunc = null; //bool function() -> true = ha cliccato sul popup
+  }
+
+  destroyPiece(piece){
+    piece.cell.piece = null;
+    let index = piece.player.pieces.indexOf(piece);
+    if (index !== -1) {
+      piece.player.pieces.splice(index, 1);
+    }
+    index = this.pieces.indexOf(piece);
+    if (index !== -1) {
+      this.pieces.splice(index, 1);
+    }
   }
 
   addPlayer(name) {
@@ -86,7 +98,8 @@ class Board {
 
     if (target.piece) {
       const newDir = target.piece.reflect(dir);
-      this.laser(target, newDir);
+      if(newDir)
+        this.laser(target, newDir);
     } else {
       this.laser(target, dir);
     }
@@ -107,7 +120,7 @@ class Board {
       throw new Error("nice rot");
 
     const newPiece = (() => {
-      const types = { king: King, switch: Switch, laser: Laser };
+      const types = { king: King, switch: Switch, laser: Laser, defender: Defender, deflector: Deflector };
       const Piece = types[type.toLowerCase()];
       if (!Piece) {
         console.log("No piece of type:", type);
@@ -207,6 +220,7 @@ class Board {
 
   handleRightClick() {
     if (!this.selected) return;
+    if (this.waitingForPopup) return;
 
     let c = this.pointedCoordinates();
     if (isInsideMap(c)) {
@@ -214,11 +228,10 @@ class Board {
       let piece = this.getSelectedCell().piece;
       if (target === this.getSelectedCell()) {
         //Stessa casella
-        if (!this.getSelectedCell().highlight) {
-          print("Error, cell was not selected");
+        if (!this.getSelectedCell().highlight) { //King cant rotate!
           return;
         }
-        
+
         //Gestisci popup
         this.popupDrawFunc =
           piece.getRotationPopup();

@@ -53,6 +53,42 @@ class Piece {
     this.cell = tg;
   }
 
+  getPopupCorner(popupSize = { x: 100, y: 50 }) {
+    let cellPos = {
+      x: this.cell.x * this.cell.size,
+      y: this.cell.y * this.cell.size,
+    };
+    let cellSize = this.cell.size;
+    let w = this.board.width;
+    let h = this.board.height;
+
+    if (cellPos.x <= w / 2) {
+      if (cellPos.y <= h / 2) {
+        return {
+          x: cellPos.x + cellSize / 2,
+          y: cellPos.y + cellSize / 2,
+        };
+      } else {
+        return {
+          x: cellPos.x + cellSize / 2,
+          y: cellPos.y - popupSize.y / 2,
+        };
+      }
+    } else {
+      if (cellPos.y <= h / 2) {
+        return {
+          x: cellPos.x - popupSize.x + cellSize / 2,
+          y: cellPos.y + cellSize / 2,
+        };
+      } else {
+        return {
+          x: cellPos.x - popupSize.x + cellSize / 2,
+          y: cellPos.y - popupSize.y + cellSize / 2,
+        };
+      }
+    }
+  }
+
   getRotationPopup() { }
   getPopupClickFunc() { }
 }
@@ -72,89 +108,174 @@ class Laser extends Piece {
     triangle(-size / 3, size / 3, size / 3, size / 3, 0, -size / 3);
     pop();
   }
-}
-
-class Switch extends Piece {
-  constructor(_player) {
-    super("Switch", _player);
-  }
-
-
-  reflect(dir) {
-    const isSlash = this.rot === "E" || this.rot === "W";
-
-    const mirrorMap = isSlash
-      ? {
-        N: "W",
-        W: "N",
-        S: "E",
-        E: "S",
-      } // "/"
-      : {
-        N: "E",
-        E: "N",
-        S: "W",
-        W: "S",
-      }; // "\"
-
-    return mirrorMap[dir];
-  }
-
-
-  show() {
-    const isSlash = this.rot === "E" || this.rot === "W";
-    push();
-    stroke(this.player.pColor);
-    strokeWeight(6);
-    if (isSlash) {
-      line(
-        this.cell.x * this.cell.size + this.cell.size,
-        this.cell.y * this.cell.size,
-        this.cell.x * this.cell.size,
-        this.cell.y * this.cell.size + this.cell.size
-      );
-    } else {
-      line(
-        this.cell.x * this.cell.size,
-        this.cell.y * this.cell.size,
-        this.cell.x * this.cell.size + this.cell.size,
-        this.cell.y * this.cell.size + this.cell.size
-      );
-    }
-    pop();
-  }
-
 
   getRotationPopup() {
-    let popupSize = { x: 100, y: 50 };
-    let cellPos = {
-      x: this.cell.x * this.cell.size,
-      y: this.cell.y * this.cell.size,
-    };
-    let cellSize = this.cell.size;
-    let w = this.board.width;
-    let h = this.board.height;
+    const popupSize = { x: 50, y: 50 };
+    const corner = this.getPopupCorner(popupSize);
 
-    let corner;
-    if (cellPos.x <= w / 2) {
-      if (cellPos.y <= h / 2) {
-        corner = { x: cellPos.x + cellSize / 2, y: cellPos.y + cellSize / 2 };
-      } else {
-        corner = { x: cellPos.x + cellSize / 2, y: cellPos.y - popupSize.y / 2 };
+    this.popupBounds = {
+      x: corner.x,
+      y: corner.y,
+      w: popupSize.x,
+      h: popupSize.y,
+    };
+
+    return () => {
+      push();
+      rectMode(CORNER);
+      fill(200, 200, 200, 150);
+      stroke(0);
+      strokeWeight(1);
+      rect(corner.x, corner.y, popupSize.x, popupSize.y, 3);
+
+      translate(corner.x + popupSize.x / 2, corner.y + popupSize.y / 2);
+      noFill();
+      strokeWeight(3);
+      // parte curva
+      arc(0, 0, popupSize.x * 6.5 / 12, popupSize.y * 6.5 / 12, PI / 2, TWO_PI);
+      // freccia
+      fill(0)
+      rotate(-0.15)
+      triangle(0, popupSize.y / 8, 0, popupSize.y * 3 / 8, popupSize.x / 5, popupSize.y / 4)
+
+      pop();
+    };
+  }
+
+  getPopupClickFunc() {
+    return () => {
+      if (!this.popupBounds) {
+        print("☠️ No popup bounds");
+        return;
       }
-    } else {
-      if (cellPos.y <= h / 2) {
-        corner = {
-          x: cellPos.x - popupSize.x + cellSize / 2,
-          y: cellPos.y + cellSize / 2,
-        };
-      } else {
-        corner = {
-          x: cellPos.x - popupSize.x + cellSize / 2,
-          y: cellPos.y - popupSize.y + cellSize / 2,
-        };
+
+      let c = { x: mouseX, y: mouseY };
+      if (
+        c.x >= this.popupBounds.x &&
+        c.x <= this.popupBounds.x + this.popupBounds.w &&
+        c.y >= this.popupBounds.y &&
+        c.y <= this.popupBounds.y + this.popupBounds.h
+      ) {
+        const rotMap = { N: "W", W: "N", S: "E", E: "S" };
+        this.rot = rotMap[this.rot];
+        this.player.laserPos.rot = this.rot;
+        return true;
       }
+    };
+  }
+}
+
+class Defender extends Piece {
+  constructor(_player) {
+    super("Defender", _player);
+  }
+
+  reflect(dir) {
+    if (dirV[(dirV[dir] + 2 /*opposto*/) % 4] != this.rot) {
+      this.board.destroyPiece(this);
     }
+    return null;
+  }
+
+  show() {
+    push()
+    fill(this.player.pColor)
+    stroke(0)
+    strokeWeight(1)
+    translate(this.cell.getCenter().x, this.cell.getCenter().y)
+    rotate(dirV[this.rot] * (PI / 2))
+    arc(0, 0, this.cell.size / 1.5, this.cell.size / 1.5, -QUARTER_PI / 2, PI + QUARTER_PI / 2)
+    stroke(color(230, 50, 50))
+    strokeWeight(4)
+    line(-this.cell.size / 4, -this.cell.size / 6, this.cell.size / 4, -this.cell.size / 6)
+    line(-this.cell.size / 4, -this.cell.size / 6, -this.cell.size / 4, -this.cell.size / 3)
+    line(this.cell.size / 4, -this.cell.size / 6, this.cell.size / 4, -this.cell.size / 3)
+    line(0, 0, 0, -this.cell.size / 6)
+    pop()
+  }
+
+  getRotationPopup() {
+    const popupSize = { x: 100, y: 50 };
+    const corner = this.getPopupCorner(popupSize);
+
+    const bounds = {
+      x: corner.x,
+      y: corner.y,
+      w: popupSize.x,
+      h: popupSize.y,
+    };
+
+    this.popupBounds = bounds;
+
+    return () => {
+      push();
+      rectMode(CORNER);
+      fill(200, 200, 200, 150);
+      stroke(0);
+      strokeWeight(1)
+      rect(corner.x, corner.y, popupSize.x, popupSize.y);
+      line(
+        corner.x + popupSize.x / 2,
+        corner.y,
+        corner.x + popupSize.x / 2,
+        corner.y + popupSize.y
+      );
+      fill(color(200, 10, 10));
+      triangle(
+        corner.x + 10,
+        corner.y + popupSize.y / 2,
+        corner.x + popupSize.x / 2 - 10,
+        corner.y + 10,
+        corner.x + popupSize.x / 2 - 10,
+        corner.y + popupSize.y - 10
+      );
+      triangle(
+        corner.x + popupSize.x - 10,
+        corner.y + popupSize.y / 2,
+        corner.x + popupSize.x / 2 + 10,
+        corner.y + 10,
+        corner.x + popupSize.x / 2 + 10,
+        corner.y + popupSize.y - 10
+      );
+      pop();
+    };
+  }
+
+  getPopupClickFunc() {
+    return () => {
+      if (!this.popupBounds) {
+        print("☠️ No popup bounds");
+        return false;
+      }
+      let c = { x: mouseX, y: mouseY };
+      if (
+        c.x >= this.popupBounds.x &&
+        c.x <= this.popupBounds.x + this.popupBounds.w &&
+        c.y >= this.popupBounds.y &&
+        c.y <= this.popupBounds.y + this.popupBounds.h
+      ) {
+        if (c.x <= this.popupBounds.x + this.popupBounds.w / 2) {
+          this.rot = dirV[(dirV[this.rot] - 1 + 4) % 4]
+        } else {
+          this.rot = dirV[(dirV[this.rot] + 1 + 4) % 4]
+        }
+        return true;
+      }
+      return false;
+    };
+  }
+
+}
+
+class Deflector extends Piece {
+  constructor(_player) {
+    super("Deflector", _player);
+  }
+  reflect(dir) { }
+  show() { }
+  getRotationPopup() {
+    const popupSize = { x: 100, y: 50 };
+    const corner = this.getPopupCorner(popupSize);
 
     const bounds = {
       x: corner.x,
@@ -199,13 +320,99 @@ class Switch extends Piece {
       pop();
     };
   }
+  getPopupClickFunc() { }
+}
+
+class Switch extends Piece {
+  constructor(_player) {
+    super("Switch", _player);
+  }
+
+
+  reflect(dir) {
+    const isSlash = this.rot === "E" || this.rot === "W";
+
+    const mirrorMap = isSlash
+      ? {
+        N: "E",
+        W: "S",
+        S: "W",
+        E: "N",
+      } // "/"
+      : {
+        N: "W",
+        E: "S",
+        S: "E",
+        W: "N",
+      }; // "\"
+
+    return mirrorMap[dir];
+  }
+
+
+  show() {
+    const isSlash = this.rot === "E" || this.rot === "W";
+    push();
+    stroke(this.player.pColor);
+    strokeWeight(6);
+    if (isSlash) {
+      line(
+        this.cell.x * this.cell.size + this.cell.size,
+        this.cell.y * this.cell.size,
+        this.cell.x * this.cell.size,
+        this.cell.y * this.cell.size + this.cell.size
+      );
+    } else {
+      line(
+        this.cell.x * this.cell.size,
+        this.cell.y * this.cell.size,
+        this.cell.x * this.cell.size + this.cell.size,
+        this.cell.y * this.cell.size + this.cell.size
+      );
+    }
+    pop();
+  }
+
+
+  getRotationPopup() {
+    const popupSize = { x: 50, y: 50 };
+    const corner = this.getPopupCorner(popupSize);
+
+    this.popupBounds = {
+      x: corner.x,
+      y: corner.y,
+      w: popupSize.x,
+      h: popupSize.y,
+    };
+
+    return () => {
+      push();
+      rectMode(CORNER);
+      fill(200, 200, 200, 150);
+      stroke(0);
+      strokeWeight(1);
+      rect(corner.x, corner.y, popupSize.x, popupSize.y, 3);
+
+      translate(corner.x + popupSize.x / 2, corner.y + popupSize.y / 2);
+      noFill();
+      strokeWeight(3);
+      // parte curva
+      arc(0, 0, popupSize.x * 6.5 / 12, popupSize.y * 6.5 / 12, PI / 2, TWO_PI);
+      // freccia
+      fill(0)
+      rotate(-0.15)
+      triangle(0, popupSize.y / 8, 0, popupSize.y * 3 / 8, popupSize.x / 5, popupSize.y / 4)
+
+      pop();
+    };
+  }
 
 
   getPopupClickFunc() {
     return () => {
       if (!this.popupBounds) {
         print("☠️ No popup bounds");
-        return;
+        return false;
       }
       let c = { x: mouseX, y: mouseY };
       if (
@@ -217,6 +424,7 @@ class Switch extends Piece {
         this.rot = (this.rot === "N" || this.rot === "S") ? "E" : "N";
         return true;
       }
+      return false;
     };
   }
 

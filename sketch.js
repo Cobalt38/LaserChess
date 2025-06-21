@@ -15,6 +15,7 @@ function setup() {
   board.addPiece("switch", player1, 10, 5, "W");
   board.addPiece("switch", player1, 2, 2, "N");
   board.addPiece("switch", player1, 8, 5, "S");
+  board.addPiece("defender", player2, 5, 6, "W")
   //board.laser(board.getCell(8,1), "N");
   board.start();
 }
@@ -24,7 +25,7 @@ function draw() {
   board.show();
 }
 
-function keyPressed(event) {}
+function keyPressed(event) { }
 
 function mouseClicked(event) {
   if (mouseButton === "left") board.mouseSelect();

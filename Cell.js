@@ -24,6 +24,7 @@ class Cell {
         for (let cell of this.board.kernel(this.rx, this.ry)) {
           cell.highlight = true;
         }
+        if(this.piece.type.toLowerCase() == "king") this.highlight = false;
       } else {
         this.highlight = true;
       }
@@ -71,11 +72,11 @@ class Cell {
     textAlign(CENTER, CENTER);
     fill(255);
     strokeWeight(0);
-    text(
-      this.i,
-      this.x * this.size + this.size / 2,
-      this.y * this.size + this.size / 2
-    );
+    // text(
+    //   this.i,
+    //   this.x * this.size + this.size / 2,
+    //   this.y * this.size + this.size / 2
+    // );
     if (this.highlight) {
       rectMode(CORNER);
       fill("rgba(150, 150, 50, 0.2)");
