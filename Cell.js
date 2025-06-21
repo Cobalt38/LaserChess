@@ -22,7 +22,8 @@ class Cell {
     if (!!this.piece) {
       if(this.piece.canBeMoved){
         for (let cell of this.board.kernel(this.rx, this.ry)) {
-          cell.highlight = true;
+          if(!cell.piece || cell == this)
+            cell.highlight = true;
         }
         if(this.piece.type.toLowerCase() == "king") this.highlight = false;
       } else {
@@ -50,7 +51,7 @@ class Cell {
   show() {
     push();
     stroke(255);
-    strokeWeight(0.2);
+    strokeWeight(0.25);
 
     fill(this.fillColor);
     rect(this.x * this.size, this.y * this.size, this.size, this.size);

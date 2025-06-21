@@ -101,11 +101,11 @@ class Board {
     return this.activePlayer;
   }
 
-  laser(cell, dir, visited = new Set()) {
+  laser(cell, dir, visited = {}) {
     if (!cell || !dir) return;
     const key = `${cell.rx},${cell.ry}`;
-    if (visited.has(key)) return;
-    visited.add(key);
+    visited[key] = (visited[key] || 0) + 1;
+    if (visited[key] > 2) return; //il laser può incrociare se stesso massimo una volta per casella (vert + hor)
 
     this.laserArray.push(cell.getCenter())
     const { x: dx, y: dy } = this.dirObj[dir];
@@ -153,8 +153,8 @@ class Board {
 
     if (cell.isOccupied())
       throw new Error("Cell (${x},${y}) is occupied");
-    if (!["N", "E", "S", "W"].includes(rot))
-      throw new Error("nice rot");
+    if (!["N", "E", "S", "W", "NW", "NE", "SW", "SE"].includes(rot))
+      throw new Error("Nice rot lul");
 
     const newPiece = (() => {
       const types = { king: King, switch: Switch, laser: Laser, defender: Defender, deflector: Deflector };
@@ -293,6 +293,7 @@ class Board {
     this.cells.forEach(function (cell) {
       cell.show();
     });
+    //Laser
     push()
     stroke(255, 50, 50);
     strokeWeight(5);
@@ -302,7 +303,7 @@ class Board {
       vertex(coord.x, coord.y)
     }
     endShape()
-    stroke(200,200,50);
+    stroke(200, 200, 50);
     strokeWeight(2);
     beginShape()
     for (let coord of this.laserArray) {
@@ -310,9 +311,32 @@ class Board {
     }
     endShape()
     pop()
+    //Popup
     if (this.popupDrawFunc) {
       this.popupDrawFunc();
     }
+    //Turn
+    push();
+    let label = "Turno di " + this.activePlayer.name;
+    let textS = 24;
+    let spacing = 10;
+    let circleSize = 20;
+
+    textSize(textS);
+    textAlign(LEFT, CENTER);
+    let textW = textWidth(label);
+    let totalWidth = textW + spacing + circleSize;
+    let centerX = this.width / 2 - totalWidth / 2;
+    let centerY = -textS / 2;
+
+    fill(180, 180, 20);
+    text(label, centerX, centerY);
+
+    fill(this.activePlayer.pColor);
+    noStroke();
+    ellipse(centerX + textW + spacing + circleSize / 2, centerY, circleSize, circleSize);
+
+    pop();
   }
 }
 

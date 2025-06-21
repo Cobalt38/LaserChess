@@ -7,6 +7,7 @@ function setup() {
     e.preventDefault();
     mouseClicked({ button: 2 });
   });
+  strokeJoin(ROUND);
   board = new Board();
   player1 = board.addPlayer("Mario");
   player2 = board.addPlayer("Luigi");
@@ -17,12 +18,13 @@ function setup() {
   board.addPiece("switch", player1, 8, 5, "S");
   board.addPiece("defender", player2, 5, 6, "W")
   board.addPiece("defender", player1, 6, 5, "W")
+  board.addPiece("deflector", player2, 4, 4, "NW")
   board.start();
 }
 
 function draw() {
   translate(offset.x, offset.y);
-  background(50);
+  background(color(10,10,10));
   board.show();
 }
 

@@ -45,9 +45,7 @@ class Piece {
       print("Error, trying to move a static piece");
       return false;
     }
-    let board = this.cell.board;
-    if (!board) throw new Error("no board");
-    if (!!tg.piece) throw new Error("target cell already occupied");
+    if (!!tg.piece) return;
     this.cell.setPiece(null);
     tg.piece = this;
     this.cell = tg;
@@ -103,11 +101,70 @@ class Piece {
 
       translate(corner.x + popupSize.x / 2, corner.y + popupSize.y / 2);
       noFill();
-      strokeWeight(3);
+      strokeWeight(4);
       arc(0, 0, popupSize.x * 6.5 / 12, popupSize.y * 6.5 / 12, PI / 2, TWO_PI);
       fill(0);
       rotate(-0.15);
       triangle(0, popupSize.y / 8, 0, popupSize.y * 3 / 8, popupSize.x / 5, popupSize.y / 4);
+      pop();
+    };
+  }
+
+  getDoubleRotationPopup(popupSize = { x: 100, y: 50 }) {
+    const corner = this.getPopupCorner(popupSize);
+
+    this.popupBounds = { x: corner.x, y: corner.y, w: popupSize.x, h: popupSize.y };
+
+    return () => {
+      push();
+      rectMode(CORNER);
+      fill(200, 200, 200, 150);
+      stroke(0);
+      strokeWeight(1)
+      rect(corner.x, corner.y, popupSize.x, popupSize.y);
+      line(
+        corner.x + popupSize.x / 2,
+        corner.y,
+        corner.x + popupSize.x / 2,
+        corner.y + popupSize.y
+      );
+      for (let offx of [0, 1]) {
+        push();
+
+        // Posizionamento: sinistra o destra
+        let posX = corner.x + popupSize.x / 4 + (popupSize.x / 2) * offx;
+        let posY = corner.y + popupSize.y / 2;
+        translate(posX, posY);
+
+        noFill();
+        strokeWeight(4);
+
+        // Arco: cambia verso in base a offx
+        if (offx === 0) {
+          // ↺ SX
+          rotate(HALF_PI + QUARTER_PI)
+          arc(0, 0, popupSize.x * 6.5 / 24, popupSize.y * 6.5 / 12, PI / 2, TWO_PI);
+          rotate(-0.15);
+          fill(0);
+          triangle(
+            0, popupSize.y / 8,
+            0, popupSize.y * 3 / 8,
+            popupSize.x / 10, popupSize.y / 4);
+        } else {
+          // ↻ DX
+          rotate(-HALF_PI - QUARTER_PI)
+          arc(0, 0, popupSize.x * 6.5 / 24, popupSize.y * 6.5 / 12, PI, PI + 3 * HALF_PI);
+          rotate(0.15);
+          fill(0);
+          triangle(
+            0, popupSize.y * 3 / 8,
+            0, popupSize.y / 8,
+            -popupSize.x / 10, popupSize.y / 4);
+        }
+
+        pop();
+      }
+
       pop();
     };
   }
@@ -123,7 +180,7 @@ class Laser extends Piece {
   }
   reflect(dir) { return null; }
   show() {
-    if(!this.cell){
+    if (!this.cell) {
       throw new Error("No cell for this piece")
     }
     let size = this.cell.size;
@@ -140,7 +197,7 @@ class Laser extends Piece {
   }
 
   getRotationPopup() {
-    return this.getSimpleRotationPopup({ x: 50, y: 50 });
+    return this.getSimpleRotationPopup();
   }
 
   getPopupClickFunc() {
@@ -196,50 +253,7 @@ class Defender extends Piece {
   }
 
   getRotationPopup() {
-    const popupSize = { x: 100, y: 50 };
-    const corner = this.getPopupCorner(popupSize);
-
-    const bounds = {
-      x: corner.x,
-      y: corner.y,
-      w: popupSize.x,
-      h: popupSize.y,
-    };
-
-    this.popupBounds = bounds;
-
-    return () => {
-      push();
-      rectMode(CORNER);
-      fill(200, 200, 200, 150);
-      stroke(0);
-      strokeWeight(1)
-      rect(corner.x, corner.y, popupSize.x, popupSize.y);
-      line(
-        corner.x + popupSize.x / 2,
-        corner.y,
-        corner.x + popupSize.x / 2,
-        corner.y + popupSize.y
-      );
-      fill(color(200, 10, 10));
-      triangle(
-        corner.x + 10,
-        corner.y + popupSize.y / 2,
-        corner.x + popupSize.x / 2 - 10,
-        corner.y + 10,
-        corner.x + popupSize.x / 2 - 10,
-        corner.y + popupSize.y - 10
-      );
-      triangle(
-        corner.x + popupSize.x - 10,
-        corner.y + popupSize.y / 2,
-        corner.x + popupSize.x / 2 + 10,
-        corner.y + 10,
-        corner.x + popupSize.x / 2 + 10,
-        corner.y + popupSize.y - 10
-      );
-      pop();
-    };
+    return this.getDoubleRotationPopup();
   }
 
   getPopupClickFunc() {
@@ -268,60 +282,111 @@ class Defender extends Piece {
 
 }
 
-class Deflector extends Piece {
+class Deflector extends Piece { //rot NE SE SW NW
   constructor(_player) {
     super("Deflector", _player);
   }
-  reflect(dir) { }
-  show() { }
-  getRotationPopup() {
-    const popupSize = { x: 100, y: 50 };
-    const corner = this.getPopupCorner(popupSize);
 
-    const bounds = {
-      x: corner.x,
-      y: corner.y,
-      w: popupSize.x,
-      h: popupSize.y,
+  reflect(dir) {
+    const reflectionMap = {
+      NE: { S: "E", W: "N" },
+      SW: { E: "S", N: "W" },
+      NW: { S: "W", E: "N" },
+      SE: { N: "E", W: "S" }
     };
 
-    this.popupBounds = bounds;
+    let ret = reflectionMap[this.rot][dir] || null;
+    if (ret) return ret;
+    this.board.destroyPiece(this);
+    return ret;
+  }
 
-    // La funzione anonima restituita usa i valori precalcolati
+  show() {
+    if (!this.cell || !this.board) return;
+
+    push();
+
+    const pos = this.cell.getCenter();
+    const r = this.cell.size * 0.33;
+    translate(pos.x, pos.y);
+    rotate(HALF_PI * ["SE", "SW", "NW", "NE"].indexOf(this.rot))
+
+    // Forma principale
+    fill(this.player.pColor);
+    stroke(255, 120);
+    strokeWeight(1);
+    beginShape();
+    vertex(+r, -r);
+    vertex(-r, -r);
+    vertex(-r, +r);
+    vertex(0, +r);
+    vertex(-r / 2, +r / 2);
+    vertex(+r / 2, -r / 2);
+    vertex(+r, 0);
+    vertex(+r, -r);
+    endShape();
+
+    // Linee diagonali verdi
+    stroke(color(50, 230, 50));
+    strokeWeight(4);
+    push();
+    translate(-2, -2);
+    line(-r * 0.5, +r / 2, +r * 0.5, -r / 2);
+    line(-r * 0.5, +r / 2, -r * 0.5 + 3, +r / 2 + 3);
+    line(+r * 0.5, -r / 2, +r * 0.5 + 3, -r / 2 + 3);
+    pop();
+
+    // Semicerchio nero trasparente
+    push();
+    translate(-3, -3);
+    rotate(HALF_PI + QUARTER_PI);
+    stroke(0);
+    strokeWeight(1);
+    fill(0, 50);
+    arc(0, 0, 10, 15, 0, PI, CHORD);
+    pop();
+
+    pop();
+  }
+
+
+  getRotationPopup() {
+    return this.getDoubleRotationPopup();
+  }
+
+  getPopupClickFunc() {
+    let _dirV = {
+      NE: 0,
+      SE: 1,
+      SW: 2,
+      NW: 3,
+      0: "NE",
+      1: "SE",
+      2: "SW",
+      3: "NW",
+    };
     return () => {
-      push();
-      rectMode(CORNER);
-      fill(200, 200, 200, 150);
-      stroke(0);
-      strokeWeight(1)
-      rect(corner.x, corner.y, popupSize.x, popupSize.y);
-      line(
-        corner.x + popupSize.x / 2,
-        corner.y,
-        corner.x + popupSize.x / 2,
-        corner.y + popupSize.y
-      );
-      fill(color(200, 10, 10));
-      triangle(
-        corner.x + 10,
-        corner.y + popupSize.y / 2,
-        corner.x + popupSize.x / 2 - 10,
-        corner.y + 10,
-        corner.x + popupSize.x / 2 - 10,
-        corner.y + popupSize.y - 10
-      );
-      triangle(
-        corner.x + popupSize.x - 10,
-        corner.y + popupSize.y / 2,
-        corner.x + popupSize.x / 2 + 10,
-        corner.y + 10,
-        corner.x + popupSize.x / 2 + 10,
-        corner.y + popupSize.y - 10
-      );
-      pop();
+      if (!this.popupBounds) {
+        print("☠️ No popup bounds");
+        return false;
+      }
+      let c = { x: mouseX - offset.x, y: mouseY - offset.y };
+      if (
+        c.x >= this.popupBounds.x &&
+        c.x <= this.popupBounds.x + this.popupBounds.w &&
+        c.y >= this.popupBounds.y &&
+        c.y <= this.popupBounds.y + this.popupBounds.h
+      ) {
+        if (c.x <= this.popupBounds.x + this.popupBounds.w / 2) {
+          this.rot = _dirV[(_dirV[this.rot] - 1 + 4) % 4]
+        } else {
+          this.rot = _dirV[(_dirV[this.rot] + 1 + 4) % 4]
+        }
+        return true;
+      }
+      return false;
     };
   }
-  getPopupClickFunc() { }
 }
 
 class Switch extends Piece {
