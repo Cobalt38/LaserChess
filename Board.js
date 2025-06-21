@@ -24,9 +24,10 @@ class Board {
     this.waitingForPopup = false;
     this.popupDrawFunc = null;
     this.popupClickFunc = null; //bool function() -> true = ha cliccato sul popup
+    this.laserArray = [];
   }
 
-  destroyPiece(piece){
+  destroyPiece(piece) {
     piece.cell.piece = null;
     let index = piece.player.pieces.indexOf(piece);
     if (index !== -1) {
@@ -36,6 +37,15 @@ class Board {
     if (index !== -1) {
       this.pieces.splice(index, 1);
     }
+    piece = null;
+  }
+
+  clearSelection() {
+    for (let cell of this.cells) {
+      cell.highlight = false;
+      cell.selected = false;
+    }
+    this.selected = null;
   }
 
   addPlayer(name) {
@@ -49,15 +59,19 @@ class Board {
       this
     );
     this.players.push(player);
-    let index = this.players.length - 2;
+    const startPositions = [
+      { x: 10, y: 1, rot: "N" },
+      { x: 1, y: 8, rot: "S" },
+    ];
+    let pos = startPositions[this.players.length - 2];
     if (
       !!player &&
       this.addPiece(
         "Laser",
         player,
-        [10, 1][index],
-        [1, 8][index],
-        ["N", "S"][index]
+        pos.x,
+        pos.y,
+        pos.rot
       )
     ) {
       return player;
@@ -74,9 +88,9 @@ class Board {
 
   endTurn() {
     let pNum = this.players.length;
-    if (this.turn > pNum) {
+    if (this.turn > pNum) { //solo in caso di errori strani
       this.turn = 0;
-    } else {
+    } else {//normale comportamento
       this.turn++;
       this.turn %= pNum;
       if (pNum > 0 && this.turn == 0) {
@@ -87,21 +101,44 @@ class Board {
     return this.activePlayer;
   }
 
-  laser(cell, dir) {
+  laser(cell, dir, visited = new Set()) {
     if (!cell || !dir) return;
+    const key = `${cell.rx},${cell.ry}`;
+    if (visited.has(key)) return;
+    visited.add(key);
 
+    this.laserArray.push(cell.getCenter())
     const { x: dx, y: dy } = this.dirObj[dir];
-    const target = this.getCell(cell.rx + dx, cell.ry + dy);
-    if (!target) return;
+    let target = this.getCell(cell.rx + dx, cell.ry + dy);
+    if (!target) {
+      this.laserArray.push({
+        x: cell.getCenter().x + dx * this.cellSize,
+        y: cell.getCenter().y - dy * this.cellSize
+      })
+      return;
+    }
 
-    cell.laserTg = target;
+    this.laserArray.push(target.getCenter())
 
     if (target.piece) {
       const newDir = target.piece.reflect(dir);
-      if(newDir)
-        this.laser(target, newDir);
+      if (newDir)
+        this.laser(target, newDir, visited);
     } else {
-      this.laser(target, dir);
+      this.laser(target, dir, visited);
+    }
+  }
+
+  fireLaser() {
+    //FIRE LASER
+    if (
+      this.activePlayer.name != "Default" &&
+      this.activePlayer.laserPos != null
+    ) {
+      let laserPos = this.activePlayer.laserPos;
+      let laserCell = this.getCell(laserPos.pos.x, laserPos.pos.y);
+      this.laser(laserCell, laserPos.rot);
+      this.endTurn();
     }
   }
 
@@ -121,12 +158,9 @@ class Board {
 
     const newPiece = (() => {
       const types = { king: King, switch: Switch, laser: Laser, defender: Defender, deflector: Deflector };
-      const Piece = types[type.toLowerCase()];
-      if (!Piece) {
-        console.log("No piece of type:", type);
-        return null;
-      }
-      let ret = new Piece(player);
+      const PieceClass = types[type.toLowerCase()];
+      if (!PieceClass) throw new Error(`❌ Unknown piece type: ${type}`);
+      let ret = new PieceClass(player);
       cell.setPiece(ret);
       ret.cell = cell;
       ret.rot = rot;
@@ -170,46 +204,25 @@ class Board {
   }
 
   pointedCoordinates() {
-    let x = int(mouseX / this.cellSize);
-    let y = int(mouseY / this.cellSize);
+    let x = int((mouseX - offset.x) / this.cellSize);
+    let y = int((mouseY - offset.y) / this.cellSize);
     return { x: x + 1, y: 8 - y };
-  }
-
-  fireLaser() {
-    //FIRE LASER
-    if (
-      this.activePlayer.name != "Default" &&
-      this.activePlayer.laserPos != null
-    ) {
-      let laserPos = this.activePlayer.laserPos;
-      let laserCell = this.getCell(laserPos.pos.x, laserPos.pos.y);
-      this.laser(laserCell, laserPos.rot);
-      this.endTurn();
-    }
   }
 
   mouseSelect() {
     if (this.waitingForPopup) {
-      let c = { x: mouseX, y: mouseY };
+      let c = { x: mouseX - offset.x, y: mouseY - offset.y };
       if (this.popupClickFunc) {
         let popupClick = this.popupClickFunc(c);
         this.waitingForPopup = false;
         this.popupDrawFunc = null;
-        for (let cell of this.cells) {
-          cell.highlight = false;
-          cell.selected = false;
-        }
-        this.selected = null;
+        this.clearSelection();
         if (popupClick) this.fireLaser();
       } else {
         print("☠️ No popup click function defined");
         this.waitingForPopup = false;
         this.popupDrawFunc = null;
-        for (let cell of this.cells) {
-          cell.highlight = false;
-          cell.selected = false;
-        }
-        this.selected = null;
+        this.clearSelection();
         return;
       }
     } else {
@@ -251,11 +264,7 @@ class Board {
         } else return;
       }
 
-      for (let cell of this.cells) {
-        cell.highlight = false;
-        cell.selected = false;
-      }
-      this.selected = null;
+      this.clearSelection();
 
       this.fireLaser();
     }
@@ -275,9 +284,7 @@ class Board {
       for (var cell of this.cells) {
         cell.highlight = false;
       }
-      for (let cell of this.cells) {
-        cell.laserTg = null;
-      }
+      this.laserArray = []
       toSelect.selectionRoutine();
     }
   }
@@ -286,19 +293,23 @@ class Board {
     this.cells.forEach(function (cell) {
       cell.show();
     });
-    for (let cell of this.cells) {
-      //laser
-      if (cell.laserTg) {
-        let { x: x1, y: y1 } = cell.getCenter();
-        let { x: x2, y: y2 } = cell.laserTg.getCenter();
-        stroke(255, 50, 50);
-        strokeWeight(5);
-        line(x1, y1, x2, y2);
-        stroke(50, 150, 50);
-        strokeWeight(2);
-        line(x1, y1, x2, y2);
-      }
+    push()
+    stroke(255, 50, 50);
+    strokeWeight(5);
+    noFill()
+    beginShape()
+    for (let coord of this.laserArray) {
+      vertex(coord.x, coord.y)
     }
+    endShape()
+    stroke(200,200,50);
+    strokeWeight(2);
+    beginShape()
+    for (let coord of this.laserArray) {
+      vertex(coord.x, coord.y)
+    }
+    endShape()
+    pop()
     if (this.popupDrawFunc) {
       this.popupDrawFunc();
     }

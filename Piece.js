@@ -89,36 +89,9 @@ class Piece {
     }
   }
 
-  getRotationPopup() { }
-  getPopupClickFunc() { }
-}
-
-class Laser extends Piece {
-  constructor(_player) {
-    super("Laser", _player);
-    this.canBeMoved = false;
-  }
-  reflect(dir) { }
-  show() {
-    let size = this.cell.size;
-    push();
-    fill(this.player.pColor);
-    translate(this.cell.getCenter().x, this.cell.getCenter().y);
-    rotate(this.rotObj[this.rot]);
-    triangle(-size / 3, size / 3, size / 3, size / 3, 0, -size / 3);
-    pop();
-  }
-
-  getRotationPopup() {
-    const popupSize = { x: 50, y: 50 };
+  getSimpleRotationPopup(popupSize = { x: 50, y: 50 }) {
     const corner = this.getPopupCorner(popupSize);
-
-    this.popupBounds = {
-      x: corner.x,
-      y: corner.y,
-      w: popupSize.x,
-      h: popupSize.y,
-    };
+    this.popupBounds = { x: corner.x, y: corner.y, w: popupSize.x, h: popupSize.y };
 
     return () => {
       push();
@@ -131,15 +104,43 @@ class Laser extends Piece {
       translate(corner.x + popupSize.x / 2, corner.y + popupSize.y / 2);
       noFill();
       strokeWeight(3);
-      // parte curva
       arc(0, 0, popupSize.x * 6.5 / 12, popupSize.y * 6.5 / 12, PI / 2, TWO_PI);
-      // freccia
-      fill(0)
-      rotate(-0.15)
-      triangle(0, popupSize.y / 8, 0, popupSize.y * 3 / 8, popupSize.x / 5, popupSize.y / 4)
-
+      fill(0);
+      rotate(-0.15);
+      triangle(0, popupSize.y / 8, 0, popupSize.y * 3 / 8, popupSize.x / 5, popupSize.y / 4);
       pop();
     };
+  }
+
+  getRotationPopup() { }
+  getPopupClickFunc() { }
+}
+
+class Laser extends Piece {
+  constructor(_player) {
+    super("Laser", _player);
+    this.canBeMoved = false;
+  }
+  reflect(dir) { return null; }
+  show() {
+    if(!this.cell){
+      throw new Error("No cell for this piece")
+    }
+    let size = this.cell.size;
+    push();
+    fill(this.player.pColor);
+    translate(this.cell.getCenter().x, this.cell.getCenter().y);
+    rotate(this.rotObj[this.rot]);
+    triangle(-size / 3, size / 3, size / 3, size / 3, 0, -size / 3);
+    fill(0, 70);
+    stroke(0)
+    strokeWeight(1)
+    arc(0, 2, 10, 20, 0, PI, CHORD)
+    pop();
+  }
+
+  getRotationPopup() {
+    return this.getSimpleRotationPopup({ x: 50, y: 50 });
   }
 
   getPopupClickFunc() {
@@ -149,7 +150,7 @@ class Laser extends Piece {
         return;
       }
 
-      let c = { x: mouseX, y: mouseY };
+      let c = { x: mouseX - offset.x, y: mouseY - offset.y };
       if (
         c.x >= this.popupBounds.x &&
         c.x <= this.popupBounds.x + this.popupBounds.w &&
@@ -185,7 +186,7 @@ class Defender extends Piece {
     translate(this.cell.getCenter().x, this.cell.getCenter().y)
     rotate(dirV[this.rot] * (PI / 2))
     arc(0, 0, this.cell.size / 1.5, this.cell.size / 1.5, -QUARTER_PI / 2, PI + QUARTER_PI / 2)
-    stroke(color(230, 50, 50))
+    stroke(color(50, 230, 50))
     strokeWeight(4)
     line(-this.cell.size / 4, -this.cell.size / 6, this.cell.size / 4, -this.cell.size / 6)
     line(-this.cell.size / 4, -this.cell.size / 6, -this.cell.size / 4, -this.cell.size / 3)
@@ -247,7 +248,7 @@ class Defender extends Piece {
         print("☠️ No popup bounds");
         return false;
       }
-      let c = { x: mouseX, y: mouseY };
+      let c = { x: mouseX - offset.x, y: mouseY - offset.y };
       if (
         c.x >= this.popupBounds.x &&
         c.x <= this.popupBounds.x + this.popupBounds.w &&
@@ -375,36 +376,7 @@ class Switch extends Piece {
 
 
   getRotationPopup() {
-    const popupSize = { x: 50, y: 50 };
-    const corner = this.getPopupCorner(popupSize);
-
-    this.popupBounds = {
-      x: corner.x,
-      y: corner.y,
-      w: popupSize.x,
-      h: popupSize.y,
-    };
-
-    return () => {
-      push();
-      rectMode(CORNER);
-      fill(200, 200, 200, 150);
-      stroke(0);
-      strokeWeight(1);
-      rect(corner.x, corner.y, popupSize.x, popupSize.y, 3);
-
-      translate(corner.x + popupSize.x / 2, corner.y + popupSize.y / 2);
-      noFill();
-      strokeWeight(3);
-      // parte curva
-      arc(0, 0, popupSize.x * 6.5 / 12, popupSize.y * 6.5 / 12, PI / 2, TWO_PI);
-      // freccia
-      fill(0)
-      rotate(-0.15)
-      triangle(0, popupSize.y / 8, 0, popupSize.y * 3 / 8, popupSize.x / 5, popupSize.y / 4)
-
-      pop();
-    };
+    return this.getSimpleRotationPopup({ x: 50, y: 50 });
   }
 
 
@@ -414,7 +386,7 @@ class Switch extends Piece {
         print("☠️ No popup bounds");
         return false;
       }
-      let c = { x: mouseX, y: mouseY };
+      let c = { x: mouseX - offset.x, y: mouseY - offset.y };
       if (
         c.x >= this.popupBounds.x &&
         c.x <= this.popupBounds.x + this.popupBounds.w &&

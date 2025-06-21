@@ -6,5 +6,4 @@ class Player {
     this.board = board;
     this.laserPos = null;
   }
-  
 }

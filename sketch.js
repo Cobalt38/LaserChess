@@ -1,6 +1,6 @@
 let board;
 let player1, player2;
-let piece1;
+let offset = {x:100, y:100};
 function setup() {
   let canvas = createCanvas(800, 800);
   canvas.elt.addEventListener("contextmenu", (e) => {
@@ -16,11 +16,12 @@ function setup() {
   board.addPiece("switch", player1, 2, 2, "N");
   board.addPiece("switch", player1, 8, 5, "S");
   board.addPiece("defender", player2, 5, 6, "W")
-  //board.laser(board.getCell(8,1), "N");
+  board.addPiece("defender", player1, 6, 5, "W")
   board.start();
 }
 
 function draw() {
+  translate(offset.x, offset.y);
   background(50);
   board.show();
 }

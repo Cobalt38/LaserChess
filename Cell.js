@@ -82,7 +82,6 @@ class Cell {
       fill("rgba(150, 150, 50, 0.2)");
       rect(this.x * this.size, this.y * this.size, this.size, this.size);
     }
-    //piece
     if (this.piece) {
       this.piece.show();
     }
