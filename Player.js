@@ -1,5 +1,5 @@
 class Player {
-  constructor(name, pColor, board){
+  constructor(name, pColor = [0,0,0], board){
     this.name = name;
     this.pColor = pColor;
     this.pieces = [];

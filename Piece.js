@@ -9,6 +9,8 @@ let dirV = {
   3: "W",
 };
 
+let mirrorColor = [50, 230, 50];
+
 class Piece {
   constructor(_type, _player) {
     if (this.constructor === Piece)
@@ -185,7 +187,7 @@ class Laser extends Piece {
     }
     let size = this.cell.size;
     push();
-    fill(this.player.pColor);
+    fill(...this.player.pColor);
     translate(this.cell.getCenter().x, this.cell.getCenter().y);
     rotate(this.rotObj[this.rot]);
     triangle(-size / 3, size / 3, size / 3, size / 3, 0, -size / 3);
@@ -237,13 +239,13 @@ class Defender extends Piece {
 
   show() {
     push()
-    fill(this.player.pColor)
+    fill(...this.player.pColor)
     stroke(0)
     strokeWeight(1)
     translate(this.cell.getCenter().x, this.cell.getCenter().y)
     rotate(dirV[this.rot] * (PI / 2))
     arc(0, 0, this.cell.size / 1.5, this.cell.size / 1.5, -QUARTER_PI / 2, PI + QUARTER_PI / 2)
-    stroke(color(50, 230, 50))
+    stroke(...mirrorColor)
     strokeWeight(4)
     line(-this.cell.size / 4, -this.cell.size / 6, this.cell.size / 4, -this.cell.size / 6)
     line(-this.cell.size / 4, -this.cell.size / 6, -this.cell.size / 4, -this.cell.size / 3)
@@ -312,8 +314,8 @@ class Deflector extends Piece { //rot NE SE SW NW
     rotate(HALF_PI * ["SE", "SW", "NW", "NE"].indexOf(this.rot))
 
     // Forma principale
-    fill(this.player.pColor);
-    stroke(255, 120);
+    fill(...this.player.pColor);
+    stroke(255, 100);
     strokeWeight(1);
     beginShape();
     vertex(+r, -r);
@@ -327,7 +329,7 @@ class Deflector extends Piece { //rot NE SE SW NW
     endShape();
 
     // Linee diagonali verdi
-    stroke(color(50, 230, 50));
+    stroke(...mirrorColor);
     strokeWeight(4);
     push();
     translate(-2, -2);
@@ -394,7 +396,6 @@ class Switch extends Piece {
     super("Switch", _player);
   }
 
-
   reflect(dir) {
     const isSlash = this.rot === "E" || this.rot === "W";
 
@@ -415,35 +416,50 @@ class Switch extends Piece {
     return mirrorMap[dir];
   }
 
-
   show() {
     const isSlash = this.rot === "E" || this.rot === "W";
+    const x = this.cell.x * this.cell.size;
+    const y = this.cell.y * this.cell.size;
+    const s = this.cell.size;
+
     push();
-    stroke(this.player.pColor);
-    strokeWeight(6);
-    if (isSlash) {
-      line(
-        this.cell.x * this.cell.size + this.cell.size,
-        this.cell.y * this.cell.size,
-        this.cell.x * this.cell.size,
-        this.cell.y * this.cell.size + this.cell.size
-      );
-    } else {
-      line(
-        this.cell.x * this.cell.size,
-        this.cell.y * this.cell.size,
-        this.cell.x * this.cell.size + this.cell.size,
-        this.cell.y * this.cell.size + this.cell.size
-      );
-    }
+
+    // Sfondo trasparente
+    noStroke();
+    fill(255, 30);
+    rect(x + 2, y + 2, s - 4, s - 4, 6);
+
+    // Bordo sottile interno
+    stroke(255, 50);
+    strokeWeight(1);
+    noFill();
+    rect(x + s / 6, y + s / 6, s * 4 / 6, s * 4 / 6, 4);
+
+    // Base diagonale
+    push()
+    translate(this.cell.getCenter().x, this.cell.getCenter().y);
+    rotate(QUARTER_PI + (isSlash ? 1 : 0) * HALF_PI);
+    rectMode(CENTER);
+    fill(...this.player.pColor, 180);
+    stroke(...this.player.pColor);
+    rect(0, 0, s * 0.8, s * 0.2, 8)
+
+    // Cerchio
+    stroke(0)
+    ellipse(0, 0, 20, 20)
+
+    // Linea evidenziata interna sopra lo specchio
+    stroke(...mirrorColor);
+    strokeWeight(3);
+    line(-s * 0.45, 0, s * 0.45, 0)
+    pop()
+
     pop();
   }
-
 
   getRotationPopup() {
     return this.getSimpleRotationPopup({ x: 50, y: 50 });
   }
-
 
   getPopupClickFunc() {
     return () => {
@@ -476,7 +492,7 @@ class King extends Piece {
   }
   show() {
     push();
-    fill(this.player.pColor);
+    fill(...this.player.pColor);
     if (this.cell) {
       let pos = this.cell.getCenter();
       rectMode(CENTER);

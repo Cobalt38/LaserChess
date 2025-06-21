@@ -55,7 +55,7 @@ class Board {
     }
     let player = new Player(
       name,
-      [color(50, 100, 150), color(150, 100, 50)][this.players.length - 1],
+      [[50, 100, 150], [150, 100, 50]][this.players.length - 1],
       this
     );
     this.players.push(player);
@@ -315,28 +315,41 @@ class Board {
     if (this.popupDrawFunc) {
       this.popupDrawFunc();
     }
-    //Turn
+    // Turn
     push();
+
     let label = "Turno di " + this.activePlayer.name;
     let textS = 24;
     let spacing = 10;
     let circleSize = 20;
+
+    let paddingX = 10;
+    let paddingY = 5;
+    let marginY = 4;
 
     textSize(textS);
     textAlign(LEFT, CENTER);
     let textW = textWidth(label);
     let totalWidth = textW + spacing + circleSize;
     let centerX = this.width / 2 - totalWidth / 2;
-    let centerY = -textS / 2;
+    let centerY = -textS / 2 - paddingY - marginY;
 
-    fill(180, 180, 20);
+    // Rettangolo di sfondo
+    fill(50, 50, 50, 180);
+    noStroke();
+    rect(centerX - paddingX, centerY - textS / 2 - paddingY, totalWidth + paddingX * 2, textS + paddingY * 2, 6);
+
+    // Testo
+    fill("#fffaf0");
     text(label, centerX, centerY);
 
-    fill(this.activePlayer.pColor);
-    noStroke();
+    // Cerchio accanto al testo
+    fill(...this.activePlayer.pColor);
+    stroke(0)
     ellipse(centerX + textW + spacing + circleSize / 2, centerY, circleSize, circleSize);
 
     pop();
+
   }
 }
 
