@@ -442,23 +442,12 @@ class Switch extends Piece {
   }
 
   reflect(dir) {
-    const isSlash = this.rot === "E" || this.rot === "W";
-
-    const mirrorMap = isSlash
-      ? {
-        N: "E",
-        W: "S",
-        S: "W",
-        E: "N",
-      } // "/"
-      : {
-        N: "W",
-        E: "S",
-        S: "E",
-        W: "N",
-      }; // "\"
-
-    return mirrorMap[dir];
+    return {
+      NE: { S: "E", W: "N", E: "S", N: "W" },
+      SW: { S: "E", W: "N", E: "S", N: "W" },
+      NW: { S: "W", E: "N", N: "E", W: "S" },
+      SE: { S: "W", E: "N", N: "E", W: "S" }
+    }[this.rot][dir] || null;
   }
 
   move(tg) {
@@ -474,7 +463,7 @@ class Switch extends Piece {
   }
 
   show() {
-    const isSlash = this.rot === "E" || this.rot === "W";
+    const isSlash = this.rot === "NE" || this.rot === "SW";
     const x = this.cell.x * this.cell.size;
     const y = this.cell.y * this.cell.size;
     const s = this.cell.size;
@@ -498,7 +487,7 @@ class Switch extends Piece {
     // Base diagonale
     push()
     translate(this.cell.getCenter().x, this.cell.getCenter().y);
-    rotate(QUARTER_PI + (isSlash ? 1 : 0) * HALF_PI);
+    rotate(QUARTER_PI + (isSlash ? 0 : 1) * HALF_PI);
     rectMode(CENTER);
     fill(...this.player.pColor, 180);
     stroke(...this.player.pColor);
@@ -534,7 +523,7 @@ class Switch extends Piece {
         c.y >= this.popupBounds.y &&
         c.y <= this.popupBounds.y + this.popupBounds.h
       ) {
-        this.rot = (this.rot === "N" || this.rot === "S") ? "E" : "N";
+        this.rot = (this.rot === "NE" || this.rot === "SW") ? "SE" : "NE";
         return true;
       }
       return false;
@@ -587,3 +576,46 @@ class King extends Piece {
   }
 
 }
+
+class Prism extends Piece {
+  constructor(_player) {
+    super("Prism", _player);
+    this.rot = "N"
+  }
+
+  reflect(dir) {
+
+  }
+
+  show() {
+    if (!this.cell) return;
+    push();
+    let pos = this.cell.getCenter();
+    translate(pos.x, pos.y);
+
+    let s = this.cell.size * 0.33;
+
+    fill(...this.player.pColor);
+    stroke(255);
+    strokeWeight(1.5);  
+    push()
+    rotate(QUARTER_PI/2)
+    this.drawRegularPolygon(8, s);
+    pop()
+
+    pop();
+  }
+
+  drawRegularPolygon(n, radius) {
+    beginShape();
+    for (let i = 0; i < n; i++) {
+      let angle = TWO_PI * i / n;
+      let x = cos(angle) * radius;
+      let y = sin(angle) * radius;
+      vertex(x, y);
+    }
+    endShape(CLOSE);
+  }
+
+}
+

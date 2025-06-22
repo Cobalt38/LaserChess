@@ -9,17 +9,8 @@ function setup() {
   });
   strokeJoin(ROUND);
   board = new Board();
-  // player1 = board.addPlayer("Mario");
-  // player2 = board.addPlayer("Luigi");
-  // board.addPiece("king", player1, 6, 1, "N");
-  // board.addPiece("king", player2, 5, 8, "S");
-  // board.addPiece("switch", player1, 10, 5, "W");
-  // board.addPiece("switch", player1, 2, 2, "N");
-  // board.addPiece("switch", player1, 8, 5, "S");
-  // board.addPiece("defender", player2, 5, 6, "W")
-  // board.addPiece("defender", player1, 6, 5, "W")
-  // board.addPiece("deflector", player2, 4, 4, "NW")
-  board.setupACE("Mario", "Luigi");
+  [player1, player2] = board.setupACE("Mario", "Luigi");
+  // board.addPiece(Prism, player1, 9,5,"S")
   board.start();
 }
 

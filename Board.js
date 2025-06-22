@@ -60,15 +60,15 @@ class Board {
       this
     );
     this.players.push(player);
-    const startPositions = [
+    const laserStartPositions = [
       { x: 10, y: 1, rot: "N" },
       { x: 1, y: 8, rot: "S" },
     ];
-    let pos = startPositions[this.players.length - 2];
+    let pos = laserStartPositions[this.players.length - 2];
     if (
       !!player &&
       this.addPiece(
-        "Laser",
+        Laser,
         player,
         pos.x,
         pos.y,
@@ -166,41 +166,40 @@ class Board {
     }
   }
 
-  addPiece(type, player, x, y, rot) {
-    let cell;
-    try {
-      cell = this.getCell(x, y);
-    } catch {
-      print("Error during cell fetch: ${x},${y}");
-      return;
-    }
-
-    if (cell.isOccupied())
-      throw new Error("Cell (${x},${y}) is occupied");
+  addPiece(PieceClass, player, x, y, rot) {
+    const cell = this.getCell(x, y);
+    if (!cell) throw new Error(`Invalid coordinates: ${x},${y}`);
+    if (cell.isOccupied()) throw new Error(`Cell (${x},${y}) is occupied`);
     if (!["N", "E", "S", "W", "NW", "NE", "SW", "SE"].includes(rot))
-      throw new Error("Nice rot lul");
+      throw new Error("Invalid rotation");
 
-    const newPiece = (() => {
-      const types = { king: King, switch: Switch, laser: Laser, defender: Defender, deflector: Deflector };
-      const PieceClass = types[type.toLowerCase()];
-      if (!PieceClass) throw new Error(`❌ Unknown piece type: ${type}`);
-      let ret = new PieceClass(player);
-      cell.setPiece(ret);
-      ret.cell = cell;
-      ret.rot = rot;
-      return ret;
-    })();
-    if (type.toLowerCase() == "laser") {
+    // ✔️ La classe è legit?
+    if (typeof PieceClass !== "function")
+      throw new Error("Invalid piece type: not a constructor");
+    if (!(PieceClass.prototype instanceof Piece))
+      throw new Error(`${PieceClass.name} must extend Piece`);
+
+    // ✅ Istanzia piece
+    const newPiece = new PieceClass(player);
+    newPiece.cell = cell;
+    newPiece.rot = rot;
+    newPiece.board = this;
+
+    cell.setPiece(newPiece);
+
+    // 🔦 Laser tracking
+    if (newPiece.type?.toLowerCase?.() === "laser") {
       player.laserPos = {
         pos: { x: cell.rx, y: cell.ry },
         rot: rot,
       };
     }
+
     this.pieces.push(newPiece);
     player.pieces.push(newPiece);
-    newPiece.board = this;
     return newPiece;
   }
+
 
   kernel(x, y) {
     let ret = [];
@@ -385,32 +384,34 @@ class Board {
       return;
     }
     //player1
-    this.addPiece("Deflector", p1, 3, 1, "NW")
-    this.addPiece("Defender", p1, 4, 1, "N")
-    this.addPiece("King", p1, 5, 1, "NW")
-    this.addPiece("Defender", p1, 6, 1, "N")
-    this.addPiece("Deflector", p1, 8, 2, "NE")
-    this.addPiece("Deflector", p1, 3, 4, "NW")
-    this.addPiece("Switch", p1, 5, 4, "N")
-    this.addPiece("Switch", p1, 6, 4, "E")
-    this.addPiece("Deflector", p1, 10, 4, "SW")
-    this.addPiece("Deflector", p1, 3, 5, "SW")
-    this.addPiece("Deflector", p1, 10, 5, "NW")
-    this.addPiece("Deflector", p1, 4, 6, "NW")
+    this.addPiece(Deflector, p1, 3, 1, "NW")
+    this.addPiece(Defender, p1, 4, 1, "N")
+    this.addPiece(King, p1, 5, 1, "NW")
+    this.addPiece(Defender, p1, 6, 1, "N")
+    this.addPiece(Deflector, p1, 8, 2, "NE")
+    this.addPiece(Deflector, p1, 3, 4, "NW")
+    this.addPiece(Switch, p1, 5, 4, "NW")
+    this.addPiece(Switch, p1, 6, 4, "NE")
+    this.addPiece(Deflector, p1, 10, 4, "SW")
+    this.addPiece(Deflector, p1, 3, 5, "SW")
+    this.addPiece(Deflector, p1, 10, 5, "NW")
+    this.addPiece(Deflector, p1, 4, 6, "NW")
 
     //player2
-    this.addPiece("Deflector", p2, 8, 8, "SE")
-    this.addPiece("Defender", p2, 7, 8, "S")
-    this.addPiece("King", p2, 6, 8, "S")
-    this.addPiece("Defender", p2, 5, 8, "S")
-    this.addPiece("Deflector", p2, 3, 7, "SW")
-    this.addPiece("Deflector", p2, 1, 5, "NE")
-    this.addPiece("Switch", p2, 5, 5, "S")
-    this.addPiece("Switch", p2, 6, 5, "E")
-    this.addPiece("Deflector", p2, 8, 5, "SE")
-    this.addPiece("Deflector", p2, 1, 4, "SE")
-    this.addPiece("Deflector", p2, 8, 4, "NE")
-    this.addPiece("Deflector", p2, 7, 3, "SE")
+    this.addPiece(Deflector, p2, 8, 8, "SE")
+    this.addPiece(Defender, p2, 7, 8, "S")
+    this.addPiece(King, p2, 6, 8, "S")
+    this.addPiece(Defender, p2, 5, 8, "S")
+    this.addPiece(Deflector, p2, 3, 7, "SW")
+    this.addPiece(Deflector, p2, 1, 5, "NE")
+    this.addPiece(Switch, p2, 5, 5, "SW")
+    this.addPiece(Switch, p2, 6, 5, "SE")
+    this.addPiece(Deflector, p2, 8, 5, "SE")
+    this.addPiece(Deflector, p2, 1, 4, "SE")
+    this.addPiece(Deflector, p2, 8, 4, "NE")
+    this.addPiece(Deflector, p2, 7, 3, "SE")
+
+    return [p1, p2];
   }
 }
 
