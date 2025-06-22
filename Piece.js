@@ -9,7 +9,7 @@ let dirV = {
   3: "W",
 };
 
-let mirrorColor = [50, 230, 50];
+let mirrorColor = [50, 230, 50]; //use with spread op (e.g. fill(...mirrorColor))
 
 class Piece {
   constructor(_type, _player) {
@@ -47,7 +47,7 @@ class Piece {
       print("Error, trying to move a static piece");
       return false;
     }
-    if (!!tg.piece) return;
+    if (!!tg.piece) return; //this should never happen anyway (filtering by highlight)
     this.cell.setPiece(null);
     tg.piece = this;
     this.cell = tg;
@@ -191,6 +191,14 @@ class Laser extends Piece {
     translate(this.cell.getCenter().x, this.cell.getCenter().y);
     rotate(this.rotObj[this.rot]);
     triangle(-size / 3, size / 3, size / 3, size / 3, 0, -size / 3);
+    push()
+    stroke("red")
+    strokeWeight(6)
+    point(0, 0)
+    stroke("yellow")
+    strokeWeight(3)
+    point(0, 0)
+    pop()
     fill(0, 70);
     stroke(0)
     strokeWeight(1)
@@ -239,18 +247,35 @@ class Defender extends Piece {
 
   show() {
     push()
+    const s = this.cell.size;
     fill(...this.player.pColor)
-    stroke(0)
+    stroke(...mirrorColor, 180)
     strokeWeight(1)
     translate(this.cell.getCenter().x, this.cell.getCenter().y)
     rotate(dirV[this.rot] * (PI / 2))
-    arc(0, 0, this.cell.size / 1.5, this.cell.size / 1.5, -QUARTER_PI / 2, PI + QUARTER_PI / 2)
+    arc(0, 0, s / 1.3, s / 1.3, -QUARTER_PI / 2, PI + QUARTER_PI / 2)
+    stroke(0, 180)
+    strokeWeight(2)
+    arc(0, 0, s * 0.66, s * 0.66, -QUARTER_PI / 2, PI + QUARTER_PI / 2)
+    push()
+    translate(0, s / 10)
     stroke(...mirrorColor)
     strokeWeight(4)
-    line(-this.cell.size / 4, -this.cell.size / 6, this.cell.size / 4, -this.cell.size / 6)
-    line(-this.cell.size / 4, -this.cell.size / 6, -this.cell.size / 4, -this.cell.size / 3)
-    line(this.cell.size / 4, -this.cell.size / 6, this.cell.size / 4, -this.cell.size / 3)
-    line(0, 0, 0, -this.cell.size / 6)
+    line(-s / 4, -s / 6, s / 4, -s / 6)
+    line(-s / 4, -s / 6, -s / 4, -s / 3)
+    line(s / 4, -s / 6, s / 4, -s / 3)
+    line(0, 0, 0, -s / 6)
+    stroke(0, 180)
+    strokeWeight(2)
+    line(-s / 4, -s / 6, s / 4, -s / 6)
+    line(-s / 4, -s / 6, -s / 4, -s / 3)
+    line(s / 4, -s / 6, s / 4, -s / 3)
+    line(0, 0, 0, -s / 6)
+    pop()
+    strokeWeight(1)
+    stroke(0, 180)
+    fill(0, 180)
+    arc(0, 2, 10, 20, 0, PI, CHORD)
     pop()
   }
 
@@ -315,7 +340,7 @@ class Deflector extends Piece { //rot NE SE SW NW
 
     // Forma principale
     fill(...this.player.pColor);
-    stroke(255, 100);
+    stroke(...mirrorColor, 180)
     strokeWeight(1);
     beginShape();
     vertex(+r, -r);
@@ -328,14 +353,34 @@ class Deflector extends Piece { //rot NE SE SW NW
     vertex(+r, -r);
     endShape();
 
+    stroke(0, 180)
+    strokeWeight(2)
+    let r2 = r * 0.9;
+    beginShape();
+    vertex(+r2, -r2);
+    vertex(-r2, -r2);
+    vertex(-r2, +r2);
+    vertex(0, +r2);
+    vertex(-r2 / 2, +r2 / 2);
+    vertex(+r2 / 2, -r2 / 2);
+    vertex(+r2, 0);
+    vertex(+r2, -r2);
+    endShape();
+
     // Linee diagonali verdi
-    stroke(...mirrorColor);
+    stroke(...mirrorColor, 180);
     strokeWeight(4);
     push();
-    translate(-2, -2);
-    line(-r * 0.5, +r / 2, +r * 0.5, -r / 2);
-    line(-r * 0.5, +r / 2, -r * 0.5 + 3, +r / 2 + 3);
-    line(+r * 0.5, -r / 2, +r * 0.5 + 3, -r / 2 + 3);
+    rotate(-QUARTER_PI)
+    strokeWeight(3)
+    line(0, -r / 3, 0, r) // taglio
+    stroke(...mirrorColor);
+    line(-r * 0.9, 0, r * 0.9, 0) // linea 1
+    strokeWeight(2)
+    translate(0, r * 0.33)
+    line(-r * 0.6, 0, r * 0.6, 0) // linea 2
+    translate(0, r * 0.33)
+    line(-r * 0.3, 0, r * 0.3, 0) //linea 3
     pop();
 
     // Semicerchio nero trasparente
@@ -344,8 +389,8 @@ class Deflector extends Piece { //rot NE SE SW NW
     rotate(HALF_PI + QUARTER_PI);
     stroke(0);
     strokeWeight(1);
-    fill(0, 50);
-    arc(0, 0, 10, 15, 0, PI, CHORD);
+    fill(0, 180);
+    arc(0, -1, 10, 20, 0, PI, CHORD)
     pop();
 
     pop();
@@ -416,6 +461,18 @@ class Switch extends Piece {
     return mirrorMap[dir];
   }
 
+  move(tg) {
+    if (!this.canBeMoved) {
+      print("Error, trying to move a static piece");
+      return false;
+    }
+    if (tg.piece)
+      tg.piece.cell = this.cell;
+    this.cell.setPiece(tg.piece || null);
+    tg.piece = this;
+    this.cell = tg;
+  }
+
   show() {
     const isSlash = this.rot === "E" || this.rot === "W";
     const x = this.cell.x * this.cell.size;
@@ -427,7 +484,10 @@ class Switch extends Piece {
     // Sfondo trasparente
     noStroke();
     fill(255, 30);
-    rect(x + 2, y + 2, s - 4, s - 4, 6);
+    rect(
+      x + s / 5, y + s / 5,
+      s * 3 / 5, s * 3 / 5,
+      4);
 
     // Bordo sottile interno
     stroke(255, 50);
@@ -486,18 +546,44 @@ class Switch extends Piece {
 class King extends Piece {
   constructor(_player) {
     super("King", _player);
+    this.rot = "N"
   }
+
   reflect(dir) {
     print(`Player ${this.player.name} loses!`);
   }
+
   show() {
     push();
     fill(...this.player.pColor);
+
     if (this.cell) {
-      let pos = this.cell.getCenter();
+      const pos = this.cell.getCenter();
+      const size = this.cell.size * 0.667;
+
       rectMode(CENTER);
-      rect(pos.x, pos.y, this.cell.size * 0.5);
+      noStroke();
+      rect(pos.x, pos.y, size, size, 6);
+
+      translate(pos.x, pos.y);
+      stroke(0, 180);
+      strokeWeight(1.5);
+      noFill();
+
+      const arcRadius = size * 0.667;
+
+      for (let i = 0; i < 4; i++) {
+        push();
+        rotate(i * HALF_PI);
+        arc(0, 2, arcRadius, arcRadius, 0, PI, CHORD)
+        stroke(...mirrorColor, 180);
+        strokeWeight(4)
+        point(arcRadius / 2, 0)
+        pop();
+      }
     }
+
     pop();
   }
+
 }

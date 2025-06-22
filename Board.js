@@ -44,18 +44,19 @@ class Board {
     for (let cell of this.cells) {
       cell.highlight = false;
       cell.selected = false;
+      cell.deny = false;
     }
     this.selected = null;
   }
 
-  addPlayer(name) {
+  addPlayer(name, colorArray = [[50, 100, 150], [150, 100, 50]]) {
     if (this.players.length == 3) {
       print("Cannot add any more players to this board!");
       return null;
     }
     let player = new Player(
       name,
-      [[50, 100, 150], [150, 100, 50]][this.players.length - 1],
+      colorArray[this.players.length - 1],
       this
     );
     this.players.push(player);
@@ -74,9 +75,32 @@ class Board {
         pos.rot
       )
     ) {
+      if (this.players.length == 2) { //player1
+        this.getCell(2, 1).playerExclusive = player;
+        this.getCell(2, 8).playerExclusive = player;
+        this.getCell(10, 2).playerExclusive = player;
+        this.getCell(10, 3).playerExclusive = player;
+        this.getCell(10, 4).playerExclusive = player;
+        this.getCell(10, 5).playerExclusive = player;
+        this.getCell(10, 6).playerExclusive = player;
+        this.getCell(10, 7).playerExclusive = player;
+        this.getCell(10, 8).playerExclusive = player;
+      } else if (this.players.length == 3) { //player2
+        this.getCell(1, 1).playerExclusive = player;
+        this.getCell(1, 2).playerExclusive = player;
+        this.getCell(1, 3).playerExclusive = player;
+        this.getCell(1, 4).playerExclusive = player;
+        this.getCell(1, 5).playerExclusive = player;
+        this.getCell(1, 6).playerExclusive = player;
+        this.getCell(1, 7).playerExclusive = player;
+        this.getCell(9, 1).playerExclusive = player;
+        this.getCell(9, 8).playerExclusive = player;
+      }
+
       return player;
     } else {
       print("Error during addPlayer");
+      return null;
     }
   }
 
@@ -226,6 +250,7 @@ class Board {
         return;
       }
     } else {
+      this.clearSelection()
       let coord = this.pointedCoordinates();
       if (isInsideMap(coord)) this.selectCell(coord.x, coord.y);
     }
@@ -350,6 +375,42 @@ class Board {
 
     pop();
 
+  }
+
+  setupACE(name1 = "Player1", name2 = "Player2") {
+    let p1 = this.addPlayer(name1) || this.players[1];
+    let p2 = this.addPlayer(name2) || this.players[2];
+    if (!(p1 && p2)) {
+      print("Error during players creation")
+      return;
+    }
+    //player1
+    this.addPiece("Deflector", p1, 3, 1, "NW")
+    this.addPiece("Defender", p1, 4, 1, "N")
+    this.addPiece("King", p1, 5, 1, "NW")
+    this.addPiece("Defender", p1, 6, 1, "N")
+    this.addPiece("Deflector", p1, 8, 2, "NE")
+    this.addPiece("Deflector", p1, 3, 4, "NW")
+    this.addPiece("Switch", p1, 5, 4, "N")
+    this.addPiece("Switch", p1, 6, 4, "E")
+    this.addPiece("Deflector", p1, 10, 4, "SW")
+    this.addPiece("Deflector", p1, 3, 5, "SW")
+    this.addPiece("Deflector", p1, 10, 5, "NW")
+    this.addPiece("Deflector", p1, 4, 6, "NW")
+
+    //player2
+    this.addPiece("Deflector", p2, 8, 8, "SE")
+    this.addPiece("Defender", p2, 7, 8, "S")
+    this.addPiece("King", p2, 6, 8, "S")
+    this.addPiece("Defender", p2, 5, 8, "S")
+    this.addPiece("Deflector", p2, 3, 7, "SW")
+    this.addPiece("Deflector", p2, 1, 5, "NE")
+    this.addPiece("Switch", p2, 5, 5, "S")
+    this.addPiece("Switch", p2, 6, 5, "E")
+    this.addPiece("Deflector", p2, 8, 5, "SE")
+    this.addPiece("Deflector", p2, 1, 4, "SE")
+    this.addPiece("Deflector", p2, 8, 4, "NE")
+    this.addPiece("Deflector", p2, 7, 3, "SE")
   }
 }
 

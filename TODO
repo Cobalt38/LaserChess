@@ -1,0 +1,5 @@
+# TODO List for Laser_Chess Project
+
+- Laser deve usare alt_direzioni
+- Aggiungere tutte le config iniziali
+- Board.addPiece() dovrebbe prendere una classe in input, non una stringa (per il tipo)
