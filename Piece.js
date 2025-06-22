@@ -581,38 +581,96 @@ class Prism extends Piece {
   constructor(_player) {
     super("Prism", _player);
     this.rot = "N"
+    this.t = 0;
   }
 
   reflect(dir) {
-
+    const allDirs = ["N", "E", "S", "W"];
+    return allDirs.filter(d => d !== this.oppositeDir(dir));
+  }
+  
+  oppositeDir(d) {
+    return { N: "S", S: "N", E: "W", W: "E" }[d];
   }
 
   show() {
     if (!this.cell) return;
+    this.t = (this.t + 0.1) % TWO_PI
     push();
     let pos = this.cell.getCenter();
     translate(pos.x, pos.y);
 
-    let s = this.cell.size * 0.33;
+    let s = this.cell.size * 0.35;
 
     fill(...this.player.pColor);
-    stroke(255);
-    strokeWeight(1.5);  
-    push()
-    rotate(QUARTER_PI/2)
-    this.drawRegularPolygon(8, s);
-    pop()
+    stroke(...mirrorColor, 180);
+    strokeWeight(1);
+    rotate(QUARTER_PI / 2) // per ottagono
+    this.drawRegularPolygon(8, s); // bordo
+    stroke(0, 180)
+    strokeWeight(1)
+    noFill()
+    this.drawRegularPolygon(8, s * 0.9, true) // bordo interno
+    strokeWeight(3)
+    stroke(0, 220)
+    this.drawRegularPolygon(8, s * 0.5) // timone
+    strokeWeight(1)
+    stroke(0);
+    for (let i = 0; i < 6; i++) {
+      let tNorm = (this.t / TWO_PI); // da 0 a 1
+      let pulse = abs(0.5 - tNorm) * 2; // da 0 → 1 → 0
+      let alpha = pulse * 90; // max alpha
+      let r = 4 * i;
+      fill(200, 20, 20, alpha);
+      stroke(200, 20, 20, alpha);
+      strokeWeight(6 - i);
+      ellipse(0, 0, r);
+    }
+    rotate(QUARTER_PI / 2)
 
+    stroke(...mirrorColor, 220)
+    strokeWeight(2)
+    strokeCap(ROUND);
+    let lineLen = s * 0.6;
+    let lineClos = s * 0.1;
+    line(-lineLen, lineClos, lineLen, lineClos);
+    line(-lineLen, -lineClos, lineLen, -lineClos);
+    rotate(HALF_PI);
+    line(-lineLen, lineClos, lineLen, lineClos);
+    line(-lineLen, -lineClos, lineLen, -lineClos);
+
+    rectMode(CENTER)
+    stroke(0)
+    strokeWeight(1)
+    fill(...mirrorColor, 220)
+    rect(0, 0, 10, 10)
+    fill(0, 180)
+    rect(0, 0, 3, 3)
+    stroke("red")
+    strokeWeight(6)
+    point(0, 0)
+    stroke("yellow")
+    strokeWeight(3)
+    point(0, 0)
     pop();
   }
 
   drawRegularPolygon(n, radius) {
-    beginShape();
-    for (let i = 0; i < n; i++) {
+    let on = 1//Math.floor((this.t / TWO_PI) * 2) % 2;
+    beginShape(TRIANGLE_FAN);
+    vertex(0, 0);
+    for (let i = 0; i < n + 1; i++) {
       let angle = TWO_PI * i / n;
       let x = cos(angle) * radius;
       let y = sin(angle) * radius;
-      vertex(x, y);
+      if ((i % 2 === on)) { // lo so che è stupido, mi serviva per altre cose
+        push();
+        fill(...this.player.pColor, 130)
+        vertex(x, y);
+        pop();
+      } else {
+        vertex(x, y);
+      }
     }
     endShape(CLOSE);
   }

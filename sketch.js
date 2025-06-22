@@ -10,7 +10,8 @@ function setup() {
   strokeJoin(ROUND);
   board = new Board();
   [player1, player2] = board.setupACE("Mario", "Luigi");
-  // board.addPiece(Prism, player1, 9,5,"S")
+  board.addPiece(Prism, player1, 9,5,"S")
+  board.addPiece(Prism, player2, 9,4,"S")
   board.start();
 }
 

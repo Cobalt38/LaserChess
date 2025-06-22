@@ -24,7 +24,8 @@ class Board {
     this.waitingForPopup = false;
     this.popupDrawFunc = null;
     this.popupClickFunc = null; //bool function() -> true = ha cliccato sul popup
-    this.laserArray = [];
+    this.laserPaths = [];
+    this.visited = null;
   }
 
   destroyPiece(piece) {
@@ -125,31 +126,54 @@ class Board {
     return this.activePlayer;
   }
 
-  laser(cell, dir, visited = {}) {
-    if (!cell || !dir) return;
-    const key = `${cell.rx},${cell.ry}`;
-    visited[key] = (visited[key] || 0) + 1;
-    if (visited[key] > 2) return; //il laser può incrociare se stesso massimo una volta per casella (vert + hor)
+  laser(startCell, dir) {
+    this.laserPaths = [];
+    this.visited = new Map();
+    this.traceLaser(startCell, dir, []);
+  }
 
-    this.laserArray.push(cell.getCenter())
+  traceLaser(cell, dir, path) {
+    if (!cell || !dir) return;
+
+    const key = `${cell.rx},${cell.ry}`;
+
+    if (!this.visited.has(key)) this.visited.set(key, new Set());
+    const visitedSet = this.visited.get(key);
+    if (visitedSet.has(dir)) return;
+    visitedSet.add(dir);
+
+    path.push(cell.getCenter());
+
     const { x: dx, y: dy } = this.dirObj[dir];
-    let target = this.getCell(cell.rx + dx, cell.ry + dy);
-    if (!target) {
-      this.laserArray.push({
+    const nextCell = this.getCell(cell.rx + dx, cell.ry + dy);
+
+    if (!nextCell) {
+      // Uscita fuori dal bordo → termina ramo
+      path.push({
         x: cell.getCenter().x + dx * this.cellSize,
-        y: cell.getCenter().y - dy * this.cellSize
-      })
+        y: cell.getCenter().y - dy * this.cellSize,
+      });
+      this.laserPaths.push([...path]);
       return;
     }
 
-    this.laserArray.push(target.getCenter())
+    path.push(nextCell.getCenter());
 
-    if (target.piece) {
-      const newDir = target.piece.reflect(dir);
-      if (newDir)
-        this.laser(target, newDir, visited);
+    if (nextCell.piece) {
+      const result = nextCell.piece.reflect(dir);
+      if (!result) {
+        this.laserPaths.push([...path]);
+        return;
+      }
+      const directions = Array.isArray(result) ? result : [result];
+      for (let i = 0; i < directions.length; i++) {
+        const dirOut = directions[i];
+        // Ogni ramo ha la sua copia del path
+        const nextPath = [...path]; // (i === directions.length - 1) ? path : [...path];
+        this.traceLaser(nextCell, dirOut, nextPath);
+      }
     } else {
-      this.laser(target, dir, visited);
+      this.traceLaser(nextCell, dir, path);
     }
   }
 
@@ -232,6 +256,12 @@ class Board {
     return { x: x + 1, y: 8 - y };
   }
 
+  worldToRelative(_x, _y, useOffset = true) {
+    let x = useOffset ? int((_x - offset.x) / this.cellSize) : int(_x / this.cellSize);
+    let y = useOffset ? int((_y - offset.y) / this.cellSize) : int(_y / this.cellSize);
+    return { x: x + 1, y: 8 - y };
+  }
+
   mouseSelect() {
     if (this.waitingForPopup) {
       let c = { x: mouseX - offset.x, y: mouseY - offset.y };
@@ -308,7 +338,7 @@ class Board {
       for (var cell of this.cells) {
         cell.highlight = false;
       }
-      this.laserArray = []
+      this.laserPaths = []
       toSelect.selectionRoutine();
     }
   }
@@ -317,25 +347,51 @@ class Board {
     this.cells.forEach(function (cell) {
       cell.show();
     });
+
+    let laserWidth = { outer: 5, inner: 2 }
+    let laserColor = { outer: [255, 50, 50], inner: [200, 200, 50] }
     //Laser
-    push()
-    stroke(255, 50, 50);
-    strokeWeight(5);
-    noFill()
-    beginShape()
-    for (let coord of this.laserArray) {
-      vertex(coord.x, coord.y)
+    for (let path of this.laserPaths) {
+      push();
+      //outer
+      stroke(...laserColor.outer);
+      strokeWeight(laserWidth.outer);
+      noFill();
+      beginShape();
+      for (let coord of path) vertex(coord.x, coord.y);
+      endShape();
+      //inner
+      stroke(...laserColor.inner);
+      strokeWeight(laserWidth.inner);
+      beginShape();
+      for (let coord of path) vertex(coord.x, coord.y);
+      endShape();
+      pop();
     }
-    endShape()
-    stroke(200, 200, 50);
-    strokeWeight(2);
-    beginShape()
-    for (let coord of this.laserArray) {
-      vertex(coord.x, coord.y)
+
+    if (this.laserPaths.length > 0) {
+      push();
+      stroke(...laserColor.inner);
+      strokeWeight(laserWidth.inner);
+      for (let cell of this.cells) {
+        if (cell.piece && cell.piece instanceof Prism) {
+          // Usa worldToRelative per ottenere le coordinate relative della cella
+          const rel = this.worldToRelative(cell.getCenter().x, cell.getCenter().y, false);
+          const key = `${rel.x},${rel.y}`;
+          // Controlla se la cella è stata visitata dal laser
+          if (this.visited && this.visited.has(key)) {
+            push();
+            translate(cell.getCenter().x, cell.getCenter().y);
+            line(-cell.size / 2, 0, cell.size / 2, 0);
+            line(0, -cell.size / 2, 0, cell.size / 2);
+            pop();
+          }
+        }
+      }
+      pop();
     }
-    endShape()
-    pop()
-    //Popup
+
+    // Popup
     if (this.popupDrawFunc) {
       this.popupDrawFunc();
     }
