@@ -256,7 +256,7 @@ class Board {
     return { x: x + 1, y: 8 - y };
   }
 
-  worldToRelative(_x, _y, useOffset = true) {
+  worldToRelative(_x, _y, useOffset = false) {
     let x = useOffset ? int((_x - offset.x) / this.cellSize) : int(_x / this.cellSize);
     let y = useOffset ? int((_y - offset.y) / this.cellSize) : int(_y / this.cellSize);
     return { x: x + 1, y: 8 - y };
@@ -369,12 +369,14 @@ class Board {
       pop();
     }
 
+    //evita gomiti brutti dove il laser passa 2+ volte
     if (this.laserPaths.length > 0) {
       push();
       stroke(...laserColor.inner);
       strokeWeight(laserWidth.inner);
       for (let cell of this.cells) {
-        if (cell.piece && cell.piece instanceof Prism) {
+        // 🥬🥬🥬 TODO: rifattorizzare leggendo this.visited dove ci sono 3 o più dir e disegnando linee in tutte le direzioni trovate
+        if (cell.piece && cell.piece instanceof Prism) { 
           // Usa worldToRelative per ottenere le coordinate relative della cella
           const rel = this.worldToRelative(cell.getCenter().x, cell.getCenter().y, false);
           const key = `${rel.x},${rel.y}`;
@@ -432,7 +434,36 @@ class Board {
 
   }
 
+  resetBoard() {
+    this.clearSelection()
+    // Clear all pieces from the board
+    for (let cell of this.cells) {
+      cell.piece = null;
+      cell.highlight = false;
+      cell.selected = false;
+      cell.deny = false;
+      cell.playerExclusive = null;
+    }
+    // Clear player pieces
+    for (let player of this.players) {
+      player.pieces = [];
+      player.laserPos = null;
+    }
+    // Clear board pieces and laser paths
+    this.pieces = [];
+    this.laserPaths = [];
+    this.visited = null;
+    this.selected = null;
+    this.waitingForPopup = false;
+    this.popupDrawFunc = null;
+    this.popupClickFunc = null;
+    // Reset turn
+    this.turn = 0;
+    this.activePlayer = this.players[this.turn];
+  }
+
   setupACE(name1 = "Player1", name2 = "Player2") {
+    this.resetBoard();
     let p1 = this.addPlayer(name1) || this.players[1];
     let p2 = this.addPlayer(name2) || this.players[2];
     if (!(p1 && p2)) {
@@ -468,6 +499,16 @@ class Board {
     this.addPiece(Deflector, p2, 7, 3, "SE")
 
     return [p1, p2];
+  }
+
+  setupCURIOSITY(name1 = "Player1", name2 = "Player2"){
+    this.resetBoard();
+    let p1 = this.addPlayer(name1) || this.players[1];
+    let p2 = this.addPlayer(name2) || this.players[2];
+    if (!(p1 && p2)) {
+      print("Error during players creation")
+      return;
+    }
   }
 }
 
