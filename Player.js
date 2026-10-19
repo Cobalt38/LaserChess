@@ -1,9 +1,8 @@
 class Player {
-  constructor(name, pColor = [0,0,0], board){
+  constructor(name, pColor = [0, 0, 0]) {
     this.name = name;
     this.pColor = pColor;
     this.pieces = [];
-    this.board = board;
-    this.laserPos = null;
+    this.laser = null; // il pezzo Laser di questo giocatore
   }
 }

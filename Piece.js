@@ -1,186 +1,87 @@
-let dirV = {
-  N: 0,
-  E: 1,
-  S: 2,
-  W: 3,
-  0: "N",
-  1: "E",
-  2: "S",
-  3: "W",
-};
-
-let mirrorColor = [50, 230, 50]; //use with spread op (e.g. fill(...mirrorColor))
-
 class Piece {
-  constructor(_type, _player) {
+  constructor(_player) {
     if (this.constructor === Piece)
       throw new TypeError(
         'Abstract class "Piece" cannot be instantiated directly.'
       );
-    if (this.reflect === undefined)
+    if (this.hit === undefined)
       throw new TypeError(
-        'Classes extending "Piece" must contain a "reflect" method'
+        'Classes extending "Piece" must contain a "hit" method'
       );
     if (this.show === undefined)
       throw new TypeError(
         'Classes extending "Piece" must contain a "show" method'
       );
     this.player = _player;
-    this.type = _type;
     this.canBeMoved = true;
-    this.rotObj = {
-      N: 0,
-      E: PI / 2,
-      S: PI,
-      W: -PI / 2,
-    };
     this.board = null;
     this.cell = null; // Cell where the piece is placed
     this.rot = null; // Initial rotation
-    this.popupBounds = null; // corner(x,y) + size
+    this.flash = 0; // 1 -> 0: bagliore quando il laser colpisce il pezzo
+    this.flashColor = LASER_COLOR.outer;
+    this.offset = { x: 0, y: 0 }; // spostamento dal centro della casella (trascinamento, scivolata)
+    this.spin = 0; // rotazione residua da animare, in radianti, che torna a 0
   }
 
-  selectionRoutine() { }
+  get type() {
+    return this.constructor.name;
+  }
+
+  // Disegna il pezzo con uno stile di partenza pulito
+  draw() {
+    push();
+    stroke(255);
+    strokeWeight(0);
+    this.show();
+    pop();
+  }
+
+  hitFlash(col) {
+    this.flash = 1;
+    this.flashColor = col;
+  }
+
+  // Le caselle helix sono riservate a un solo giocatore
+  canEnter(cell) {
+    return !cell.playerExclusive || cell.playerExclusive === this.player;
+  }
+
+  // cell è adiacente: il pezzo può andarci?
+  canMoveTo(cell) {
+    return this.canBeMoved && !cell.piece && this.canEnter(cell);
+  }
 
   move(tg) {
-    if (!this.canBeMoved) {
-      print("Error, trying to move a static piece");
-      return false;
-    }
-    if (!!tg.piece) return; //this should never happen anyway (filtering by highlight)
     this.cell.setPiece(null);
-    tg.piece = this;
+    tg.setPiece(this);
     this.cell = tg;
   }
 
-  getPopupCorner(popupSize = { x: 100, y: 50 }) {
-    let cellPos = {
-      x: this.cell.x * this.cell.size,
-      y: this.cell.y * this.cell.size,
-    };
-    let cellSize = this.cell.size;
-    let w = this.board.width;
-    let h = this.board.height;
-
-    if (cellPos.x <= w / 2) {
-      if (cellPos.y <= h / 2) {
-        return {
-          x: cellPos.x + cellSize / 2,
-          y: cellPos.y + cellSize / 2,
-        };
-      } else {
-        return {
-          x: cellPos.x + cellSize / 2,
-          y: cellPos.y - popupSize.y / 2,
-        };
-      }
-    } else {
-      if (cellPos.y <= h / 2) {
-        return {
-          x: cellPos.x - popupSize.x + cellSize / 2,
-          y: cellPos.y + cellSize / 2,
-        };
-      } else {
-        return {
-          x: cellPos.x - popupSize.x + cellSize / 2,
-          y: cellPos.y - popupSize.y + cellSize / 2,
-        };
-      }
-    }
+  // Rotazioni proposte nel menu del pezzo: [antioraria, oraria] o [unica]; [] = il pezzo non ruota
+  rotations() {
+    return [];
   }
 
-  getSimpleRotationPopup(popupSize = { x: 50, y: 50 }) {
-    const corner = this.getPopupCorner(popupSize);
-    this.popupBounds = { x: corner.x, y: corner.y, w: popupSize.x, h: popupSize.y };
-
-    return () => {
-      push();
-      rectMode(CORNER);
-      fill(200, 200, 200, 150);
-      stroke(0);
-      strokeWeight(1);
-      rect(corner.x, corner.y, popupSize.x, popupSize.y, 3);
-
-      translate(corner.x + popupSize.x / 2, corner.y + popupSize.y / 2);
-      noFill();
-      strokeWeight(4);
-      arc(0, 0, popupSize.x * 6.5 / 12, popupSize.y * 6.5 / 12, PI / 2, TWO_PI);
-      fill(0);
-      rotate(-0.15);
-      triangle(0, popupSize.y / 8, 0, popupSize.y * 3 / 8, popupSize.x / 5, popupSize.y / 4);
-      pop();
-    };
-  }
-
-  getDoubleRotationPopup(popupSize = { x: 100, y: 50 }) {
-    const corner = this.getPopupCorner(popupSize);
-
-    this.popupBounds = { x: corner.x, y: corner.y, w: popupSize.x, h: popupSize.y };
-
-    return () => {
-      push();
-      rectMode(CORNER);
-      fill(200, 200, 200, 150);
-      stroke(0);
-      strokeWeight(1)
-      rect(corner.x, corner.y, popupSize.x, popupSize.y);
-      line(
-        corner.x + popupSize.x / 2,
-        corner.y,
-        corner.x + popupSize.x / 2,
-        corner.y + popupSize.y
-      );
-      for (let offx of [0, 1]) {
-        push();
-
-        // Posizionamento: sinistra o destra
-        let posX = corner.x + popupSize.x / 4 + (popupSize.x / 2) * offx;
-        let posY = corner.y + popupSize.y / 2;
-        translate(posX, posY);
-
-        noFill();
-        strokeWeight(4);
-
-        // Arco: cambia verso in base a offx
-        if (offx === 0) {
-          // ↺ SX
-          rotate(HALF_PI + QUARTER_PI)
-          arc(0, 0, popupSize.x * 6.5 / 24, popupSize.y * 6.5 / 12, PI / 2, TWO_PI);
-          rotate(-0.15);
-          fill(0);
-          triangle(
-            0, popupSize.y / 8,
-            0, popupSize.y * 3 / 8,
-            popupSize.x / 10, popupSize.y / 4);
-        } else {
-          // ↻ DX
-          rotate(-HALF_PI - QUARTER_PI)
-          arc(0, 0, popupSize.x * 6.5 / 24, popupSize.y * 6.5 / 12, PI, PI + 3 * HALF_PI);
-          rotate(0.15);
-          fill(0);
-          triangle(
-            0, popupSize.y * 3 / 8,
-            0, popupSize.y / 8,
-            -popupSize.x / 10, popupSize.y / 4);
-        }
-
-        pop();
-      }
-
-      pop();
-    };
-  }
-
-  getRotationPopup() { }
-  getPopupClickFunc() { }
+  // hit(dir): reazione al laser che viaggia verso dir ed entra nella casella del pezzo.
+  // Restituisce { out: direzioni in uscita, effect: "reflect" | "block" | "destroy" | "king" }.
+  // Non deve modificare la board: l'effetto viene applicato quando il raggio animato arriva.
 }
 
 class Laser extends Piece {
   constructor(_player) {
-    super("Laser", _player);
+    super(_player);
     this.canBeMoved = false;
   }
-  reflect(dir) { return null; }
+
+  hit(dir) {
+    return { out: [], effect: "block" }; // il Laser non può essere eliminato
+  }
+
+  // Punta verso la prima colonna o verso la prima riga
+  rotations() {
+    return [{ N: "W", W: "N", S: "E", E: "S" }[this.rot]];
+  }
+
   show() {
     if (!this.cell) {
       throw new Error("No cell for this piece")
@@ -188,8 +89,8 @@ class Laser extends Piece {
     let size = this.cell.size;
     push();
     fill(...this.player.pColor);
-    translate(this.cell.getCenter().x, this.cell.getCenter().y);
-    rotate(this.rotObj[this.rot]);
+    translate(this.cell.center.x, this.cell.center.y);
+    rotate(DIRS.indexOf(this.rot) * HALF_PI);
     triangle(-size / 3, size / 3, size / 3, size / 3, 0, -size / 3);
     push()
     stroke("red")
@@ -205,72 +106,41 @@ class Laser extends Piece {
     arc(0, 2, 10, 20, 0, PI, CHORD)
     pop();
   }
-
-  getRotationPopup() {
-    return this.getSimpleRotationPopup();
-  }
-
-  getPopupClickFunc() {
-    return () => {
-      if (!this.popupBounds) {
-        print("☠️ No popup bounds");
-        return;
-      }
-
-      let c = { x: mouseX - offset.x, y: mouseY - offset.y };
-      if (
-        c.x >= this.popupBounds.x &&
-        c.x <= this.popupBounds.x + this.popupBounds.w &&
-        c.y >= this.popupBounds.y &&
-        c.y <= this.popupBounds.y + this.popupBounds.h
-      ) {
-        const rotMap = { N: "W", W: "N", S: "E", E: "S" };
-        this.rot = rotMap[this.rot];
-        this.player.laserPos.rot = this.rot;
-        return true;
-      }
-    };
-  }
 }
 
 class Defender extends Piece {
-  constructor(_player) {
-    super("Defender", _player);
+  hit(dir) {
+    // Il fronte (rot) blocca il raggio che arriva da quella parte, altrimenti il Defender salta
+    return { out: [], effect: this.rot === OPPOSITE[dir] ? "block" : "destroy" };
   }
 
-  reflect(dir) {
-    if (dirV[(dirV[dir] + 2 /*opposto*/) % 4] != this.rot) {
-      this.board.destroyPiece(this);
-    }
-    return null;
+  rotations() {
+    return [rotateIn(DIRS, this.rot, -1), rotateIn(DIRS, this.rot, 1)];
   }
 
   show() {
     push()
     const s = this.cell.size;
     fill(...this.player.pColor)
-    stroke(...mirrorColor, 180)
+    stroke(...MIRROR_COLOR, 180)
     strokeWeight(1)
-    translate(this.cell.getCenter().x, this.cell.getCenter().y)
-    rotate(dirV[this.rot] * (PI / 2))
+    translate(this.cell.center.x, this.cell.center.y)
+    rotate(DIRS.indexOf(this.rot) * HALF_PI)
     arc(0, 0, s / 1.3, s / 1.3, -QUARTER_PI / 2, PI + QUARTER_PI / 2)
     stroke(0, 180)
     strokeWeight(2)
     arc(0, 0, s * 0.66, s * 0.66, -QUARTER_PI / 2, PI + QUARTER_PI / 2)
     push()
     translate(0, s / 10)
-    stroke(...mirrorColor)
-    strokeWeight(4)
-    line(-s / 4, -s / 6, s / 4, -s / 6)
-    line(-s / 4, -s / 6, -s / 4, -s / 3)
-    line(s / 4, -s / 6, s / 4, -s / 3)
-    line(0, 0, 0, -s / 6)
-    stroke(0, 180)
-    strokeWeight(2)
-    line(-s / 4, -s / 6, s / 4, -s / 6)
-    line(-s / 4, -s / 6, -s / 4, -s / 3)
-    line(s / 4, -s / 6, s / 4, -s / 3)
-    line(0, 0, 0, -s / 6)
+    // scudo: prima lo specchio verde, poi il bordo scuro sopra
+    for (const [col, w] of [[MIRROR_COLOR, 4], [[0, 180], 2]]) {
+      stroke(...col)
+      strokeWeight(w)
+      line(-s / 4, -s / 6, s / 4, -s / 6)
+      line(-s / 4, -s / 6, -s / 4, -s / 3)
+      line(s / 4, -s / 6, s / 4, -s / 3)
+      line(0, 0, 0, -s / 6)
+    }
     pop()
     strokeWeight(1)
     stroke(0, 180)
@@ -278,70 +148,27 @@ class Defender extends Piece {
     arc(0, 2, 10, 20, 0, PI, CHORD)
     pop()
   }
-
-  getRotationPopup() {
-    return this.getDoubleRotationPopup();
-  }
-
-  getPopupClickFunc() {
-    return () => {
-      if (!this.popupBounds) {
-        print("☠️ No popup bounds");
-        return false;
-      }
-      let c = { x: mouseX - offset.x, y: mouseY - offset.y };
-      if (
-        c.x >= this.popupBounds.x &&
-        c.x <= this.popupBounds.x + this.popupBounds.w &&
-        c.y >= this.popupBounds.y &&
-        c.y <= this.popupBounds.y + this.popupBounds.h
-      ) {
-        if (c.x <= this.popupBounds.x + this.popupBounds.w / 2) {
-          this.rot = dirV[(dirV[this.rot] - 1 + 4) % 4]
-        } else {
-          this.rot = dirV[(dirV[this.rot] + 1 + 4) % 4]
-        }
-        return true;
-      }
-      return false;
-    };
-  }
-
 }
 
 class Deflector extends Piece { //rot NE SE SW NW
-  constructor(_player) {
-    super("Deflector", _player);
+  static REFLECTIONS = {
+    NE: { S: "E", W: "N" },
+    SW: { E: "S", N: "W" },
+    NW: { S: "W", E: "N" },
+    SE: { N: "E", W: "S" }
+  };
+
+  hit(dir) {
+    const out = Deflector.REFLECTIONS[this.rot][dir];
+    // Lato a specchio: riflette di 90°. Qualunque altro lato: eliminato
+    return out ? { out: [out], effect: "reflect" } : { out: [], effect: "destroy" };
   }
 
-  reflect(dir) {
-    const reflectionMap = {
-      NE: { S: "E", W: "N" },
-      SW: { E: "S", N: "W" },
-      NW: { S: "W", E: "N" },
-      SE: { N: "E", W: "S" }
-    };
-
-    let ret = reflectionMap[this.rot][dir] || null;
-    if (ret) return ret;
-    this.board.destroyPiece(this);
-    return ret;
+  rotations() {
+    return [rotateIn(DIAGONALS, this.rot, -1), rotateIn(DIAGONALS, this.rot, 1)];
   }
 
-  show() {
-    if (!this.cell || !this.board) return;
-
-    push();
-
-    const pos = this.cell.getCenter();
-    const r = this.cell.size * 0.33;
-    translate(pos.x, pos.y);
-    rotate(HALF_PI * ["SE", "SW", "NW", "NE"].indexOf(this.rot))
-
-    // Forma principale
-    fill(...this.player.pColor);
-    stroke(...mirrorColor, 180)
-    strokeWeight(1);
+  drawBody(r) {
     beginShape();
     vertex(+r, -r);
     vertex(-r, -r);
@@ -352,29 +179,36 @@ class Deflector extends Piece { //rot NE SE SW NW
     vertex(+r, 0);
     vertex(+r, -r);
     endShape();
+  }
+
+  show() {
+    if (!this.cell || !this.board) return;
+
+    push();
+
+    const pos = this.cell.center;
+    const r = this.cell.size * 0.33;
+    translate(pos.x, pos.y);
+    rotate(HALF_PI * ["SE", "SW", "NW", "NE"].indexOf(this.rot))
+
+    // Forma principale
+    fill(...this.player.pColor);
+    stroke(...MIRROR_COLOR, 180)
+    strokeWeight(1);
+    this.drawBody(r);
 
     stroke(0, 180)
     strokeWeight(2)
-    let r2 = r * 0.9;
-    beginShape();
-    vertex(+r2, -r2);
-    vertex(-r2, -r2);
-    vertex(-r2, +r2);
-    vertex(0, +r2);
-    vertex(-r2 / 2, +r2 / 2);
-    vertex(+r2 / 2, -r2 / 2);
-    vertex(+r2, 0);
-    vertex(+r2, -r2);
-    endShape();
+    this.drawBody(r * 0.9);
 
     // Linee diagonali verdi
-    stroke(...mirrorColor, 180);
+    stroke(...MIRROR_COLOR, 180);
     strokeWeight(4);
     push();
     rotate(-QUARTER_PI)
     strokeWeight(3)
     line(0, -r / 3, 0, r) // taglio
-    stroke(...mirrorColor);
+    stroke(...MIRROR_COLOR);
     line(-r * 0.9, 0, r * 0.9, 0) // linea 1
     strokeWeight(2)
     translate(0, r * 0.33)
@@ -395,77 +229,55 @@ class Deflector extends Piece { //rot NE SE SW NW
 
     pop();
   }
+}
 
-
-  getRotationPopup() {
-    return this.getDoubleRotationPopup();
-  }
-
-  getPopupClickFunc() {
-    let _dirV = {
-      NE: 0,
-      SE: 1,
-      SW: 2,
-      NW: 3,
-      0: "NE",
-      1: "SE",
-      2: "SW",
-      3: "NW",
-    };
-    return () => {
-      if (!this.popupBounds) {
-        print("☠️ No popup bounds");
-        return false;
-      }
-      let c = { x: mouseX - offset.x, y: mouseY - offset.y };
-      if (
-        c.x >= this.popupBounds.x &&
-        c.x <= this.popupBounds.x + this.popupBounds.w &&
-        c.y >= this.popupBounds.y &&
-        c.y <= this.popupBounds.y + this.popupBounds.h
-      ) {
-        if (c.x <= this.popupBounds.x + this.popupBounds.w / 2) {
-          this.rot = _dirV[(_dirV[this.rot] - 1 + 4) % 4]
-        } else {
-          this.rot = _dirV[(_dirV[this.rot] + 1 + 4) % 4]
-        }
-        return true;
-      }
-      return false;
-    };
-  }
+// Specchio diagonale che riflette da entrambi i lati (Switch, HalfMirror)
+function diagonalReflection(isSlash, dir) {
+  return (isSlash
+    ? { S: "E", W: "N", E: "S", N: "W" }
+    : { S: "W", E: "N", N: "E", W: "S" })[dir];
 }
 
 class Switch extends Piece {
-  constructor(_player) {
-    super("Switch", _player);
+  get isSlash() {
+    return this.rot === "NE" || this.rot === "SW";
   }
 
-  reflect(dir) {
-    return {
-      NE: { S: "E", W: "N", E: "S", N: "W" },
-      SW: { S: "E", W: "N", E: "S", N: "W" },
-      NW: { S: "W", E: "N", N: "E", W: "S" },
-      SE: { S: "W", E: "N", N: "E", W: "S" }
-    }[this.rot][dir] || null;
+  hit(dir) {
+    // Specchio su entrambi i lati: riflette sempre, non può essere eliminato
+    return { out: [diagonalReflection(this.isSlash, dir)], effect: "reflect" };
+  }
+
+  rotations() {
+    return [this.isSlash ? "SE" : "NE"];
+  }
+
+  // Oltre alle caselle libere, può scambiarsi con un Defender o Deflector adiacente (di qualunque
+  // colore), purché il pezzo scambiato possa entrare nella casella dello Switch
+  canMoveTo(cell) {
+    const other = cell.piece;
+    if (!other) return super.canMoveTo(cell);
+    return (
+      (other instanceof Defender || other instanceof Deflector) &&
+      this.canEnter(cell) &&
+      other.canEnter(this.cell)
+    );
   }
 
   move(tg) {
-    if (!this.canBeMoved) {
-      print("Error, trying to move a static piece");
-      return false;
+    const other = tg.piece;
+    const from = this.cell;
+    super.move(tg);
+    if (other) {
+      from.setPiece(other);
+      other.cell = from;
     }
-    if (tg.piece)
-      tg.piece.cell = this.cell;
-    this.cell.setPiece(tg.piece || null);
-    tg.piece = this;
-    this.cell = tg;
   }
 
   show() {
-    const isSlash = this.rot === "NE" || this.rot === "SW";
-    const x = this.cell.x * this.cell.size;
-    const y = this.cell.y * this.cell.size;
+    const isSlash = this.isSlash;
+    const x = this.cell.px;
+    const y = this.cell.py;
     const s = this.cell.size;
 
     push();
@@ -486,7 +298,7 @@ class Switch extends Piece {
 
     // Base diagonale
     push()
-    translate(this.cell.getCenter().x, this.cell.getCenter().y);
+    translate(this.cell.center.x, this.cell.center.y);
     rotate(QUARTER_PI + (isSlash ? 0 : 1) * HALF_PI);
     rectMode(CENTER);
     fill(...this.player.pColor, 180);
@@ -498,48 +310,86 @@ class Switch extends Piece {
     ellipse(0, 0, 20, 20)
 
     // Linea evidenziata interna sopra lo specchio
-    stroke(...mirrorColor);
+    stroke(...MIRROR_COLOR);
     strokeWeight(3);
     line(-s * 0.45, 0, s * 0.45, 0)
     pop()
 
     pop();
   }
+}
 
-  getRotationPopup() {
-    return this.getSimpleRotationPopup({ x: 50, y: 50 });
+// Specchio semitrasparente (pezzo inventato): metà del raggio prosegue dritta, metà viene
+// riflessa di 90°. Funziona da entrambi i lati come lo Switch e non può essere eliminato,
+// ma non può fare scambi.
+class HalfMirror extends Piece {
+  get isSlash() {
+    return this.rot === "NE" || this.rot === "SW";
   }
 
-  getPopupClickFunc() {
-    return () => {
-      if (!this.popupBounds) {
-        print("☠️ No popup bounds");
-        return false;
-      }
-      let c = { x: mouseX - offset.x, y: mouseY - offset.y };
-      if (
-        c.x >= this.popupBounds.x &&
-        c.x <= this.popupBounds.x + this.popupBounds.w &&
-        c.y >= this.popupBounds.y &&
-        c.y <= this.popupBounds.y + this.popupBounds.h
-      ) {
-        this.rot = (this.rot === "NE" || this.rot === "SW") ? "SE" : "NE";
-        return true;
-      }
-      return false;
-    };
+  hit(dir) {
+    return { out: [dir, diagonalReflection(this.isSlash, dir)], effect: "reflect" };
   }
 
+  rotations() {
+    return [this.isSlash ? "SE" : "NE"];
+  }
+
+  show() {
+    const s = this.cell.size;
+    const c = this.cell.center;
+    push();
+    translate(c.x, c.y);
+
+    // Base: disco del colore del giocatore
+    stroke(0, 180);
+    strokeWeight(1);
+    fill(...this.player.pColor, 110);
+    ellipse(0, 0, s * 0.62);
+    noFill();
+    stroke(...this.player.pColor);
+    strokeWeight(2);
+    ellipse(0, 0, s * 0.56);
+
+    rotate(QUARTER_PI + (this.isSlash ? 0 : 1) * HALF_PI);
+
+    // Lastra di vetro
+    rectMode(CENTER);
+    stroke(200, 240, 255, 170);
+    strokeWeight(1);
+    fill(170, 225, 255, 60);
+    rect(0, 0, s * 0.86, s * 0.18, 4);
+
+    // Specchiatura a metà: tratteggio verde
+    stroke(...MIRROR_COLOR, 230);
+    strokeWeight(3);
+    strokeCap(SQUARE);
+    const step = s * 0.12;
+    for (let x = -s * 0.39; x < s * 0.39; x += step) line(x, 0, x + step / 2, 0);
+
+    // Riflesso sul vetro
+    stroke(255, 255, 255, 150);
+    strokeWeight(1.5);
+    strokeCap(ROUND);
+    line(-s * 0.3, -s * 0.05, -s * 0.1, -s * 0.05);
+
+    // Fermi alle estremità
+    noStroke();
+    fill(...this.player.pColor);
+    rect(-s * 0.43, 0, s * 0.06, s * 0.24, 2);
+    rect(s * 0.43, 0, s * 0.06, s * 0.24, 2);
+    pop();
+  }
 }
 
 class King extends Piece {
   constructor(_player) {
-    super("King", _player);
+    super(_player);
     this.rot = "N"
   }
 
-  reflect(dir) {
-    print(`Player ${this.player.name} loses!`);
+  hit(dir) {
+    return { out: [], effect: "king" };
   }
 
   show() {
@@ -547,7 +397,7 @@ class King extends Piece {
     fill(...this.player.pColor);
 
     if (this.cell) {
-      const pos = this.cell.getCenter();
+      const pos = this.cell.center;
       const size = this.cell.size * 0.667;
 
       rectMode(CENTER);
@@ -565,7 +415,7 @@ class King extends Piece {
         push();
         rotate(i * HALF_PI);
         arc(0, 2, arcRadius, arcRadius, 0, PI, CHORD)
-        stroke(...mirrorColor, 180);
+        stroke(...MIRROR_COLOR, 180);
         strokeWeight(4)
         point(arcRadius / 2, 0)
         pop();
@@ -574,52 +424,47 @@ class King extends Piece {
 
     pop();
   }
-
 }
 
 class Prism extends Piece {
   constructor(_player) {
-    super("Prism", _player);
+    super(_player);
     this.rot = "N"
     this.t = 0;
   }
 
-  reflect(dir) {
-    const allDirs = ["N", "E", "S", "W"];
-    return allDirs.filter(d => d !== this.oppositeDir(dir));
-  }
-  
-  oppositeDir(d) {
-    return { N: "S", S: "N", E: "W", W: "E" }[d];
+  hit(dir) {
+    // Divide il raggio: prosegue dritto e si apre ai due lati
+    return { out: DIRS.filter((d) => d !== OPPOSITE[dir]), effect: "reflect" };
   }
 
   show() {
     if (!this.cell) return;
-    this.t = (this.t + 0.1) % TWO_PI
+    this.t = (this.t + deltaTime * 0.006) % TWO_PI // ~0.1 per frame a 60fps
     push();
-    let pos = this.cell.getCenter();
+    let pos = this.cell.center;
     translate(pos.x, pos.y);
 
     let s = this.cell.size * 0.35;
 
     fill(...this.player.pColor);
-    stroke(...mirrorColor, 180);
+    stroke(...MIRROR_COLOR, 180);
     strokeWeight(1);
     rotate(QUARTER_PI / 2) // per ottagono
     this.drawRegularPolygon(8, s); // bordo
     stroke(0, 180)
     strokeWeight(1)
     noFill()
-    this.drawRegularPolygon(8, s * 0.9, true) // bordo interno
+    this.drawRegularPolygon(8, s * 0.9) // bordo interno
     strokeWeight(3)
     stroke(0, 220)
     this.drawRegularPolygon(8, s * 0.5) // timone
     strokeWeight(1)
     stroke(0);
+    let tNorm = (this.t / TWO_PI); // da 0 a 1
+    let pulse = abs(0.5 - tNorm) * 2; // da 0 → 1 → 0
+    let alpha = pulse * 90; // max alpha
     for (let i = 0; i < 6; i++) {
-      let tNorm = (this.t / TWO_PI); // da 0 a 1
-      let pulse = abs(0.5 - tNorm) * 2; // da 0 → 1 → 0
-      let alpha = pulse * 90; // max alpha
       let r = 4 * i;
       fill(200, 20, 20, alpha);
       stroke(200, 20, 20, alpha);
@@ -628,7 +473,7 @@ class Prism extends Piece {
     }
     rotate(QUARTER_PI / 2)
 
-    stroke(...mirrorColor, 220)
+    stroke(...MIRROR_COLOR, 220)
     strokeWeight(2)
     strokeCap(ROUND);
     let lineLen = s * 0.6;
@@ -642,7 +487,7 @@ class Prism extends Piece {
     rectMode(CENTER)
     stroke(0)
     strokeWeight(1)
-    fill(...mirrorColor, 220)
+    fill(...MIRROR_COLOR, 220)
     rect(0, 0, 10, 10)
     fill(0, 180)
     rect(0, 0, 3, 3)
@@ -663,7 +508,7 @@ class Prism extends Piece {
       let angle = TWO_PI * i / n;
       let x = cos(angle) * radius;
       let y = sin(angle) * radius;
-      if ((i % 2 === on)) { // lo so che è stupido, mi serviva per altre cose
+      if ((i % 2 === on)) { // in TRIANGLE_FAN il fill è per vertice: spicchi alternati
         push();
         fill(...this.player.pColor, 130)
         vertex(x, y);
@@ -674,6 +519,4 @@ class Prism extends Piece {
     }
     endShape(CLOSE);
   }
-
 }
-

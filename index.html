@@ -1,19 +1,93 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
   <head>
-    <script src="https://cdn.jsdelivr.net/npm/p5@1.11.5/lib/p5.js"></script>
-    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.3/addons/p5.sound.min.js"></script> -->
-    <link rel="stylesheet" type="text/css" href="style.css">
     <meta charset="utf-8" />
-
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0a0a0a" />
+    <title>Laser Chess</title>
+    <link rel="icon" href="icon.ico">
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.11.5/lib/p5.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="style.css">
   </head>
   <body>
-    <main>
-    </main>
-    <script src="sketch.js"></script>
-    <script src="Board.js"></script>
-    <script src="Piece.js"></script>
+    <div id="app">
+      <header id="status" aria-live="polite">
+        <span id="status-dot" class="dot" hidden></span>
+        <span id="status-text">Laser Chess</span>
+      </header>
+
+      <main id="stage"></main>
+
+      <div id="controls">
+        <div class="fire-row">
+          <button id="btn-undo" type="button" class="undo" disabled
+            title="Annulla la mossa (Ctrl+Z)" aria-label="Annulla la mossa">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 14 4 9l5-5" />
+              <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
+            </svg>
+          </button>
+          <button id="btn-fire" type="button" class="fire" disabled>
+            <svg class="fire-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="7" />
+              <path d="M12 1.5v5M12 17.5v5M1.5 12h5M17.5 12h5" />
+              <circle cx="12" cy="12" r="2" class="fire-dot" />
+            </svg>
+            <span>SPARA</span>
+          </button>
+        </div>
+        <div class="row">
+          <button id="btn-new" type="button">Nuova partita</button>
+          <button id="btn-sound" type="button" aria-pressed="true">🔊 Audio</button>
+        </div>
+        <button id="btn-draw" type="button" class="accent" hidden
+          title="La stessa posizione si è presentata tre volte">Dichiara patta (posizione ripetuta)</button>
+        <details>
+          <summary>Varianti</summary>
+          <div id="variant-list" class="variants"></div>
+        </details>
+        <details>
+          <summary>Come si gioca</summary>
+          <ul class="help">
+            <li>Tocca o clicca un tuo pezzo per vedere dove può andare.</li>
+            <li><strong>Trascinalo</strong> su una casella evidenziata per muoverlo.</li>
+            <li><strong>Tasto destro</strong> o <strong>tieni premuto</strong> sul pezzo per il menu di rotazione.</li>
+            <li>Poi premi <strong>SPARA</strong> (o <kbd>Spazio</kbd>, o tocca il tuo laser): colpisci il King avversario!</li>
+            <li>Ci hai ripensato? <strong>↶</strong> (o <kbd>Ctrl</kbd>+<kbd>Z</kbd>) annulla la mossa finché non spari.</li>
+            <li><kbd>Esc</kbd> annulla, <kbd>R</kbd> ricomincia.</li>
+          </ul>
+        </details>
+      </div>
+
+      <section id="history-panel" aria-label="Storico delle mosse">
+        <h2>Mosse</h2>
+        <ol id="history"></ol>
+      </section>
+    </div>
+
+    <div id="gameover" hidden>
+      <div class="card" role="dialog" aria-modal="true" aria-labelledby="go-title">
+        <h2 id="go-title"></h2>
+        <p id="go-text"></p>
+        <div class="row">
+          <button id="go-new" type="button" class="accent">Nuova partita</button>
+          <button id="go-close" type="button">Guarda la board</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- L'ordine conta: ogni file usa le classi/costanti di quelli sopra -->
+    <script src="constants.js"></script>
     <script src="Player.js"></script>
     <script src="Cell.js"></script>
+    <script src="Piece.js"></script>
+    <script src="setups.js"></script>
+    <script src="Popup.js"></script>
+    <script src="LaserBeam.js"></script>
+    <script src="Effects.js"></script>
+    <script src="Sound.js"></script>
+    <script src="Board.js"></script>
+    <script src="ui.js"></script>
+    <script src="sketch.js"></script>
   </body>
 </html>

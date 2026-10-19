@@ -1,43 +1,27 @@
 class Cell {
   constructor(i, cellSize) {
-    this.x = i % 10; //colonna
-    this.y = int(i / 10); //riga
-    this.i = i;
+    this.x = i % COLS; //colonna (0-based, da sinistra)
+    this.y = Math.floor(i / COLS); //riga (0-based, dall'alto)
+    this.rx = this.x + 1; //colonna 1..COLS
+    this.ry = ROWS - this.y; //riga 1..ROWS, dal basso
     this.size = cellSize;
-    this.fillColor = color(0, 0, 0);
+    this.px = this.x * cellSize; //angolo in alto a sinistra
+    this.py = this.y * cellSize;
+    this.center = { x: this.px + cellSize / 2, y: this.py + cellSize / 2 };
+    this.piece = null;
     this.selected = false;
     this.highlight = false;
-    this.board = null;
-    this.rx = this.x + 1;
-    this.ry = 8 - this.y;
-    this.laserTg = null; //target laser
-    this.playerExclusive = null; //only this player can move here
     this.deny = false; //shows that moving here is forbidden (X)
+    this.playerExclusive = null; //only this player can move here
   }
 
-  selectionRoutine() {
-    if (!this.board) {
-      print("Cell has no board registered, weird", this);
-      return false;
-    }
-    this.selected = true;
-    if (!this.piece) return;
-    if (this.piece.canBeMoved) {
-      for (let cell of this.board.kernel(this.rx, this.ry)) {
-        if (!cell.piece || cell == this)
-          cell.highlight = true;
-        if (this.piece.type.toLowerCase() == "switch" && cell.piece && ["defender", "deflector"].includes(cell.piece.type.toLowerCase()))
-          cell.highlight = true;
-        if (cell != this && cell.playerExclusive && cell.playerExclusive != this.board.activePlayer) {
-          cell.deny = true;
-          cell.highlight = false;
-        }
-      }
-      if (this.piece.type.toLowerCase() == "king") this.highlight = false;
-    } else {
-      this.highlight = true;
-    }
-    this.piece.selectionRoutine();
+  getCenter() {
+    return this.center;
+  }
+
+  // Nome in stile scacchi: colonna a..j, riga 1..8 (es. "e1")
+  get name() {
+    return String.fromCharCode(97 + this.x) + this.ry;
   }
 
   setPiece(piece) {
@@ -48,72 +32,55 @@ class Cell {
     return !!this.piece;
   }
 
-  getCenter() {
-    return {
-      x: this.x * this.size + this.size / 2,
-      y: this.y * this.size + this.size / 2,
-    };
+  // Parte statica (sfondo + caselle riservate): disegnata una volta sola nel buffer g della board
+  drawBackground(g) {
+    g.stroke(255);
+    g.strokeWeight(0.25);
+    g.fill(0);
+    g.rect(this.px, this.py, this.size, this.size);
+    if (this.playerExclusive) {
+      g.push();
+      g.fill(...this.playerExclusive.pColor, 70);
+      g.rectMode(CENTER);
+      g.rect(this.center.x, this.center.y, this.size * 0.9, this.size * 0.9, 1);
+      g.pop();
+    }
   }
 
-  show() {
-    push();
-    stroke(255);
-    strokeWeight(0.25);
-
-    fill(this.fillColor);
-    rect(this.x * this.size, this.y * this.size, this.size, this.size);
-    if (this.playerExclusive) {
-      push()
-      fill(...this.playerExclusive.pColor, 70)
-      rectMode(CENTER)
-      rect(this.getCenter().x, this.getCenter().y, this.size * 0.9, this.size * 0.9, 1);
-      pop()
-    }
+  // Parte dinamica: selezione (pulsante), divieto e caselle raggiungibili
+  showOverlay() {
+    if (!(this.selected || this.deny || this.highlight)) return;
     if (this.selected) {
       push();
-      let strok = 5;
+      const pulse = (Math.sin(millis() / 160) + 1) / 2; // 0..1
+      const strok = 4 + pulse * 1.5;
       rectMode(CENTER);
-      stroke(150, 150, 20);
+      stroke(150 + 70 * pulse, 150 + 70 * pulse, 20 + 40 * pulse);
       strokeWeight(strok);
       noFill();
-      rect(
-        this.getCenter().x,
-        this.getCenter().y,
-        this.size - strok,
-        this.size - strok
-      );
+      rect(this.center.x, this.center.y, this.size - strok, this.size - strok);
       pop();
     }
     if (this.deny) {
-      push()
-      let strok = 5;
-      let r = this.size * 0.6;
+      push();
+      const strok = 5;
+      const r = this.size * 0.6;
       stroke(240, 40, 60, 180);
       strokeWeight(strok);
-      noFill()
-      translate(this.getCenter().x, this.getCenter().y)
-      ellipse(0, 0, r, r)
-      rotate(-QUARTER_PI)
+      noFill();
+      translate(this.center.x, this.center.y);
+      ellipse(0, 0, r, r);
+      rotate(-QUARTER_PI);
       strokeCap(PROJECT);
-      line(-r / 2 + strok, 0, r / 2 - strok, 0)
+      line(-r / 2 + strok, 0, r / 2 - strok, 0);
       pop();
     }
-    textAlign(CENTER, CENTER);
-    fill(255);
-    strokeWeight(0);
-    // text(
-    //   this.i,
-    //   this.x * this.size + this.size / 2,
-    //   this.y * this.size + this.size / 2
-    // );
     if (this.highlight) {
-      rectMode(CORNER);
-      fill("rgba(200, 200, 50, 0.2)");
-      rect(this.x * this.size, this.y * this.size, this.size, this.size);
+      push();
+      noStroke();
+      fill(200, 200, 50, 51);
+      rect(this.px, this.py, this.size, this.size);
+      pop();
     }
-    if (this.piece) {
-      this.piece.show();
-    }
-    pop();
   }
 }
