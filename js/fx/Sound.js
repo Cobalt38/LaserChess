@@ -103,6 +103,15 @@ class SoundFX {
         this.tone({ type: "triangle", f0: 700, f1: 350, dur: 0.12, vol: 0.07 });
         this.tone({ type: "triangle", f0: 520, f1: 260, dur: 0.1, vol: 0.05, delay: 0.07 });
         break;
+      case "peerJoined":
+        [523.25, 783.99].forEach((f, i) =>
+          this.tone({ type: "triangle", f0: f, dur: 0.15, vol: 0.08, delay: i * 0.1 }));
+        break;
+      case "peerLeft":
+        [659.25, 392].forEach((f, i) =>
+          this.tone({ type: "triangle", f0: f, dur: 0.18, vol: 0.08, delay: i * 0.12 }));
+        break;
+      case "notYourTurn":
       case "needFire":
         this.tone({ type: "square", f0: 180, dur: 0.06, vol: 0.04 });
         this.tone({ type: "square", f0: 180, dur: 0.06, vol: 0.04, delay: 0.09 });

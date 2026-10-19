@@ -6,7 +6,15 @@
     <meta name="theme-color" content="#0a0a0a" />
     <title>Laser Chess</title>
     <link rel="icon" href="assets/icon.ico">
-    <script src="https://cdn.jsdelivr.net/npm/p5@1.11.5/lib/p5.min.js"></script>
+    <!-- Librerie esterne: versione fissa + firma "integrity". Se il file sul CDN venisse
+         modificato, il browser si rifiuterebbe di eseguirlo -->
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.11.5/lib/p5.min.js"
+      integrity="sha384-HAhlNq60Pt8FPArO94dBFXW3Fa/5li0eyAdkD/eDtP0kwiBDXRvoz7RG9yfQemgj"
+      crossorigin="anonymous"></script>
+    <!-- PeerJS (open source, MIT, peerjs.com): collega direttamente i due browser per il gioco online -->
+    <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"
+      integrity="sha384-nlUQ8ZqCbvStErob+biJNzSgltf6urV3VGqhfIfzhmg9RXmpeRm76ELw0pYnKlTR"
+      crossorigin="anonymous"></script>
     <link rel="stylesheet" type="text/css" href="css/style.css">
   </head>
   <body>
@@ -42,21 +50,12 @@
         </div>
         <button id="btn-draw" type="button" class="accent" hidden
           title="La stessa posizione si è presentata tre volte">Dichiara patta (posizione ripetuta)</button>
-        <details>
-          <summary>Varianti</summary>
-          <div id="variant-list" class="variants"></div>
-        </details>
-        <details>
-          <summary>Come si gioca</summary>
-          <ul class="help">
-            <li>Tocca o clicca un tuo pezzo per vedere dove può andare.</li>
-            <li><strong>Trascinalo</strong> su una casella evidenziata per muoverlo.</li>
-            <li><strong>Tasto destro</strong> o <strong>tieni premuto</strong> sul pezzo per il menu di rotazione.</li>
-            <li>Poi premi <strong>SPARA</strong> (o <kbd>Spazio</kbd>, o tocca il tuo laser): colpisci il King avversario!</li>
-            <li>Ci hai ripensato? <strong>↶</strong> (o <kbd>Ctrl</kbd>+<kbd>Z</kbd>) annulla la mossa finché non spari.</li>
-            <li><kbd>Esc</kbd> annulla, <kbd>R</kbd> ricomincia.</li>
-          </ul>
-        </details>
+        <div class="row small-buttons">
+          <button id="btn-online" type="button" data-open="dlg-online">🌐 Online</button>
+          <button type="button" data-open="dlg-names">👥 Nomi</button>
+          <button type="button" data-open="dlg-variants">🧩 Varianti</button>
+          <button type="button" data-open="dlg-help">❓ Aiuto</button>
+        </div>
       </div>
 
       <section id="history-panel" aria-label="Storico delle mosse">
@@ -76,6 +75,80 @@
       </div>
     </div>
 
+    <!-- Finestre -->
+    <dialog id="dlg-online" aria-labelledby="dlg-online-title">
+      <form method="dialog" class="dialog-close"><button aria-label="Chiudi">✕</button></form>
+      <h2 id="dlg-online-title">Gioca online</h2>
+      <p class="muted">Crea un link e mandalo al tuo amico: quando lo apre, la partita parte.
+        Niente indirizzi IP da scambiare.</p>
+      <label class="field">Il tuo nome
+        <input id="my-name" maxlength="16" autocomplete="nickname" placeholder="Giocatore">
+      </label>
+
+      <div id="online-start" class="stack">
+        <button id="btn-host" type="button" class="accent">🔗 Crea link partita</button>
+        <p class="divider"><span>oppure entra in una partita</span></p>
+        <form id="join-form" class="row">
+          <input id="join-code" autocomplete="off" autocapitalize="characters" spellcheck="false"
+            placeholder="Codice o link" aria-label="Codice o link della partita">
+          <button type="submit">Entra</button>
+        </form>
+      </div>
+
+      <div id="online-room" class="stack" hidden>
+        <p class="muted">Manda questo link al tuo amico:</p>
+        <input id="invite-link" readonly aria-label="Link della partita">
+        <div class="row">
+          <button id="btn-copy" type="button" class="accent">Copia link</button>
+          <button id="btn-share" type="button">Condividi…</button>
+        </div>
+        <p class="muted">Oppure detta il codice: <strong id="room-code" class="code"></strong></p>
+      </div>
+
+      <p id="online-msg" class="online-msg" aria-live="polite" hidden></p>
+      <div class="row">
+        <button id="btn-reconnect" type="button" class="accent" hidden>Riconnetti</button>
+        <button id="btn-leave" type="button" hidden>Esci dalla partita online</button>
+      </div>
+
+      <p class="fineprint">I due browser si collegano direttamente con WebRTC, una connessione cifrata.
+        Il server gratuito di PeerJS serve solo a farli trovare tramite il codice. Come in ogni gioco
+        con collegamento diretto, il tuo amico può vedere il tuo indirizzo IP: gioca con chi conosci.</p>
+    </dialog>
+
+    <dialog id="dlg-names" aria-labelledby="dlg-names-title">
+      <form method="dialog" class="dialog-close"><button aria-label="Chiudi">✕</button></form>
+      <h2 id="dlg-names-title">Nomi dei giocatori</h2>
+      <label class="field player-field"><span class="dot" id="name-dot-0"></span>
+        <input id="name-0" maxlength="16" aria-label="Nome del giocatore blu"></label>
+      <label class="field player-field"><span class="dot" id="name-dot-1"></span>
+        <input id="name-1" maxlength="16" aria-label="Nome del giocatore arancione"></label>
+      <p id="names-note" class="muted" hidden>Nella partita online ognuno sceglie il proprio nome
+        dalla finestra “Online”.</p>
+    </dialog>
+
+    <dialog id="dlg-variants" aria-labelledby="dlg-variants-title">
+      <form method="dialog" class="dialog-close"><button aria-label="Chiudi">✕</button></form>
+      <h2 id="dlg-variants-title">Varianti</h2>
+      <p class="muted">Pezzi inventati da aggiungere alla partita.</p>
+      <div id="variant-list" class="variants"></div>
+      <p id="variant-note" class="muted" hidden>Online le varianti le sceglie chi ha creato la partita.</p>
+    </dialog>
+
+    <dialog id="dlg-help" aria-labelledby="dlg-help-title">
+      <form method="dialog" class="dialog-close"><button aria-label="Chiudi">✕</button></form>
+      <h2 id="dlg-help-title">Come si gioca</h2>
+      <ul class="help">
+        <li>Tocca o clicca un tuo pezzo per vedere dove può andare.</li>
+        <li><strong>Trascinalo</strong> su una casella evidenziata per muoverlo.</li>
+        <li><strong>Tasto destro</strong> o <strong>tieni premuto</strong> sul pezzo per il menu di rotazione.</li>
+        <li>Poi premi <strong>SPARA</strong> (o <kbd>Spazio</kbd>, o tocca il tuo laser): colpisci il King avversario!</li>
+        <li>Ci hai ripensato? <strong>↶</strong> (o <kbd>Ctrl</kbd>+<kbd>Z</kbd>) annulla la mossa finché non spari.</li>
+        <li><kbd>Esc</kbd> annulla, <kbd>R</kbd> ricomincia.</li>
+        <li>Per giocare a distanza: <strong>🌐 Online</strong> → <strong>Crea link partita</strong> e mandalo al tuo amico.</li>
+      </ul>
+    </dialog>
+
     <!-- L'ordine conta: ogni file usa le classi/costanti di quelli sopra -->
     <!-- Configurazione -->
     <script src="js/config/constants.js"></script>
@@ -93,13 +166,15 @@
     <script src="js/pieces/variants/HalfMirror.js"></script>
     <!-- Configurazioni iniziali (usano le classi dei pezzi) -->
     <script src="js/config/setups.js"></script>
-    <!-- Laser, effetti, suoni, interfaccia -->
+    <!-- Laser, effetti, suoni, gioco online, interfaccia -->
     <script src="js/core/LaserBeam.js"></script>
     <script src="js/fx/Effects.js"></script>
     <script src="js/fx/Sound.js"></script>
     <script src="js/ui/ActionMenu.js"></script>
     <script src="js/core/Board.js"></script>
+    <script src="js/net/Online.js"></script>
     <script src="js/ui/GameUI.js"></script>
+    <script src="js/ui/OnlinePanel.js"></script>
     <!-- Avvio p5: setup, draw, input e layout -->
     <script src="js/sketch.js"></script>
   </body>

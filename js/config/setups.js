@@ -33,6 +33,10 @@ const SETUPS = {
   ],
 };
 
+// Tutte le classi dei pezzi per nome: servono per ricostruire una partita ricevuta online.
+// Un pezzo nuovo va aggiunto anche qui.
+const PIECE_TYPES = { Laser, King, Defender, Deflector, Switch, Prism, HalfMirror };
+
 // Pezzi inventati, attivabili dalla barra laterale. Per un pezzo nuovo basta aggiungere una voce.
 const VARIANTS = {
   prism: {

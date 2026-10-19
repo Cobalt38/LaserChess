@@ -30,6 +30,13 @@ class Board {
     this.drawClaimable = false; // il giocatore di turno può dichiarare patta
     this.pendingUndo = null; // mossa fatta ma non ancora sparata: { undo, lastMove, drawClaimable }
     this.onEvent = () => { }; // onEvent(nome, dati): suoni, UI...
+
+    // Online (vedi js/net/Online.js): chi gioca da questo browser e cosa arriva dall'altro
+    this.localIndex = null; // null = tutti e due i giocatori qui; 0/1 = solo quel giocatore
+    this.peerConnected = false;
+    this.onAction = () => { }; // onAction(azione): mossa fatta qui, da mandare all'altro giocatore
+    this.remoteQueue = []; // azioni ricevute, applicate quando il laser non è in volo
+    this.applyingRemote = false;
   }
 
   get activePlayer() {
@@ -47,6 +54,24 @@ class Board {
 
   get canUndo() {
     return this.canFire && !!this.pendingUndo;
+  }
+
+  get localPlayer() {
+    return this.localIndex === null ? null : this.players[this.localIndex];
+  }
+
+  // Tocca a chi sta usando questo browser? (in locale sempre; online solo nel proprio turno)
+  get myTurn() {
+    if (this.localIndex === null) return true;
+    return this.peerConnected && this.activePlayer === this.localPlayer;
+  }
+
+  get localCanFire() {
+    return this.canFire && this.myTurn;
+  }
+
+  get localCanUndo() {
+    return this.canUndo && this.myTurn;
   }
 
   get dragging() {
@@ -73,6 +98,11 @@ class Board {
       }
     }
     return ret;
+  }
+
+  // Casella dal nome in stile scacchi ("e1")
+  cellByName(name) {
+    return this.getCell(name.charCodeAt(0) - 96, parseInt(name.slice(1), 10));
   }
 
   // Casella sotto il punto p (coordinate board); floor e non int, così i punti appena fuori non
@@ -169,6 +199,14 @@ class Board {
     this.positions = new Map();
     this.drawClaimable = false;
     this.pendingUndo = null;
+    this.remoteQueue = [];
+  }
+
+  renamePlayer(index, name) {
+    const player = this.players[index];
+    if (!player || player.name === name) return;
+    player.name = name;
+    this.historyVersion++; // lo storico mostra i nomi
   }
 
   // Prepara una configurazione di SETUPS, più i pezzi delle VARIANTS scelte (vedi setups.js)
@@ -223,8 +261,10 @@ class Board {
 
   claimDraw() {
     if (!this.drawClaimable || this.phase !== "move" || this.busy || this.gameOver) return;
+    if (!this.applyingRemote && !this.myTurn) return;
     this.cancelSelection();
     this.gameOver = { winner: null, reason: "repetition" };
+    this.emit({ type: "claimDraw" });
     this.onEvent("gameover", this.gameOver);
   }
 
@@ -251,6 +291,7 @@ class Board {
       () => this.slide(piece, from, other) // lo Switch, muovendosi su "other", rifà lo scambio al contrario
     );
     this.slide(piece, target, other);
+    this.emit({ type: "move", from: from.name, to: target.name });
     this.onEvent("move");
   }
 
@@ -277,6 +318,7 @@ class Board {
     this.record(`ruota ${piece.type} ${piece.cell.name} (${old} → ${rot})`, [piece.cell],
       () => this.turnPiece(piece, old));
     this.turnPiece(piece, rot);
+    this.emit({ type: "rotate", at: piece.cell.name, rot });
     this.onEvent("rotate");
   }
 
@@ -290,7 +332,7 @@ class Board {
 
   // Ripensamento prima di sparare: la mossa torna indietro e il turno ricomincia
   undoMove() {
-    if (!this.canUndo) return;
+    if (!this.canUndo || (!this.applyingRemote && !this.myTurn)) return;
     const { undo, lastMove, drawClaimable } = this.pendingUndo;
     this.pendingUndo = null;
     undo();
@@ -299,11 +341,14 @@ class Board {
     this.lastMove = lastMove;
     this.drawClaimable = drawClaimable;
     this.phase = "move";
+    this.emit({ type: "undo" });
     this.onEvent("undo");
   }
 
   fireLaser() {
-    if (!this.canFire) return;
+    if (!this.canFire || (!this.applyingRemote && !this.myTurn)) return;
+    // La disposizione prima dello sparo: l'altro giocatore controlla di avere la stessa
+    this.emit({ type: "fire", key: this.positionKey() });
     const laser = this.activePlayer.laser;
     this.hitKings = [];
     this.bounces = 0;
@@ -347,7 +392,111 @@ class Board {
     }
   }
 
+  // ---------- Online ----------
+
+  emit(action) {
+    if (!this.applyingRemote) this.onAction(action);
+  }
+
+  queueRemote(action) {
+    this.remoteQueue.push(action);
+  }
+
+  // Applica un'azione dell'altro giocatore controllando che sia valida qui.
+  // false = le due board non coincidono più (serve una risincronizzazione)
+  applyRemote(a) {
+    if (this.gameOver) return false;
+    this.applyingRemote = true;
+    try {
+      switch (a.type) {
+        case "move": {
+          const from = this.cellByName(a.from);
+          const to = this.cellByName(a.to);
+          const piece = from && from.piece;
+          if (this.phase !== "move" || !piece || !to || piece.player !== this.activePlayer ||
+            !this.neighbors(from).includes(to) || !piece.canMoveTo(to)) return false;
+          this.cancelSelection();
+          this.movePiece(piece, to);
+          return true;
+        }
+        case "rotate": {
+          const cell = this.cellByName(a.at);
+          const piece = cell && cell.piece;
+          if (this.phase !== "move" || !piece || piece.player !== this.activePlayer ||
+            !piece.rotations().includes(a.rot)) return false;
+          this.cancelSelection();
+          this.rotatePiece(piece, a.rot);
+          return true;
+        }
+        case "undo":
+          if (!this.canUndo) return false;
+          this.undoMove();
+          return true;
+        case "fire":
+          if (!this.canFire || a.key !== this.positionKey()) return false;
+          this.fireLaser();
+          return true;
+        case "claimDraw":
+          if (!this.drawClaimable || this.phase !== "move") return false;
+          this.claimDraw();
+          return true;
+      }
+      return false;
+    } finally {
+      this.applyingRemote = false;
+    }
+  }
+
+  // Fotografia completa della partita, per allineare l'altro giocatore
+  snapshot() {
+    const idx = (player) => this.players.indexOf(player);
+    return {
+      players: this.players.map((p) => p.name),
+      pieces: this.pieces.map((p) => [p.type, idx(p.player), p.cell.rx, p.cell.ry, p.rot]),
+      turn: this.turn,
+      phase: this.phase,
+      history: this.history.map((e) => ({ n: e.n, player: idx(e.player), text: e.text, hits: e.hits })),
+      lastMove: this.lastMove && { cells: this.lastMove.cells.map((c) => c.name), player: idx(this.lastMove.player) },
+      positions: [...this.positions],
+      drawClaimable: this.drawClaimable,
+      gameOver: this.gameOver && { winner: idx(this.gameOver.winner), reason: this.gameOver.reason },
+    };
+  }
+
+  restore(s) {
+    this.resetBoard();
+    const players = s.players.map((name) => this.addPlayer(name));
+    for (const [type, owner, x, y, rot] of s.pieces) {
+      if (type === "Laser") {
+        players[owner].laser.rot = rot; // i Laser li mette già addPlayer, nel loro angolo
+        continue;
+      }
+      this.addPiece(PIECE_TYPES[type], players[owner], x, y, rot);
+    }
+    this.turn = s.turn;
+    this.phase = s.phase;
+    this.history = s.history.map((e) => ({ n: e.n, player: players[e.player], text: e.text, hits: e.hits }));
+    this.historyVersion++;
+    this.lastMove = s.lastMove && {
+      cells: s.lastMove.cells.map((name) => this.cellByName(name)),
+      player: players[s.lastMove.player],
+    };
+    this.positions = new Map(s.positions);
+    this.drawClaimable = s.drawClaimable;
+    this.gameOver = s.gameOver && { winner: players[s.gameOver.winner] || null, reason: s.gameOver.reason };
+  }
+
   update(dt) {
+    // Azioni dell'altro giocatore, in ordine, quando il laser non è in volo
+    while (this.remoteQueue.length > 0 && !this.busy) {
+      const action = this.remoteQueue.shift();
+      if (!this.applyRemote(action)) {
+        this.remoteQueue = [];
+        this.onEvent("desync", action);
+        break;
+      }
+    }
+
     // Pressione prolungata su un pezzo senza trascinarlo: menu
     if (this.press && !this.press.dragging) {
       this.press.time += dt;
@@ -441,6 +590,10 @@ class Board {
   pointerDown(p, button = 0) {
     this.pointer = p;
     if (this.gameOver || this.busy) return;
+    if (!this.myTurn) {
+      this.onEvent("notYourTurn");
+      return;
+    }
     if (this.menu) {
       const item = this.menu.itemAt(p);
       this.menu = null;
