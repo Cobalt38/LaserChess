@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0a0a0a" />
     <title>Laser Chess</title>
-    <link rel="icon" href="icon.ico">
+    <link rel="icon" href="assets/icon.ico">
     <script src="https://cdn.jsdelivr.net/npm/p5@1.11.5/lib/p5.min.js"></script>
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <link rel="stylesheet" type="text/css" href="css/style.css">
   </head>
   <body>
     <div id="app">
@@ -77,17 +77,30 @@
     </div>
 
     <!-- L'ordine conta: ogni file usa le classi/costanti di quelli sopra -->
-    <script src="constants.js"></script>
-    <script src="Player.js"></script>
-    <script src="Cell.js"></script>
-    <script src="Piece.js"></script>
-    <script src="setups.js"></script>
-    <script src="Popup.js"></script>
-    <script src="LaserBeam.js"></script>
-    <script src="Effects.js"></script>
-    <script src="Sound.js"></script>
-    <script src="Board.js"></script>
-    <script src="ui.js"></script>
-    <script src="sketch.js"></script>
+    <!-- Configurazione -->
+    <script src="js/config/constants.js"></script>
+    <!-- Logica di base -->
+    <script src="js/core/Player.js"></script>
+    <script src="js/core/Cell.js"></script>
+    <!-- Pezzi: base, ufficiali, inventati -->
+    <script src="js/pieces/Piece.js"></script>
+    <script src="js/pieces/Laser.js"></script>
+    <script src="js/pieces/King.js"></script>
+    <script src="js/pieces/Defender.js"></script>
+    <script src="js/pieces/Deflector.js"></script>
+    <script src="js/pieces/Switch.js"></script>
+    <script src="js/pieces/variants/Prism.js"></script>
+    <script src="js/pieces/variants/HalfMirror.js"></script>
+    <!-- Configurazioni iniziali (usano le classi dei pezzi) -->
+    <script src="js/config/setups.js"></script>
+    <!-- Laser, effetti, suoni, interfaccia -->
+    <script src="js/core/LaserBeam.js"></script>
+    <script src="js/fx/Effects.js"></script>
+    <script src="js/fx/Sound.js"></script>
+    <script src="js/ui/ActionMenu.js"></script>
+    <script src="js/core/Board.js"></script>
+    <script src="js/ui/GameUI.js"></script>
+    <!-- Avvio p5: setup, draw, input e layout -->
+    <script src="js/sketch.js"></script>
   </body>
 </html>
