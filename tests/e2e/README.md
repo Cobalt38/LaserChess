@@ -12,6 +12,7 @@ python3 -m http.server 8765 --bind 127.0.0.1     # dalla cartella principale del
 cd tests/e2e
 ../../.venv/bin/python test_single.py   # computer, in due, nomi, configurazioni, telefono
 ../../.venv/bin/python test_online.py   # due browser online
+../../.venv/bin/python test_update.py   # versione negli indirizzi e avviso "versione nuova" (porta 8766)
 ```
 
 Variabili utili: `LASERCHESS_URL` (indirizzo del gioco), `GECKODRIVER` (percorso di geckodriver),

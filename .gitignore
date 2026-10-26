@@ -15,3 +15,4 @@ p5*.js
 .venv/
 tests/e2e/screenshots/
 __pycache__/
+version.json

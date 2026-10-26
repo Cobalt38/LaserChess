@@ -627,6 +627,30 @@ kbd {
   display: none;
 }
 
+/* Versione nuova pubblicata: barra in alto con il pulsante per ricaricare */
+#update-banner {
+  position: fixed;
+  top: max(10px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - 32px);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 8px 8px 14px;
+  border-radius: 10px;
+  background: #2b2b2b;
+  border: 1px solid var(--accent);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  z-index: 30;
+  font-size: 14px;
+}
+
+#update-banner[hidden] {
+  display: none;
+}
+
 /* Messaggio breve in basso (nomi salvati, richiesta mandata...) */
 #toast {
   position: fixed;

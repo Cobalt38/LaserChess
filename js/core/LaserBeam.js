@@ -6,7 +6,7 @@ class LaserBeam {
     this.board = board;
     this.source = source; // pezzo Laser che spara
     this.segments = []; // { a, b, t }: tratto da a a b, percorso tra t e t+1
-    this.events = []; // { t, piece, effect }, in ordine di t
+    this.events = []; // { t, piece, cell, effect }, in ordine di t (cell: dove il raggio colpisce il pezzo)
     this.progress = 0; // caselle percorse dal fronte del raggio
     this.hold = 0; // secondi passati a raggio completo
     this.nextEvent = 0;
@@ -45,7 +45,7 @@ class LaserBeam {
           continue;
         }
         const { out, effect } = piece.hit(dir);
-        this.events.push({ t: t + 1, piece, effect });
+        this.events.push({ t: t + 1, piece, cell: target, effect });
         if (effect === "destroy" || effect === "king") removed.add(piece);
         for (const d of out) next.push({ cell: target, dir: d });
       }

@@ -151,6 +151,7 @@ function setup() {
     ask: (...args) => ui.ask(...args),
   });
   applyOptions();
+  new UpdateCheck();
 
   // Si riprende la partita di prima (pagina ricaricata), altrimenti se ne prepara una nuova.
   // Aperto da un link d'invito (?partita=CODICE): si propone di entrare, a meno che questa

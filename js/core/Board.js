@@ -835,9 +835,11 @@ class Board {
     drawingContext.setLineDash([]);
     // Pezzi che verrebbero eliminati: mirino rosso; il King: mirino che pulsa
     const pulse = (Math.sin(millis() / 150) + 1) / 2;
-    for (const { piece, effect } of beam.events) {
+    for (const { cell, effect } of beam.events) {
       if (effect !== "destroy" && effect !== "king") continue;
-      const c = piece.cell.center;
+      // La casella del colpo, non quella attuale del pezzo: trascinandolo, il raggio è calcolato
+      // con il pezzo nella casella sotto il dito
+      const c = cell.center;
       const r = this.cellSize * (effect === "king" ? 0.42 + 0.06 * pulse : 0.4);
       stroke(255, 60, 50, effect === "king" ? 255 : 220);
       strokeWeight(effect === "king" ? 3.5 : 2.5);

@@ -55,6 +55,16 @@ con collegamento diretto, l'altro giocatore può vedere il tuo indirizzo IP.
 Il link funziona dalla versione pubblicata su GitHub Pages: se apri `index.html` dal disco,
 il link punta a un file sul tuo computer e il tuo amico non può aprirlo.
 
+## Pubblicazione
+
+A ogni push su `master` il workflow `.github/workflows/static.yml` pubblica il gioco su GitHub
+Pages. Prima scrive il commit negli indirizzi di JS e CSS (`sketch.js?v=3b14d2b`, con
+`tools/stamp-version.sh`) e in `version.json`: GitHub Pages fa tenere i file in cache 10 minuti,
+ma con indirizzi nuovi basta ricaricare la pagina per avere tutta la versione nuova. Chi ha già
+il gioco aperto vede la barra "C'è una versione nuova del gioco" con il pulsante **Aggiorna** (la
+partita riprende da dove era). Nel repository restano i segnaposto `?v=dev`: la versione si
+scrive solo nella copia che viene pubblicata.
+
 Per giocare in locale basta aprire `index.html` nel browser (p5.js arriva dal CDN).
 
 ## Test

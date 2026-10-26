@@ -34,7 +34,8 @@ function load() {
   for (const name of drawing) ctx[name] = noop;
   vm.createContext(ctx);
   const html = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
-  const scripts = [...html.matchAll(/<script src="(js\/[^"]+)"/g)].map((m) => m[1]).filter((s) => !SKIP.test(s));
+  // (senza il ?v=... che serve solo al browser per la cache)
+  const scripts = [...html.matchAll(/<script src="(js\/[^"?]+)/g)].map((m) => m[1]).filter((s) => !SKIP.test(s));
   for (const file of scripts) {
     vm.runInContext(fs.readFileSync(path.join(ROOT, file), "utf8"), ctx, { filename: file });
   }

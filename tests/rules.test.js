@@ -245,3 +245,19 @@ test("anteprima del laser: segue la disposizione e segna i pezzi che verrebbero 
   assert.deepStrictEqual(events, ["destroy g1"]);
   assert.strictEqual(board.pieces.length, 5, "l'anteprima non deve togliere pezzi");
 });
+
+test("anteprima mentre si trascina: il mirino è nella casella sotto il dito, non in quella di partenza", () => {
+  const { King, Defender } = g;
+  // Laser blu verso ovest lungo la riga 1; il Defender blu in h2 trascinato in h1 finisce sul raggio
+  const board = position([[King, 1, 5, 8, "N"], [King, 0, 5, 3, "N"], [Defender, 0, 8, 2, "N"]]);
+  board.players[0].laser.rot = "W";
+  board.showPreview = true;
+  const from = board.cellByName("h2").center;
+  const to = board.cellByName("h1").center;
+  board.pointerDown(from);
+  board.pointerMove(to);
+  assert.ok(board.dragging, "il pezzo deve essere trascinato");
+  const hits = plain(board.laserPreview().events.filter((e) => e.effect === "destroy").map((e) => e.cell.name));
+  assert.deepStrictEqual(hits, ["h1"]);
+  assert.strictEqual(board.cellByName("h2").piece.type, "Defender", "durante il trascinamento il pezzo resta in h2");
+});

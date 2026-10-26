@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0a0a0a" />
     <title>Laser Chess</title>
+    <!-- Versione pubblicata (commit), scritta da tools/stamp-version.sh durante il deploy, come i
+         ?v=dev degli script: così dopo ogni aggiornamento il browser non usa i file vecchi in cache -->
+    <meta name="version" content="dev">
     <link rel="icon" href="assets/icon.ico">
     <!-- Librerie esterne: versione fissa + firma "integrity". Se il file sul CDN venisse
          modificato, il browser si rifiuterebbe di eseguirlo -->
@@ -15,7 +18,7 @@
     <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"
       integrity="sha384-nlUQ8ZqCbvStErob+biJNzSgltf6urV3VGqhfIfzhmg9RXmpeRm76ELw0pYnKlTR"
       crossorigin="anonymous"></script>
-    <link rel="stylesheet" type="text/css" href="css/style.css">
+    <link rel="stylesheet" type="text/css" href="css/style.css?v=dev">
   </head>
   <body>
     <div id="app">
@@ -109,6 +112,11 @@
     </div>
 
     <div id="toast" role="status" aria-live="polite" hidden></div>
+
+    <div id="update-banner" role="status" hidden>
+      <span>C'è una versione nuova del gioco. La partita in corso riprende da dove era.</span>
+      <button id="update-reload" type="button" class="accent">Aggiorna</button>
+    </div>
 
     <!-- Finestre -->
     <dialog id="dlg-new" aria-labelledby="dlg-new-title">
@@ -266,7 +274,8 @@
       <h3>Opzioni</h3>
       <label class="check"><input type="checkbox" id="opt-preview"> Mostra dove andrà il raggio (linea tratteggiata)</label>
       <label class="check"><input type="checkbox" id="opt-coach"> Mostra i suggerimenti sotto la board</label>
-      <p class="fineprint">Regole e disposizioni iniziali dal manuale di Laser Chess (ThinkFun).</p>
+      <p class="fineprint">Regole e disposizioni iniziali dal manuale di Laser Chess (ThinkFun),
+        tranne PRISMA. Versione <span id="app-version"></span>.</p>
     </dialog>
 
     <!-- Domanda sì/no dentro la pagina (confirm() bloccherebbe il gioco e la connessione online) -->
@@ -281,34 +290,35 @@
 
     <!-- L'ordine conta: ogni file usa le classi/costanti di quelli sopra -->
     <!-- Configurazione -->
-    <script src="js/config/constants.js"></script>
+    <script src="js/config/constants.js?v=dev"></script>
     <!-- Logica di base -->
-    <script src="js/core/Player.js"></script>
-    <script src="js/core/Cell.js"></script>
+    <script src="js/core/Player.js?v=dev"></script>
+    <script src="js/core/Cell.js?v=dev"></script>
     <!-- Pezzi: base, ufficiali, inventati -->
-    <script src="js/pieces/Piece.js"></script>
-    <script src="js/pieces/Laser.js"></script>
-    <script src="js/pieces/King.js"></script>
-    <script src="js/pieces/Defender.js"></script>
-    <script src="js/pieces/Deflector.js"></script>
-    <script src="js/pieces/Switch.js"></script>
-    <script src="js/pieces/variants/Prism.js"></script>
-    <script src="js/pieces/variants/HalfMirror.js"></script>
+    <script src="js/pieces/Piece.js?v=dev"></script>
+    <script src="js/pieces/Laser.js?v=dev"></script>
+    <script src="js/pieces/King.js?v=dev"></script>
+    <script src="js/pieces/Defender.js?v=dev"></script>
+    <script src="js/pieces/Deflector.js?v=dev"></script>
+    <script src="js/pieces/Switch.js?v=dev"></script>
+    <script src="js/pieces/variants/Prism.js?v=dev"></script>
+    <script src="js/pieces/variants/HalfMirror.js?v=dev"></script>
     <!-- Configurazioni iniziali (usano le classi dei pezzi) -->
-    <script src="js/config/setups.js"></script>
+    <script src="js/config/setups.js?v=dev"></script>
     <!-- Laser, effetti, suoni, gioco online, interfaccia -->
-    <script src="js/core/LaserBeam.js"></script>
-    <script src="js/fx/Effects.js"></script>
-    <script src="js/fx/Sound.js"></script>
-    <script src="js/ui/ActionMenu.js"></script>
-    <script src="js/core/Board.js"></script>
+    <script src="js/core/LaserBeam.js?v=dev"></script>
+    <script src="js/fx/Effects.js?v=dev"></script>
+    <script src="js/fx/Sound.js?v=dev"></script>
+    <script src="js/ui/ActionMenu.js?v=dev"></script>
+    <script src="js/core/Board.js?v=dev"></script>
     <!-- Computer: motore delle regole, ricerca della mossa, avversario -->
-    <script src="js/ai/Engine.js"></script>
-    <script src="js/ai/AIPlayer.js"></script>
-    <script src="js/net/Online.js"></script>
-    <script src="js/ui/GameUI.js"></script>
-    <script src="js/ui/OnlinePanel.js"></script>
+    <script src="js/ai/Engine.js?v=dev"></script>
+    <script src="js/ai/AIPlayer.js?v=dev"></script>
+    <script src="js/net/Online.js?v=dev"></script>
+    <script src="js/net/Updates.js?v=dev"></script>
+    <script src="js/ui/GameUI.js?v=dev"></script>
+    <script src="js/ui/OnlinePanel.js?v=dev"></script>
     <!-- Avvio p5: setup, draw, input e layout -->
-    <script src="js/sketch.js"></script>
+    <script src="js/sketch.js?v=dev"></script>
   </body>
 </html>
