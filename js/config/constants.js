@@ -29,6 +29,7 @@ const SPARK_COLORS = [[255, 220, 120], [255, 90, 50], [255, 255, 255]];
 const LASER_SPEED = 28; // caselle al secondo
 const LASER_HOLD = 0.5; // secondi a raggio completo prima di passare il turno
 const KING_HIT_HOLD = 1.3; // pausa più lunga per goderci l'esplosione del re
+const BEAM_LINGER = 3; // secondi in cui il raggio dell'ultimo colpo resta visibile
 
 // Input
 const DRAG_THRESHOLD = 6; // unità board: oltre questo spostamento la pressione diventa trascinamento

@@ -29,11 +29,15 @@ class Board {
     this.positions = new Map(); // disposizione dei pezzi -> volte in cui si è presentata
     this.drawClaimable = false; // il giocatore di turno può dichiarare patta
     this.pendingUndo = null; // mossa fatta ma non ancora sparata: { undo, lastMove, drawClaimable }
+    this.version = 0; // cambia a ogni modifica di pezzi, turno o nomi (anteprima del laser, salvataggio)
+    this.showPreview = true; // traiettoria tratteggiata del laser prima di sparare
+    this.preview = null; // { key, beam }: anteprima calcolata per l'ultima disposizione
     this.onEvent = () => { }; // onEvent(nome, dati): suoni, UI...
 
-    // Online (vedi js/net/Online.js): chi gioca da questo browser e cosa arriva dall'altro
+    // Chi gioca da questo browser: in due sullo stesso schermo, contro il computer o online
+    // (vedi js/net/Online.js e js/ai/AIPlayer.js)
     this.localIndex = null; // null = tutti e due i giocatori qui; 0/1 = solo quel giocatore
-    this.peerConnected = false;
+    this.opponentReady = false; // l'altro giocatore (computer o collegato online) c'è
     this.onAction = () => { }; // onAction(azione): mossa fatta qui, da mandare all'altro giocatore
     this.remoteQueue = []; // azioni ricevute, applicate quando il laser non è in volo
     this.applyingRemote = false;
@@ -63,7 +67,7 @@ class Board {
   // Tocca a chi sta usando questo browser? (in locale sempre; online solo nel proprio turno)
   get myTurn() {
     if (this.localIndex === null) return true;
-    return this.peerConnected && this.activePlayer === this.localPlayer;
+    return this.opponentReady && this.activePlayer === this.localPlayer;
   }
 
   get localCanFire() {
@@ -76,6 +80,13 @@ class Board {
 
   get dragging() {
     return this.press && this.press.dragging ? this.press.piece : null;
+  }
+
+  // Pezzo proprio selezionato che si può ruotare adesso (pulsanti ↺ ↻ e menu)
+  get rotatable() {
+    const piece = this.selected && this.selected.piece;
+    if (!piece || this.phase !== "move" || this.busy || this.gameOver || !this.myTurn) return null;
+    return piece.player === this.activePlayer && piece.rotations().length > 0 ? piece : null;
   }
 
   // ---------- Griglia ----------
@@ -129,16 +140,37 @@ class Board {
 
   addPlayer(name) {
     const slot = PLAYER_SLOTS[this.players.length];
-    if (!slot) {
-      print("Cannot add any more players to this board!");
-      return null;
-    }
+    if (!slot) throw new Error("Cannot add any more players to this board!");
     const player = new Player(name, slot.color);
     this.players.push(player);
     this.addPiece(Laser, player, slot.laser.x, slot.laser.y, slot.laser.rot);
     for (const [x, y] of slot.exclusive) this.getCell(x, y).playerExclusive = player;
+    this.refreshNames();
     this.invalidateGrid();
     return player;
+  }
+
+  // Pezzo di una variante: se in questa configurazione la sua casella è occupata, va nella casella
+  // libera più vicina. L'arancione cerca a specchio rispetto al blu, così la board resta simmetrica
+  placeVariant(PieceClass, player, x, y, rot) {
+    const mirrored = this.players.indexOf(player) === 1;
+    const flip = (cx, cy) => (mirrored ? [COLS + 1 - cx, ROWS + 1 - cy] : [cx, cy]);
+    const [bx, by] = flip(x, y); // la casella vista dal blu
+    const candidates = [];
+    for (let cx = 1; cx <= COLS; cx++) {
+      for (let cy = 1; cy <= ROWS; cy++) {
+        const d = Math.max(Math.abs(cx - bx), Math.abs(cy - by)) * 100 + Math.abs(cx - bx) + Math.abs(cy - by);
+        candidates.push({ d, cx, cy });
+      }
+    }
+    candidates.sort((a, b) => a.d - b.d || a.cy - b.cy || a.cx - b.cx);
+    for (const { cx, cy } of candidates) {
+      const cell = this.getCell(...flip(cx, cy));
+      if (!cell.piece && (!cell.playerExclusive || cell.playerExclusive === player)) {
+        return this.addPiece(PieceClass, player, cell.rx, cell.ry, rot);
+      }
+    }
+    return null;
   }
 
   addPiece(PieceClass, player, x, y, rot) {
@@ -161,6 +193,7 @@ class Board {
 
     this.pieces.push(newPiece);
     player.pieces.push(newPiece);
+    this.version++;
     return newPiece;
   }
 
@@ -168,6 +201,7 @@ class Board {
     if (piece.cell.piece === piece) piece.cell.setPiece(null);
     removeFrom(piece.player.pieces, piece);
     removeFrom(this.pieces, piece);
+    this.version++;
   }
 
   // ---------- Partita ----------
@@ -199,14 +233,25 @@ class Board {
     this.positions = new Map();
     this.drawClaimable = false;
     this.pendingUndo = null;
+    this.preview = null;
     this.remoteQueue = [];
+    this.version++;
   }
 
   renamePlayer(index, name) {
     const player = this.players[index];
-    if (!player || player.name === name) return;
-    player.name = name;
+    if (!player || player.baseName === name) return;
+    player.baseName = name;
+    this.refreshNames();
+  }
+
+  // Nomi mostrati: se i due giocatori hanno lo stesso nome, il secondo diventa "Nome (2)"
+  refreshNames() {
+    const [a, b] = this.players;
+    for (const p of this.players) p.name = p.baseName;
+    if (a && b && sameName(a.baseName, b.baseName)) b.name = `${b.baseName.trim()} (2)`;
     this.historyVersion++; // lo storico mostra i nomi
+    this.version++;
   }
 
   // Prepara una configurazione di SETUPS, più i pezzi delle VARIANTS scelte (vedi setups.js)
@@ -214,10 +259,15 @@ class Board {
     const layout = SETUPS[name];
     if (!layout) throw new Error(`Unknown setup: ${name}`);
     this.resetBoard();
+    this.setupName = name;
     const players = playerNames.map((n) => this.addPlayer(n));
-    const extra = variants.flatMap((v) => VARIANTS[v].pieces);
-    for (const [PieceClass, owner, x, y, rot] of [...layout, ...extra]) {
+    for (const [PieceClass, owner, x, y, rot] of layout) {
       this.addPiece(PieceClass, players[owner], x, y, rot);
+    }
+    for (const v of variants) {
+      for (const [PieceClass, owner, x, y, rot] of VARIANTS[v].pieces) {
+        this.placeVariant(PieceClass, players[owner], x, y, rot);
+      }
     }
     return players;
   }
@@ -225,6 +275,7 @@ class Board {
   start() {
     if (this.turn !== -1) return;
     this.turn = 0; // inizia il primo giocatore (blu)
+    this.version++;
     this.recordPosition();
   }
 
@@ -232,7 +283,9 @@ class Board {
     this.pendingUndo = null;
     this.turn = (this.turn + 1) % this.players.length;
     this.phase = "move";
+    this.version++;
     this.recordPosition();
+    this.onEvent("turn");
   }
 
   endGame() {
@@ -240,6 +293,7 @@ class Board {
     const survivors = this.players.filter((p) => !losers.includes(p));
     // Entrambi i re colpiti nello stesso colpo -> pareggio
     this.gameOver = { winner: survivors.length === 1 ? survivors[0] : null, reason: "king" };
+    this.version++;
     this.onEvent("gameover", this.gameOver);
   }
 
@@ -264,6 +318,7 @@ class Board {
     if (!this.applyingRemote && !this.myTurn) return;
     this.cancelSelection();
     this.gameOver = { winner: null, reason: "repetition" };
+    this.version++;
     this.emit({ type: "claimDraw" });
     this.onEvent("gameover", this.gameOver);
   }
@@ -275,6 +330,7 @@ class Board {
     this.history.push({ n: this.history.length + 1, player: this.activePlayer, text, hits: [] });
     this.historyVersion++;
     this.lastMove = { cells, player: this.activePlayer };
+    this.beam = null; // via il raggio del turno precedente, se si vede ancora
     this.drawClaimable = false; // ha mosso invece di dichiarare patta
     this.phase = "fire";
     this.clearSelection();
@@ -311,6 +367,7 @@ class Board {
       };
     }
     piece.move(target);
+    this.version++;
   }
 
   rotatePiece(piece, rot) {
@@ -328,6 +385,15 @@ class Board {
     const step = (cycle.indexOf(rot) - cycle.indexOf(piece.rot) + 4) % 4; // 1 orario, 3 antiorario
     piece.rot = rot;
     piece.spin += (step === 3 ? 1 : -step) * HALF_PI;
+    this.version++;
+  }
+
+  // Rotazione del pezzo selezionato dai pulsanti: step -1 antioraria, +1 oraria
+  rotateSelected(step) {
+    const piece = this.rotatable;
+    if (!piece) return;
+    const rots = piece.rotations();
+    this.rotatePiece(piece, rots.length === 1 || step < 0 ? rots[0] : rots[1]);
   }
 
   // Ripensamento prima di sparare: la mossa torna indietro e il turno ricomincia
@@ -451,7 +517,8 @@ class Board {
   snapshot() {
     const idx = (player) => this.players.indexOf(player);
     return {
-      players: this.players.map((p) => p.name),
+      setup: this.setupName,
+      players: this.players.map((p) => p.baseName),
       pieces: this.pieces.map((p) => [p.type, idx(p.player), p.cell.rx, p.cell.ry, p.rot]),
       turn: this.turn,
       phase: this.phase,
@@ -465,6 +532,7 @@ class Board {
 
   restore(s) {
     this.resetBoard();
+    this.setupName = s.setup;
     const players = s.players.map((name) => this.addPlayer(name));
     for (const [type, owner, x, y, rot] of s.pieces) {
       if (type === "Laser") {
@@ -517,6 +585,11 @@ class Board {
       }
     }
 
+    if (this.beam && this.beam.resolved && !this.gameOver) {
+      this.beam.hold += dt;
+      if (this.beam.hold > BEAM_LINGER) this.beam = null;
+    }
+
     // Pezzi che tornano a posto dopo trascinamenti, scambi e rotazioni
     const settle = Math.pow(1e-5, dt);
     const dragged = this.dragging;
@@ -558,7 +631,7 @@ class Board {
   selectCell(cell) {
     const piece = cell.piece;
     if (piece && piece.player !== this.activePlayer) {
-      this.onEvent("deny");
+      this.onEvent("deny", { piece }); // la UI spiega che pezzo è
       return;
     }
     this.beam = null; // nasconde il raggio del turno precedente
@@ -606,6 +679,12 @@ class Board {
       // Mossa già fatta: resta solo da sparare (anche toccando il proprio Laser, come sul gioco vero)
       if (cell && cell.piece === this.activePlayer.laser) this.fireLaser();
       else this.onEvent("needFire");
+      return;
+    }
+    // Pezzo già selezionato e tocco su una casella evidenziata: il pezzo ci va
+    const selected = this.selected && this.selected.piece;
+    if (cell && cell.highlight && selected && cell !== this.selected) {
+      this.movePiece(selected, cell);
       return;
     }
     this.clearSelection();
@@ -668,11 +747,65 @@ class Board {
     for (const cell of this.cells) cell.showOverlay();
     this.showDropTarget();
     this.showPieces();
+    this.showLaserPreview();
     if (this.beam) this.beam.show();
     for (const e of this.effects) e.show();
     pop();
 
     if (this.menu) this.menu.show(this.pointer);
+  }
+
+  // Dove andrebbe il laser di chi deve muovere: con la disposizione attuale o, mentre si trascina
+  // un pezzo su una casella valida, con il pezzo spostato lì. Si calcola solo quando cambia qualcosa
+  laserPreview() {
+    // Mentre si vede il raggio dell'ultimo colpo, niente anteprima
+    if (!this.showPreview || this.beam || this.gameOver || !this.activePlayer) return null;
+    const dragged = this.dragging;
+    const target = dragged && this.cellAt(this.pointer);
+    const hypothetical = target && target.highlight && target !== this.press.from ? target : null;
+    const key = `${this.version}|${this.turn}|${hypothetical ? hypothetical.name : ""}`;
+    if (this.preview && this.preview.key === key) return this.preview.beam;
+    let beam;
+    if (hypothetical) {
+      // Sposto il pezzo per un attimo (senza animazioni né storico), calcolo il raggio e lo rimetto
+      const from = dragged.cell;
+      dragged.move(hypothetical);
+      beam = new LaserBeam(this, this.activePlayer.laser);
+      dragged.move(from); // lo Switch rifà lo scambio al contrario
+    } else {
+      beam = new LaserBeam(this, this.activePlayer.laser);
+    }
+    this.preview = { key, beam };
+    return beam;
+  }
+
+  showLaserPreview() {
+    const beam = this.laserPreview();
+    if (!beam) return;
+    push();
+    noFill();
+    strokeCap(ROUND);
+    // Tratteggio che scorre nel verso del raggio
+    drawingContext.setLineDash([4, 7]);
+    drawingContext.lineDashOffset = -millis() / 40;
+    stroke(...LASER_COLOR.outer, 210);
+    strokeWeight(2.5);
+    for (const s of beam.segments) line(s.a.x, s.a.y, s.b.x, s.b.y);
+    drawingContext.setLineDash([]);
+    // Pezzi che verrebbero eliminati: mirino rosso; il King: mirino che pulsa
+    const pulse = (Math.sin(millis() / 150) + 1) / 2;
+    for (const { piece, effect } of beam.events) {
+      if (effect !== "destroy" && effect !== "king") continue;
+      const c = piece.cell.center;
+      const r = this.cellSize * (effect === "king" ? 0.42 + 0.06 * pulse : 0.4);
+      stroke(255, 60, 50, effect === "king" ? 255 : 220);
+      strokeWeight(effect === "king" ? 3.5 : 2.5);
+      ellipse(c.x, c.y, r * 2);
+      const k = r * 0.55;
+      line(c.x - k, c.y - k, c.x + k, c.y + k);
+      line(c.x - k, c.y + k, c.x + k, c.y - k);
+    }
+    pop();
   }
 
   showLastMove() {

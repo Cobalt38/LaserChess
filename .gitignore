@@ -10,3 +10,8 @@ Thumbs.db
 # Dipendenze locali (p5 si carica dal CDN in index.html)
 node_modules/
 p5*.js
+
+# Test nel browser: ambiente Python e screenshot
+.venv/
+tests/e2e/screenshots/
+__pycache__/

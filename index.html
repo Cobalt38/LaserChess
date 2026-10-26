@@ -20,19 +20,42 @@
   <body>
     <div id="app">
       <header id="status" aria-live="polite">
-        <span id="status-dot" class="dot" hidden></span>
-        <span id="status-text">Laser Chess</span>
+        <div class="status-main">
+          <span id="status-dot" class="dot" hidden></span>
+          <span id="status-text">Laser Chess</span>
+        </div>
+        <span id="status-sub" class="status-sub"></span>
       </header>
 
       <main id="stage"></main>
 
+      <!-- Istruzioni sempre visibili: i due passi del turno e un suggerimento su cosa fare adesso -->
+      <section id="coach" aria-label="Come si gioca">
+        <p class="goal">🎯 Colpisci il <strong>King</strong> avversario con il tuo laser.</p>
+        <ol class="steps">
+          <li id="step-move"><span class="num">1</span><span>Sposta <em>o</em> ruota un tuo pezzo</span></li>
+          <li id="step-fire"><span class="num">2</span><span>Spara il laser</span></li>
+        </ol>
+        <div class="hint">
+          <img id="hint-icon" alt="" hidden>
+          <p id="hint" aria-live="polite"></p>
+        </div>
+      </section>
+
       <div id="controls">
         <div class="fire-row">
-          <button id="btn-undo" type="button" class="undo" disabled
+          <button id="btn-undo" type="button" class="round" disabled
             title="Annulla la mossa (Ctrl+Z)" aria-label="Annulla la mossa">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M9 14 4 9l5-5" />
               <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
+            </svg>
+          </button>
+          <button id="btn-rot-ccw" type="button" class="round" disabled
+            title="Ruota in senso antiorario (Q)" aria-label="Ruota il pezzo in senso antiorario">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 4v6h6" />
+              <path d="M3.5 10A9 9 0 1 1 6 17.5" />
             </svg>
           </button>
           <button id="btn-fire" type="button" class="fire" disabled>
@@ -43,25 +66,33 @@
             </svg>
             <span>SPARA</span>
           </button>
-        </div>
-        <div class="row">
-          <button id="btn-new" type="button">Nuova partita</button>
-          <button id="btn-sound" type="button" aria-pressed="true">🔊 Audio</button>
+          <button id="btn-rot-cw" type="button" class="round" disabled
+            title="Ruota in senso orario (E)" aria-label="Ruota il pezzo in senso orario">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M21 4v6h-6" />
+              <path d="M20.5 10A9 9 0 1 0 18 17.5" />
+            </svg>
+          </button>
         </div>
         <button id="btn-draw" type="button" class="accent" hidden
           title="La stessa posizione si è presentata tre volte">Dichiara patta (posizione ripetuta)</button>
-        <div class="row small-buttons">
-          <button id="btn-online" type="button" data-open="dlg-online">🌐 Online</button>
-          <button type="button" data-open="dlg-names">👥 Nomi</button>
-          <button type="button" data-open="dlg-variants">🧩 Varianti</button>
-          <button type="button" data-open="dlg-help">❓ Aiuto</button>
-        </div>
       </div>
 
       <section id="history-panel" aria-label="Storico delle mosse">
-        <h2>Mosse</h2>
-        <ol id="history"></ol>
+        <details id="history-box">
+          <summary>Mosse <span id="history-count" class="count"></span></summary>
+          <ol id="history"></ol>
+        </details>
       </section>
+
+      <!-- Icona + nome; dove lo spazio è poco si vede il nome corto sotto l'icona -->
+      <nav id="menu" aria-label="Menu">
+        <button id="btn-new" type="button"><span class="ico" aria-hidden="true">➕</span><span class="long">Nuova partita</span><span class="short" aria-hidden="true">Nuova</span></button>
+        <button id="btn-online" type="button" data-open="dlg-online"><span class="ico" aria-hidden="true">🌐</span><span class="label">Online</span></button>
+        <button type="button" data-open="dlg-names"><span class="ico" aria-hidden="true">👥</span><span class="label">Nomi</span></button>
+        <button type="button" data-open="dlg-help"><span class="ico" aria-hidden="true">❓</span><span class="label">Regole</span></button>
+        <button id="btn-sound" type="button" aria-pressed="true"><span class="ico" aria-hidden="true">🔊</span><span class="label">Audio</span></button>
+      </nav>
     </div>
 
     <div id="gameover" hidden>
@@ -75,18 +106,91 @@
       </div>
     </div>
 
+    <div id="toast" role="status" aria-live="polite" hidden></div>
+
     <!-- Finestre -->
+    <dialog id="dlg-new" aria-labelledby="dlg-new-title">
+      <form method="dialog" class="dialog-close"><button aria-label="Chiudi">✕</button></form>
+      <h2 id="dlg-new-title">Nuova partita</h2>
+      <div id="intro" class="intro" hidden>
+        <p><strong>Benvenuto in Laser Chess!</strong> Vince chi colpisce per primo il <strong>King</strong>
+          avversario con il proprio laser.</p>
+        <p>A ogni turno fai <strong>una</strong> cosa, poi spari:</p>
+        <ol>
+          <li><strong>sposti</strong> un tuo pezzo di una casella (anche in diagonale) <em>oppure</em> lo <strong>ruoti</strong>;</li>
+          <li>premi <strong>SPARA</strong>: gli specchi verdi deviano il raggio, i pezzi colpiti dove non c'è specchio vengono eliminati.</li>
+        </ol>
+        <p class="muted">Prima di sparare una linea tratteggiata ti mostra dove andrà il raggio.</p>
+      </div>
+      <form id="new-form" class="stack">
+        <fieldset class="choice modes">
+          <legend>Come vuoi giocare?</legend>
+          <label><input type="radio" name="mode" value="ai"><span>🤖 Contro il computer</span></label>
+          <label><input type="radio" name="mode" value="local"><span>👥 In due, sullo stesso schermo</span></label>
+          <label><input type="radio" name="mode" value="online"><span>🌐 Online, con un amico</span></label>
+        </fieldset>
+
+        <div class="stack" data-mode="ai">
+          <fieldset class="choice segmented">
+            <legend>Livello</legend>
+            <label><input type="radio" name="level" value="easy"><span>Facile</span></label>
+            <label><input type="radio" name="level" value="medium"><span>Medio</span></label>
+            <label><input type="radio" name="level" value="hard"><span>Difficile</span></label>
+          </fieldset>
+          <fieldset class="choice segmented">
+            <legend>Il tuo colore</legend>
+            <label><input type="radio" name="side" value="0"><span><span class="dot blue"></span> Blu: inizi tu</span></label>
+            <label><input type="radio" name="side" value="1"><span><span class="dot orange"></span> Arancione</span></label>
+          </fieldset>
+          <label class="field">Il tuo nome
+            <input name="myName" maxlength="16" autocomplete="nickname" placeholder="Giocatore">
+          </label>
+        </div>
+
+        <div class="stack" data-mode="local">
+          <label class="field player-field"><span class="dot blue"></span>
+            <input name="name0" maxlength="16" placeholder="Giocatore 1" aria-label="Nome del giocatore blu (inizia)"></label>
+          <label class="field player-field"><span class="dot orange"></span>
+            <input name="name1" maxlength="16" placeholder="Giocatore 2" aria-label="Nome del giocatore arancione"></label>
+          <p class="muted small">Il blu fa la prima mossa.</p>
+        </div>
+
+        <p class="muted" data-mode="online">Nella prossima finestra crei un link da mandare a un amico,
+          oppure entri nella partita di un amico con il suo codice.</p>
+
+        <div class="stack" data-hide-for-guest>
+          <label class="field">Disposizione iniziale (dal manuale)
+            <select name="setup" id="setup-select"></select>
+          </label>
+          <p id="setup-desc" class="muted small"></p>
+          <img id="setup-preview" class="setup-preview" alt="Anteprima della disposizione iniziale">
+          <details class="variants-box">
+            <summary>Varianti: pezzi inventati</summary>
+            <div id="variant-list" class="variants"></div>
+          </details>
+        </div>
+
+        <p id="new-error" class="form-error" role="alert" hidden></p>
+        <button id="new-start" type="submit" class="accent big">Inizia la partita</button>
+      </form>
+    </dialog>
+
     <dialog id="dlg-online" aria-labelledby="dlg-online-title">
       <form method="dialog" class="dialog-close"><button aria-label="Chiudi">✕</button></form>
       <h2 id="dlg-online-title">Gioca online</h2>
       <p class="muted">Crea un link e mandalo al tuo amico: quando lo apre, la partita parte.
         Niente indirizzi IP da scambiare.</p>
-      <label class="field">Il tuo nome
-        <input id="my-name" maxlength="16" autocomplete="nickname" placeholder="Giocatore">
-      </label>
+      <form id="my-name-form" class="field">
+        <label for="my-name">Il tuo nome</label>
+        <div class="row">
+          <input id="my-name" maxlength="16" autocomplete="nickname" placeholder="Giocatore">
+          <button id="my-name-save" type="submit">Salva</button>
+        </div>
+      </form>
 
       <div id="online-start" class="stack">
         <button id="btn-host" type="button" class="accent">🔗 Crea link partita</button>
+        <p class="muted small">Disposizione e varianti sono quelle scelte in “Nuova partita”.</p>
         <p class="divider"><span>oppure entra in una partita</span></p>
         <form id="join-form" class="row">
           <input id="join-code" autocomplete="off" autocapitalize="characters" spellcheck="false"
@@ -107,7 +211,7 @@
 
       <p id="online-msg" class="online-msg" aria-live="polite" hidden></p>
       <div class="row">
-        <button id="btn-reconnect" type="button" class="accent" hidden>Riconnetti</button>
+        <button id="btn-reconnect" type="button" class="accent" hidden>Riprova ora</button>
         <button id="btn-leave" type="button" hidden>Esci dalla partita online</button>
       </div>
 
@@ -119,34 +223,56 @@
     <dialog id="dlg-names" aria-labelledby="dlg-names-title">
       <form method="dialog" class="dialog-close"><button aria-label="Chiudi">✕</button></form>
       <h2 id="dlg-names-title">Nomi dei giocatori</h2>
-      <label class="field player-field"><span class="dot" id="name-dot-0"></span>
-        <input id="name-0" maxlength="16" aria-label="Nome del giocatore blu"></label>
-      <label class="field player-field"><span class="dot" id="name-dot-1"></span>
-        <input id="name-1" maxlength="16" aria-label="Nome del giocatore arancione"></label>
-      <p id="names-note" class="muted" hidden>Nella partita online ognuno sceglie il proprio nome
-        dalla finestra “Online”.</p>
-    </dialog>
-
-    <dialog id="dlg-variants" aria-labelledby="dlg-variants-title">
-      <form method="dialog" class="dialog-close"><button aria-label="Chiudi">✕</button></form>
-      <h2 id="dlg-variants-title">Varianti</h2>
-      <p class="muted">Pezzi inventati da aggiungere alla partita.</p>
-      <div id="variant-list" class="variants"></div>
-      <p id="variant-note" class="muted" hidden>Online le varianti le sceglie chi ha creato la partita.</p>
+      <form id="names-form" class="stack">
+        <label class="field player-field"><span class="dot" id="name-dot-0"></span>
+          <input id="name-0" maxlength="16" aria-label="Nome del giocatore blu"></label>
+        <label class="field player-field"><span class="dot" id="name-dot-1"></span>
+          <input id="name-1" maxlength="16" aria-label="Nome del giocatore arancione"></label>
+        <p id="names-note" class="muted small" hidden></p>
+        <p id="names-error" class="form-error" role="alert" hidden></p>
+        <div class="row">
+          <button type="submit" class="accent">Salva</button>
+          <button type="button" id="names-cancel">Annulla</button>
+        </div>
+      </form>
     </dialog>
 
     <dialog id="dlg-help" aria-labelledby="dlg-help-title">
       <form method="dialog" class="dialog-close"><button aria-label="Chiudi">✕</button></form>
-      <h2 id="dlg-help-title">Come si gioca</h2>
+      <h2 id="dlg-help-title">Regole</h2>
+      <p>Vince chi colpisce per primo il <strong>King</strong> avversario con il proprio laser.
+        Se colpisci il tuo King, perdi.</p>
+      <h3>Il turno</h3>
+      <ol class="help">
+        <li><strong>Sposta</strong> un tuo pezzo di una casella, anche in diagonale, su una casella libera;
+          <em>oppure</em> <strong>ruotalo</strong> di 90° con <strong>↺ ↻</strong>.</li>
+        <li><strong>Spara</strong>: il raggio parte dal tuo Laser. Si spara sempre, anche se non colpisce nulla.</li>
+      </ol>
+      <p class="muted">Le caselle colorate sui bordi sono riservate: ci entrano solo i pezzi di quel colore.</p>
+      <h3>I pezzi</h3>
+      <ul id="legend" class="legend"></ul>
+      <h3>Comandi</h3>
       <ul class="help">
-        <li>Tocca o clicca un tuo pezzo per vedere dove può andare.</li>
-        <li><strong>Trascinalo</strong> su una casella evidenziata per muoverlo.</li>
-        <li><strong>Tasto destro</strong> o <strong>tieni premuto</strong> sul pezzo per il menu di rotazione.</li>
-        <li>Poi premi <strong>SPARA</strong> (o <kbd>Spazio</kbd>, o tocca il tuo laser): colpisci il King avversario!</li>
-        <li>Ci hai ripensato? <strong>↶</strong> (o <kbd>Ctrl</kbd>+<kbd>Z</kbd>) annulla la mossa finché non spari.</li>
-        <li><kbd>Esc</kbd> annulla, <kbd>R</kbd> ricomincia.</li>
-        <li>Per giocare a distanza: <strong>🌐 Online</strong> → <strong>Crea link partita</strong> e mandalo al tuo amico.</li>
+        <li>Tocca un tuo pezzo, poi tocca una casella evidenziata per spostarlo (oppure trascinalo).</li>
+        <li><strong>↺ ↻</strong> ruotano il pezzo selezionato (anche <kbd>Q</kbd> <kbd>E</kbd>, tasto destro o pressione lunga sul pezzo).</li>
+        <li><strong>SPARA</strong> (o <kbd>Spazio</kbd>, o tocca il tuo Laser) chiude il turno.</li>
+        <li><strong>↶</strong> (o <kbd>Ctrl</kbd>+<kbd>Z</kbd>) annulla la mossa finché non spari.</li>
+        <li>Se la stessa posizione si presenta tre volte, chi deve muovere può dichiarare patta.</li>
       </ul>
+      <h3>Opzioni</h3>
+      <label class="check"><input type="checkbox" id="opt-preview"> Mostra dove andrà il raggio (linea tratteggiata)</label>
+      <label class="check"><input type="checkbox" id="opt-coach"> Mostra i suggerimenti sotto la board</label>
+      <p class="fineprint">Regole e disposizioni iniziali dal manuale di Laser Chess (ThinkFun).</p>
+    </dialog>
+
+    <!-- Domanda sì/no dentro la pagina (confirm() bloccherebbe il gioco e la connessione online) -->
+    <dialog id="dlg-ask" aria-labelledby="ask-title">
+      <h2 id="ask-title"></h2>
+      <p id="ask-text" class="muted"></p>
+      <div class="row">
+        <button id="ask-yes" type="button" class="accent"></button>
+        <button id="ask-no" type="button"></button>
+      </div>
     </dialog>
 
     <!-- L'ordine conta: ogni file usa le classi/costanti di quelli sopra -->
@@ -172,6 +298,9 @@
     <script src="js/fx/Sound.js"></script>
     <script src="js/ui/ActionMenu.js"></script>
     <script src="js/core/Board.js"></script>
+    <!-- Computer: motore delle regole, ricerca della mossa, avversario -->
+    <script src="js/ai/Engine.js"></script>
+    <script src="js/ai/AIPlayer.js"></script>
     <script src="js/net/Online.js"></script>
     <script src="js/ui/GameUI.js"></script>
     <script src="js/ui/OnlinePanel.js"></script>
