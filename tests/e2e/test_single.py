@@ -26,7 +26,7 @@ def main():
         p.wait("!document.getElementById('dlg-new').open")
         assert p.js("game.mode") == "ai" and p.js("board.localIndex") == 0
         assert p.js("game.ai.side") == 1
-        assert "Tocca uno dei tuoi pezzi blu" in p.text("#hint"), p.text("#hint")
+        p.wait("document.getElementById('hint').textContent.includes('Tocca uno dei tuoi pezzi blu')", 3)
 
         step("tocco un pezzo avversario: il suggerimento spiega cos'è")
         p.tap_cell("h5")  # Deflector arancione in ACE
@@ -35,8 +35,8 @@ def main():
         step("tocco un mio Deflector: suggerimento, caselle evidenziate, ↺ ↻ attivi")
         p.tap_cell("h2")
         p.wait("board.selected && board.selected.name === 'h2'", 3)
-        assert "Deflector" in p.text("#hint")
-        assert p.js("!document.getElementById('btn-rot-cw').disabled")
+        p.wait("document.getElementById('hint').textContent.startsWith('Deflector')", 3)
+        p.wait("!document.getElementById('btn-rot-cw').disabled", 3)  # i pulsanti si aggiornano al frame dopo
         assert p.js("board.cellByName('h3').highlight")
         assert p.js("board.laserPreview() !== null"), "anteprima del laser assente"
         p.shot("02-selezione")
@@ -45,8 +45,8 @@ def main():
         p.tap_cell("h3")
         p.wait("board.phase === 'fire'", 3)
         assert p.js("board.cellByName('h3').piece && board.cellByName('h3').piece.type") == "Deflector"
-        assert p.js("!document.getElementById('btn-fire').disabled")
-        assert p.js("document.getElementById('step-fire').classList.contains('active')")
+        p.wait("!document.getElementById('btn-fire').disabled", 3)
+        p.wait("document.getElementById('step-fire').classList.contains('active')", 3)
         assert p.js("board.laserPreview().segments.length") > 0
         time.sleep(0.4)
         p.shot("03-anteprima-laser")
@@ -141,7 +141,22 @@ def main():
         p.click("#btn-fire")
         settle(p)
         p.wait("board.turn === 1", 5)
-        assert "Bruno" in p.text("#status-text")
+        p.wait("document.getElementById('status-text').textContent.includes('Bruno')", 3)
+
+        step("contro il computer, inizia lui: io sono l'arancione e la board è girata")
+        p.click("#btn-new")
+        p.wait("document.getElementById('dlg-new').open", 3)
+        p.click("input[name=mode][value=ai] + span")
+        p.click("input[name=side][value='1'] + span")
+        p.click("#new-start")
+        p.wait("document.getElementById('dlg-ask').open", 3)
+        p.click("#ask-yes")
+        p.wait("game.mode === 'ai' && board.localIndex === 1", 5)
+        assert p.js("game.ai.side") == 0 and p.js("board.players[0].name") == "Computer"
+        assert p.js("view.turns") == 2, "l'arancione deve vedere i suoi pezzi in basso"
+        p.wait("board.history.length === 1 && board.turn === 1 && !board.busy", 20, "prima mossa del computer")
+        p.wait("document.getElementById('status-text').textContent.includes('Tocca a te')", 3)
+        p.shot("08-inizia-il-computer")
 
         step("tutte le configurazioni si avviano, con e senza varianti")
         for name in ["ACE", "CURIOSITY", "GRAIL", "MERCURY", "SOPHIE"]:
