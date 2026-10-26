@@ -321,6 +321,21 @@ const Engine = {
     return best;
   },
 
+  // Mosse con cui un giocatore, muovendo per primo da questa posizione, elimina subito un pezzo
+  // avversario: [{ side, action, hits: [caselle] }]. I pezzi propri non contano (ci si può
+  // sempre colpire da soli). Serve per piazzare i pezzi delle varianti (Board.placeVariants)
+  openingCaptures(cells) {
+    const found = [];
+    for (const side of [0, 1]) {
+      for (const m of this.moves(cells, side)) {
+        const next = this.play(cells, m);
+        const hits = this.fire(next, side, false).hits.filter((c) => this.owner(next[c]) !== side);
+        if (hits.length) found.push({ side, action: this.toAction(m), hits: hits.map((c) => this.cellName(c)) });
+      }
+    }
+    return found;
+  },
+
   toAction(m) {
     const from = m & 127;
     const arg = m >> 7;

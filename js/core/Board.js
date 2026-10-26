@@ -150,9 +150,35 @@ class Board {
     return player;
   }
 
-  // Pezzo di una variante: se in questa configurazione la sua casella è occupata, va nella casella
-  // libera più vicina. L'arancione cerca a specchio rispetto al blu, così la board resta simmetrica
-  placeVariant(PieceClass, player, x, y, rot) {
+  // Pezzi delle varianti scelte (chiavi di VARIANTS), una variante alla volta. Ognuno parte dalla
+  // casella indicata in VARIANTS; se è occupata, o se così qualcuno potrebbe eliminare un pezzo
+  // avversario già alla prima mossa (es. il Prism che apre il raggio verso un pezzo scoperto), si
+  // prova la casella libera successiva, dalla più vicina. I pezzi di una variante si spostano
+  // insieme e l'arancione cerca a specchio del blu, così la board resta simmetrica
+  placeVariants(keys) {
+    for (const key of keys) {
+      const pieces = VARIANTS[key].pieces.map(([PieceClass, owner, x, y, rot]) => {
+        const player = this.players[owner];
+        return { PieceClass, player, rot, cells: this.freeCellsNear(player, x, y) };
+      });
+      const tries = Math.min(...pieces.map((p) => p.cells.length));
+      let safe = false;
+      for (let k = 0; k < tries && !safe; k++) {
+        const added = pieces.map((p) => this.addPiece(p.PieceClass, p.player, p.cells[k].rx, p.cells[k].ry, p.rot));
+        safe = Engine.openingCaptures(Engine.fromBoard(this)).length === 0;
+        if (!safe) for (const piece of added) this.destroyPiece(piece);
+      }
+      if (!safe && tries > 0) {
+        // Nessuna casella sicura (non succede con le varianti attuali: lo controlla
+        // tests/rules.test.js): almeno la più vicina
+        for (const p of pieces) this.addPiece(p.PieceClass, p.player, p.cells[0].rx, p.cells[0].ry, p.rot);
+      }
+    }
+  }
+
+  // Caselle libere in cui può entrare un pezzo di player, dalla più vicina a (x, y).
+  // Per l'arancione l'ordine è lo specchio di quello del blu
+  freeCellsNear(player, x, y) {
     const mirrored = this.players.indexOf(player) === 1;
     const flip = (cx, cy) => (mirrored ? [COLS + 1 - cx, ROWS + 1 - cy] : [cx, cy]);
     const [bx, by] = flip(x, y); // la casella vista dal blu
@@ -164,13 +190,9 @@ class Board {
       }
     }
     candidates.sort((a, b) => a.d - b.d || a.cy - b.cy || a.cx - b.cx);
-    for (const { cx, cy } of candidates) {
-      const cell = this.getCell(...flip(cx, cy));
-      if (!cell.piece && (!cell.playerExclusive || cell.playerExclusive === player)) {
-        return this.addPiece(PieceClass, player, cell.rx, cell.ry, rot);
-      }
-    }
-    return null;
+    return candidates
+      .map(({ cx, cy }) => this.getCell(...flip(cx, cy)))
+      .filter((cell) => !cell.piece && (!cell.playerExclusive || cell.playerExclusive === player));
   }
 
   addPiece(PieceClass, player, x, y, rot) {
@@ -264,11 +286,7 @@ class Board {
     for (const [PieceClass, owner, x, y, rot] of layout) {
       this.addPiece(PieceClass, players[owner], x, y, rot);
     }
-    for (const v of variants) {
-      for (const [PieceClass, owner, x, y, rot] of VARIANTS[v].pieces) {
-        this.placeVariant(PieceClass, players[owner], x, y, rot);
-      }
-    }
+    this.placeVariants(variants);
     return players;
   }
 

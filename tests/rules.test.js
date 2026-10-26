@@ -60,6 +60,40 @@ test("le configurazioni sono simmetriche e ogni giocatore ha 13 pezzi", () => {
   }
 });
 
+// Prime mosse (di chi muove per primo, o dell'altro se muovesse lui) che eliminano un pezzo
+// avversario, provate sulla board vera: mossa, raggio calcolato da LaserBeam, mossa annullata
+function openingCaptures(board) {
+  const found = [];
+  for (const side of [0, 1]) {
+    board.turn = side;
+    for (const text of boardMoves(board)) {
+      const [type, a, b] = text.split(" ");
+      assert.ok(board.applyRemote(type === "move" ? { type, from: a, to: b } : { type, at: a, rot: b }), text);
+      const beam = new g.LaserBeam(board, board.players[side].laser);
+      const hits = beam.events.filter((e) => (e.effect === "destroy" || e.effect === "king") && e.piece.player !== board.players[side]);
+      if (hits.length) found.push(`${side === 0 ? "blu" : "arancione"}: ${text} elimina ${hits.map((e) => `${e.piece.type} ${e.piece.cell.name}`)}`);
+      board.undoMove();
+    }
+  }
+  board.turn = 0;
+  return found;
+}
+
+test("alla prima mossa nessuno può eliminare un pezzo avversario, con qualunque combinazione di varianti", () => {
+  const keys = Object.keys(VARIANTS);
+  for (const name of Object.keys(SETUPS)) {
+    for (let mask = 0; mask < 1 << keys.length; mask++) {
+      const variants = keys.filter((_, i) => mask & (1 << i));
+      const board = new Board();
+      board.setup(name, ["A", "B"], variants);
+      board.start();
+      const before = board.positionKey();
+      assert.deepStrictEqual(plain(openingCaptures(board)), [], `${name} + [${variants}]`);
+      assert.strictEqual(board.positionKey(), before, "le prove devono lasciare la board com'era");
+    }
+  }
+});
+
 test("il motore del computer ha le stesse regole della board (partite casuali)", () => {
   for (const [i, name] of Object.keys(SETUPS).entries()) {
     for (const variants of [[], Object.keys(VARIANTS)]) {

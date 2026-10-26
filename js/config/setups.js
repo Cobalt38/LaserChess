@@ -158,8 +158,10 @@ const SETUP_INFO = {
 const PIECE_TYPES = { Laser, King, Defender, Deflector, Switch, Prism, HalfMirror };
 
 // Pezzi inventati, attivabili dalla finestra "Nuova partita". Per un pezzo nuovo basta aggiungere
-// una voce. Se in una configurazione la casella è già occupata, il pezzo va nella casella libera
-// più vicina (vedi Board.placeVariant).
+// una voce: il primo pezzo è del blu, il secondo dell'arancione nella casella a specchio.
+// La casella indicata è quella preferita: se in una configurazione è occupata, o se da lì
+// qualcuno potrebbe eliminare un pezzo avversario alla prima mossa, il pezzo va nella casella
+// libera più vicina dove questo non succede (vedi Board.placeVariants).
 const VARIANTS = {
   prism: {
     label: "Prism",

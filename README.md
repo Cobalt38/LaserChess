@@ -26,7 +26,9 @@ La finestra **Nuova partita** (aperta da sola alla prima visita) sceglie:
   **in due sullo stesso schermo** oppure **online**;
 - la **disposizione iniziale** del manuale: ACE (consigliata per iniziare), CURIOSITY, GRAIL,
   MERCURY, SOPHIE;
-- le **varianti** con i pezzi inventati (Prism e specchio semitrasparente).
+- le **varianti** con i pezzi inventati (Prism e specchio semitrasparente). I loro pezzi vanno
+  in caselle scelte in modo che alla prima mossa nessuno possa eliminare un pezzo avversario
+  (le disposizioni del manuale sono già così).
 
 Ricaricando la pagina la partita in corso riprende da dove era.
 
@@ -93,10 +95,13 @@ js/
     ActionMenu.js     menu del pezzo (rotazioni)
 tests/
   harness.js          carica gli script del gioco in Node, senza p5
-  rules.test.js       configurazioni, motore del computer uguale alla board, computer, nomi, anteprima
+  rules.test.js       configurazioni, prima mossa senza catture, motore uguale alla board, computer, nomi, anteprima
   e2e/                test nel browser (Firefox + Selenium)
 ```
 
 Per aggiungere un pezzo inventato: crea la sua classe in `js/pieces/variants/`, aggiungila in
 `index.html` e in `js/config/setups.js` (tra i `PIECE_TYPES` e nelle `VARIANTS`). Il computer
 legge le regole del pezzo (`hit`, `rotations`, `canMoveTo`) dalla classe, quindi lo usa da solo.
+La casella scritta in `VARIANTS` è quella preferita: se da lì si potrebbe eliminare un pezzo
+avversario alla prima mossa, il gioco sceglie la casella libera più vicina dove non succede, e
+`tests/rules.test.js` lo controlla per ogni disposizione e combinazione di varianti.
