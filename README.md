@@ -10,7 +10,8 @@ Vince chi colpisce per primo il King avversario con il proprio laser. A ogni tur
 un proprio pezzo di una casella (anche in diagonale) **oppure** lo si ruota, poi si spara.
 
 - **Tocca** un tuo pezzo, poi tocca una casella evidenziata per spostarlo (oppure **trascinalo**)
-- **↺ ↻** ruotano il pezzo selezionato (anche **Q**/**E**, tasto destro o pressione lunga sul pezzo)
+- Le frecce **↺ ↻** che compaiono accanto al pezzo selezionato lo ruotano (anche **Q**/**E**, tasto
+  destro o pressione lunga sul pezzo); col mouse sopra una freccia l'anteprima mostra il raggio ruotato
 - Poi premi **SPARA** (oppure **Spazio**, o tocca il tuo laser)
 - Prima di sparare una **linea tratteggiata** mostra dove andrà il raggio e segna con un mirino
   i pezzi che verrebbero eliminati
@@ -24,8 +25,9 @@ cosa fa il pezzo che hai toccato (anche se è dell'avversario). Si può nasconde
 La finestra **Nuova partita** (aperta da sola alla prima visita) sceglie:
 - **contro il computer** (Facile, Medio, Difficile; si può giocare col blu o con l'arancione),
   **in due sullo stesso schermo** oppure **online**;
-- la **disposizione iniziale** del manuale: ACE (consigliata per iniziare), CURIOSITY, GRAIL,
-  MERCURY, SOPHIE;
+- la **disposizione iniziale**: PRISMA (predefinita, inventata per questo gioco: Prism e specchio
+  semitrasparente sono già in campo) oppure quelle del manuale, ACE (consigliata dal manuale per
+  iniziare), CURIOSITY, GRAIL, MERCURY, SOPHIE;
 - le **varianti** con i pezzi inventati (Prism e specchio semitrasparente). I loro pezzi vanno
   in caselle scelte in modo che alla prima mossa nessuno possa eliminare un pezzo avversario
   (le disposizioni del manuale sono già così).

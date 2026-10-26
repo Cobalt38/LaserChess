@@ -52,7 +52,7 @@ class Page:
 
     def click(self, css):
         # I pulsanti si attivano al frame successivo a quello in cui cambia lo stato: si aspetta
-        self.wait(f"!document.querySelector({json.dumps(css)}).disabled", 5, f"{css} attivo")
+        self.wait(f"(e => !e.disabled && !e.hidden)(document.querySelector({json.dumps(css)}))", 5, f"{css} attivo")
         self.d.find_element(By.CSS_SELECTOR, css).click()
 
     def visible(self, css):
@@ -77,6 +77,14 @@ class Page:
         canvas = self.d.find_element(By.CSS_SELECTOR, "#stage canvas")
         w, h = canvas.size["width"], canvas.size["height"]
         ActionChains(self.d).move_to_element_with_offset(canvas, x - w / 2, y - h / 2).click().perform()
+
+    def pixel(self, name):
+        """Colore [r, g, b] del canvas al centro di una casella."""
+        return self.js(f"""(() => {{
+            const c = board.cellByName({json.dumps(name)}).center;
+            const p = boardToScreen(c.x, c.y), d = pixelDensity();
+            return [...drawingContext.getImageData(Math.round(p.x * d), Math.round(p.y * d), 1, 1).data].slice(0, 3);
+        }})()""")
 
     def shot(self, label):
         os.makedirs(SHOTS, exist_ok=True)

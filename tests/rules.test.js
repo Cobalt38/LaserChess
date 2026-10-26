@@ -39,15 +39,23 @@ function beamHits(board, side) {
   return beam.events.filter((e) => e.effect === "destroy" || e.effect === "king").map((e) => e.piece.cell.name).sort();
 }
 
-test("le configurazioni sono simmetriche e ogni giocatore ha 13 pezzi", () => {
+test("PRISMA contiene Prism e specchio semitrasparente", () => {
+  const types = new Set(SETUPS.PRISMA.map(([PieceClass]) => PieceClass.name));
+  assert.ok(types.has("Prism") && types.has("HalfMirror"));
+});
+
+test("le configurazioni sono simmetriche e una variante non duplica pezzi che ci sono già", () => {
   const board = new Board();
   const R180 = { N: "S", S: "N", E: "W", W: "E", NE: "SW", SW: "NE", NW: "SE", SE: "NW" };
   for (const name of Object.keys(SETUPS)) {
+    const types = new Set(SETUPS[name].map(([PieceClass]) => PieceClass));
     for (const variants of [[], Object.keys(VARIANTS)]) {
       board.setup(name, ["A", "B"], variants);
-      const extra = variants.length;
-      assert.strictEqual(board.players[0].pieces.length, 13 + extra, name);
-      assert.strictEqual(board.players[1].pieces.length, 13 + extra, name);
+      // Pezzi della disposizione + Laser + uno per ogni variante che la disposizione non ha già
+      const added = variants.filter((v) => !VARIANTS[v].pieces.some(([PieceClass]) => types.has(PieceClass))).length;
+      const expected = SETUPS[name].filter((p) => p[1] === 0).length + 1 + added;
+      assert.strictEqual(board.players[0].pieces.length, expected, name);
+      assert.strictEqual(board.players[1].pieces.length, expected, name);
       for (const p of board.pieces) {
         const q = board.getCell(11 - p.cell.rx, 9 - p.cell.ry).piece;
         assert.ok(q && q.type === p.type && q.player !== p.player, `${name}: ${p.type} ${p.cell.name} senza gemello`);

@@ -31,6 +31,7 @@ class Board {
     this.pendingUndo = null; // mossa fatta ma non ancora sparata: { undo, lastMove, drawClaimable }
     this.version = 0; // cambia a ogni modifica di pezzi, turno o nomi (anteprima del laser, salvataggio)
     this.showPreview = true; // traiettoria tratteggiata del laser prima di sparare
+    this.previewRotation = null; // { piece, rot }: rotazione da mostrare nell'anteprima (pulsante sotto il mouse)
     this.preview = null; // { key, beam }: anteprima calcolata per l'ultima disposizione
     this.onEvent = () => { }; // onEvent(nome, dati): suoni, UI...
 
@@ -286,7 +287,9 @@ class Board {
     for (const [PieceClass, owner, x, y, rot] of layout) {
       this.addPiece(PieceClass, players[owner], x, y, rot);
     }
-    this.placeVariants(variants);
+    // Una variante non si aggiunge se la disposizione ha già il suo pezzo (es. PRISMA)
+    const present = new Set(layout.map(([PieceClass]) => PieceClass));
+    this.placeVariants(variants.filter((v) => !VARIANTS[v].pieces.some(([PieceClass]) => present.has(PieceClass))));
     return players;
   }
 
@@ -410,8 +413,8 @@ class Board {
   rotateSelected(step) {
     const piece = this.rotatable;
     if (!piece) return;
-    const rots = piece.rotations();
-    this.rotatePiece(piece, rots.length === 1 || step < 0 ? rots[0] : rots[1]);
+    this.previewRotation = null;
+    this.rotatePiece(piece, this.rotationFor(piece, step));
   }
 
   // Ripensamento prima di sparare: la mossa torna indietro e il turno ricomincia
@@ -756,6 +759,18 @@ class Board {
     return g;
   }
 
+  // Board vuota, solo griglia e caselle riservate (mentre si sceglie la nuova partita)
+  showEmpty() {
+    if (!this.gridLayer) this.gridLayer = this.renderGrid();
+    image(this.gridLayer, 0, 0, this.width + 1, this.height + 1);
+  }
+
+  // Rotazione che faranno i pulsanti accanto al pezzo: step -1 antioraria, +1 oraria
+  rotationFor(piece, step) {
+    const rots = piece.rotations();
+    return rots.length === 1 || step < 0 ? rots[0] : rots[1];
+  }
+
   show() {
     push();
     if (this.shake > 0) translate(random(-this.shake, this.shake), random(-this.shake, this.shake));
@@ -781,7 +796,9 @@ class Board {
     const dragged = this.dragging;
     const target = dragged && this.cellAt(this.pointer);
     const hypothetical = target && target.highlight && target !== this.press.from ? target : null;
-    const key = `${this.version}|${this.turn}|${hypothetical ? hypothetical.name : ""}`;
+    const turning = !hypothetical && this.previewRotation && this.rotatable === this.previewRotation.piece
+      ? this.previewRotation : null;
+    const key = `${this.version}|${this.turn}|${hypothetical ? hypothetical.name : ""}|${turning ? turning.rot : ""}`;
     if (this.preview && this.preview.key === key) return this.preview.beam;
     let beam;
     if (hypothetical) {
@@ -790,6 +807,12 @@ class Board {
       dragged.move(hypothetical);
       beam = new LaserBeam(this, this.activePlayer.laser);
       dragged.move(from); // lo Switch rifà lo scambio al contrario
+    } else if (turning) {
+      // Idem per la rotazione sotto il mouse
+      const old = turning.piece.rot;
+      turning.piece.rot = turning.rot;
+      beam = new LaserBeam(this, this.activePlayer.laser);
+      turning.piece.rot = old;
     } else {
       beam = new LaserBeam(this, this.activePlayer.laser);
     }

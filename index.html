@@ -27,7 +27,23 @@
         <span id="status-sub" class="status-sub"></span>
       </header>
 
-      <main id="stage"></main>
+      <!-- Board. I pulsanti di rotazione compaiono accanto al pezzo selezionato (li posiziona GameUI) -->
+      <main id="stage">
+        <button id="btn-rot-ccw" type="button" class="rotate-handle" hidden
+          title="Ruota in senso antiorario (Q)" aria-label="Ruota il pezzo in senso antiorario">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 4v6h6" />
+            <path d="M3.5 10A9 9 0 1 1 6 17.5" />
+          </svg>
+        </button>
+        <button id="btn-rot-cw" type="button" class="rotate-handle" hidden
+          title="Ruota in senso orario (E)" aria-label="Ruota il pezzo in senso orario">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M21 4v6h-6" />
+            <path d="M20.5 10A9 9 0 1 0 18 17.5" />
+          </svg>
+        </button>
+      </main>
 
       <!-- Istruzioni sempre visibili: i due passi del turno e un suggerimento su cosa fare adesso -->
       <section id="coach" aria-label="Come si gioca">
@@ -51,13 +67,6 @@
               <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
             </svg>
           </button>
-          <button id="btn-rot-ccw" type="button" class="round" disabled
-            title="Ruota in senso antiorario (Q)" aria-label="Ruota il pezzo in senso antiorario">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M3 4v6h6" />
-              <path d="M3.5 10A9 9 0 1 1 6 17.5" />
-            </svg>
-          </button>
           <button id="btn-fire" type="button" class="fire" disabled>
             <svg class="fire-icon" viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="12" cy="12" r="7" />
@@ -65,13 +74,6 @@
               <circle cx="12" cy="12" r="2" class="fire-dot" />
             </svg>
             <span>SPARA</span>
-          </button>
-          <button id="btn-rot-cw" type="button" class="round" disabled
-            title="Ruota in senso orario (E)" aria-label="Ruota il pezzo in senso orario">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M21 4v6h-6" />
-              <path d="M20.5 10A9 9 0 1 0 18 17.5" />
-            </svg>
           </button>
         </div>
         <button id="btn-draw" type="button" class="accent" hidden
@@ -256,7 +258,7 @@
       <h3>Comandi</h3>
       <ul class="help">
         <li>Tocca un tuo pezzo, poi tocca una casella evidenziata per spostarlo (oppure trascinalo).</li>
-        <li><strong>↺ ↻</strong> ruotano il pezzo selezionato (anche <kbd>Q</kbd> <kbd>E</kbd>, tasto destro o pressione lunga sul pezzo).</li>
+        <li>Le frecce <strong>↺ ↻</strong> che compaiono accanto al pezzo selezionato lo ruotano (anche <kbd>Q</kbd> <kbd>E</kbd>, tasto destro o pressione lunga sul pezzo). Col mouse sopra una freccia, la linea tratteggiata mostra dove andrebbe il raggio.</li>
         <li><strong>SPARA</strong> (o <kbd>Spazio</kbd>, o tocca il tuo Laser) chiude il turno.</li>
         <li><strong>↶</strong> (o <kbd>Ctrl</kbd>+<kbd>Z</kbd>) annulla la mossa finché non spari.</li>
         <li>Se la stessa posizione si presenta tre volte, chi deve muovere può dichiarare patta.</li>

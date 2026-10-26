@@ -4,6 +4,38 @@
 // (lo controlla tests/rules.test.js). Fonte: manuale ThinkFun (LaserCh-1034-Instructions.pdf),
 // nella trascrizione di github.com/kishannareshpal/laserchess (docs/Guide.md, tabelle dei pezzi).
 const SETUPS = {
+  // Inventata per questo gioco (non è nel manuale), con i pezzi inventati già dentro: lo specchio
+  // semitrasparente accanto al Laser manda metà del raggio sul Prism al centro, che lo apre su tre
+  // lati. Controllata come le altre: alla prima mossa nessuno può eliminare un pezzo avversario.
+  PRISMA: [
+    [Defender, 0, 4, 1, "N"],
+    [King, 0, 5, 1, "N"],
+    [Defender, 0, 6, 1, "N"],
+    [Deflector, 0, 3, 2, "NW"],
+    [Switch, 0, 5, 2, "NE"],
+    [Deflector, 0, 8, 2, "NW"],
+    [Deflector, 0, 2, 3, "NW"],
+    [Deflector, 0, 7, 3, "NE"],
+    [Deflector, 0, 9, 3, "NW"],
+    [Deflector, 0, 3, 4, "NW"],
+    [Switch, 0, 4, 4, "NE"],
+    [Prism, 0, 6, 4, "N"],
+    [HalfMirror, 0, 10, 4, "NE"],
+
+    [Defender, 1, 5, 8, "S"],
+    [King, 1, 6, 8, "S"],
+    [Defender, 1, 7, 8, "S"],
+    [Deflector, 1, 3, 7, "SE"],
+    [Switch, 1, 6, 7, "SW"],
+    [Deflector, 1, 8, 7, "SE"],
+    [Deflector, 1, 2, 6, "SE"],
+    [Deflector, 1, 4, 6, "SW"],
+    [Deflector, 1, 9, 6, "SE"],
+    [HalfMirror, 1, 1, 5, "SW"],
+    [Prism, 1, 5, 5, "S"],
+    [Switch, 1, 7, 5, "SW"],
+    [Deflector, 1, 8, 5, "SE"],
+  ],
   ACE: [
     //player1
     [Deflector, 0, 3, 1, "NW"],
@@ -143,10 +175,11 @@ const SETUPS = {
   ],
 };
 
-// Nome e descrizione delle configurazioni, nell'ordine in cui il manuale le propone
+// Descrizione delle configurazioni: prima la nostra, poi quelle del manuale nel suo ordine
 // (il manuale consiglia ACE per iniziare e le altre quando si conosce il gioco)
 const SETUP_INFO = {
-  ACE: "La disposizione classica: consigliata per le prime partite.",
+  PRISMA: "Inventata per questo gioco, con i pezzi nuovi: lo specchio semitrasparente accanto al Laser manda metà del raggio sul Prism al centro, che lo divide in tre.",
+  ACE: "La disposizione classica del manuale: consigliata per le prime partite.",
   CURIOSITY: "Per chi conosce già il gioco. Uno Switch accanto ai Defender del King.",
   GRAIL: "Per chi conosce già il gioco. Il King parte in seconda fila, circondato dai suoi pezzi.",
   MERCURY: "Per chi conosce già il gioco. Uno Switch parte nella fila di fondo avversaria.",
@@ -159,6 +192,7 @@ const PIECE_TYPES = { Laser, King, Defender, Deflector, Switch, Prism, HalfMirro
 
 // Pezzi inventati, attivabili dalla finestra "Nuova partita". Per un pezzo nuovo basta aggiungere
 // una voce: il primo pezzo è del blu, il secondo dell'arancione nella casella a specchio.
+// Una variante non si aggiunge alle disposizioni che hanno già quel pezzo (es. PRISMA).
 // La casella indicata è quella preferita: se in una configurazione è occupata, o se da lì
 // qualcuno potrebbe eliminare un pezzo avversario alla prima mossa, il pezzo va nella casella
 // libera più vicina dove questo non succede (vedi Board.placeVariants).

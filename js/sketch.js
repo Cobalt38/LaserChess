@@ -9,6 +9,9 @@ const view = { x: 0, y: 0, scale: 1, turns: 0 };
 // Deve combaciare con la media query del layout "a colonna" in style.css
 const STACKED_QUERY = "(max-width: 760px) and (orientation: portrait)";
 const SETTINGS_KEY = "laserchess.settings";
+// Da aumentare quando cambia un'impostazione predefinita da applicare anche a chi le ha già salvate
+// (2: la disposizione predefinita diventa PRISMA)
+const SETTINGS_VERSION = 2;
 const GAME_KEY = "laserchess.game"; // partita in corso (non online), per riprenderla ricaricando
 const settings = loadSettings();
 let activePointer = null; // un solo dito/puntatore alla volta sulla board
@@ -21,17 +24,20 @@ function loadSettings() {
     mode: "ai", // modalità della prossima partita: "ai" o "local" (online si sceglie a parte)
     aiLevel: "medium",
     humanSide: 0, // contro il computer: 0 blu (muove per primo), 1 arancione
-    setup: "ACE",
+    setup: "PRISMA",
     variants: { prism: false, halfMirror: false },
     names: ["Giocatore 1", "Giocatore 2"], // partita sullo stesso schermo
     myName: "", // contro il computer e online
     preview: true, // linea tratteggiata del laser
     coach: true, // suggerimenti sotto la board
     seenIntro: false, // la finestra iniziale con le istruzioni è già stata vista
+    version: SETTINGS_VERSION,
   };
   try {
     const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {};
     const s = { ...defaults, ...saved, variants: { ...defaults.variants, ...saved.variants } };
+    if (!(saved.version >= 2)) s.setup = defaults.setup;
+    s.version = SETTINGS_VERSION;
     if (!SETUPS[s.setup]) s.setup = defaults.setup;
     if (!AI_LEVELS[s.aiLevel]) s.aiLevel = defaults.aiLevel;
     if (s.mode !== "ai" && s.mode !== "local") s.mode = defaults.mode;
@@ -124,6 +130,12 @@ function setup() {
     pieceIcon,
     setupPreview,
     relayout: fitCanvas,
+    // Centro e lato di una casella in pixel dentro #stage (per le frecce di rotazione)
+    cellOnScreen(cell) {
+      const p = boardToScreen(cell.center.x, cell.center.y);
+      return { x: p.x, y: p.y, size: cell.size * view.scale };
+    },
+    stageSize: () => ({ w: width, h: height }),
     setMuted(muted) {
       settings.muted = muted;
       sfx.setMuted(muted);
@@ -392,8 +404,10 @@ function windowResized() {
 function draw() {
   // Limita dt: dopo un cambio di scheda deltaTime può essere enorme
   const dt = Math.min(deltaTime, 50) / 1000;
+  // Mentre si sceglie la nuova partita la board è vuota e il computer aspetta
+  const choosing = document.getElementById("dlg-new").open;
   board.update(dt);
-  if (game.ai) game.ai.update(dt);
+  if (game.ai && !choosing) game.ai.update(dt);
   online.update();
   ui.update();
   if (!online.active && !board.busy && board.version !== savedVersion) saveLocalGame();
@@ -410,7 +424,8 @@ function draw() {
     translate(0, board.width);
     rotate(-HALF_PI);
   }
-  board.show();
+  if (choosing) board.showEmpty();
+  else board.show();
 }
 
 function keyPressed() {

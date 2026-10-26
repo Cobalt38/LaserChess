@@ -61,6 +61,37 @@ html, body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Frecce di rotazione accanto al pezzo selezionato: GameUI le mette sugli angoli della casella */
+.rotate-handle {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  background: rgba(20, 20, 20, 0.88);
+  color: var(--accent);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.6);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.rotate-handle:hover {
+  background: rgba(60, 50, 20, 0.95);
+}
+
+.rotate-handle svg {
+  width: 60%;
+  height: 60%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 #status, #coach, #controls, #history-panel, #menu {
   background: var(--panel);
   border-left: 1px solid var(--line);
@@ -435,6 +466,19 @@ details[open] summary {
 .variants small {
   display: block;
   color: var(--muted);
+}
+
+.variants .included-note {
+  display: none;
+  color: var(--accent);
+}
+
+.variants label.included {
+  cursor: default;
+}
+
+.variants label.included .included-note {
+  display: block;
 }
 
 .help {

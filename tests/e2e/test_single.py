@@ -19,12 +19,21 @@ def main():
         assert p.visible("#intro"), "istruzioni iniziali nascoste"
         assert p.js("document.querySelector('#new-form').elements.mode.value") == "ai"
         assert p.js("!!document.getElementById('setup-preview').src"), "anteprima della disposizione mancante"
+        assert p.js("document.getElementById('setup-select').value") == "PRISMA", "PRISMA deve essere la predefinita"
+        assert p.js("[...document.querySelectorAll('[name=variant]')].every(i => i.disabled && i.checked)"), \
+            "con PRISMA le varianti sono già incluse"
+        # Dietro la finestra la board è vuota: dove ci sarebbe il King blu c'è il nero della casella
+        p.wait("document.getElementById('dlg-new').open && typeof board === 'object'", 3)
+        assert max(p.pixel("e1")) < 40, f"la board deve essere vuota, al posto del King c'è {p.pixel('e1')}"
         p.shot("01-benvenuto")
 
         step("contro il computer (medio), si gioca col blu")
         p.click("#new-start")
         p.wait("!document.getElementById('dlg-new').open")
         assert p.js("game.mode") == "ai" and p.js("board.localIndex") == 0
+        assert p.js("board.setupName") == "PRISMA"
+        assert p.js("board.pieces.filter(p => p.type === 'Prism' || p.type === 'HalfMirror').length") == 4
+        p.wait("Math.max(...(" + "(() => { const c = board.cellByName('e1').center; const q = boardToScreen(c.x, c.y), d = pixelDensity(); return [...drawingContext.getImageData(Math.round(q.x * d), Math.round(q.y * d), 1, 1).data].slice(0, 3); })()" + ")) > 60", 3, "pezzi visibili dopo l'inizio")
         assert p.js("game.ai.side") == 1
         p.wait("document.getElementById('hint').textContent.includes('Tocca uno dei tuoi pezzi blu')", 3)
 
@@ -36,7 +45,20 @@ def main():
         p.tap_cell("h2")
         p.wait("board.selected && board.selected.name === 'h2'", 3)
         p.wait("document.getElementById('hint').textContent.startsWith('Deflector')", 3)
-        p.wait("!document.getElementById('btn-rot-cw').disabled", 3)  # i pulsanti si aggiornano al frame dopo
+        # Le frecce di rotazione compaiono sulla board, sulla casella del pezzo selezionato
+        p.wait("!document.getElementById('btn-rot-cw').hidden && !document.getElementById('btn-rot-ccw').hidden", 3)
+        assert p.js("""(() => {
+            const r = document.getElementById('btn-rot-cw').getBoundingClientRect();
+            const s = document.querySelector('#stage canvas').getBoundingClientRect();
+            const c = board.cellByName('h2').center, q = boardToScreen(c.x, c.y), half = board.cellSize * view.scale / 2;
+            const bx = r.left + r.width / 2 - s.left, by = r.top + r.height / 2 - s.top;
+            return Math.abs(bx - (q.x + half)) < 2 && Math.abs(Math.abs(by - q.y) - half) < 2;
+        })()"""), "la freccia ↻ deve stare sull'angolo della casella del pezzo"
+        assert p.js("!document.querySelector('#controls #btn-rot-cw')"), "le frecce non devono stare accanto a SPARA"
+        # Col mouse sopra la freccia, l'anteprima mostra il raggio dopo la rotazione
+        p.d.execute_script("document.getElementById('btn-rot-cw').dispatchEvent(new PointerEvent('pointerenter', {pointerType: 'mouse'}))")
+        assert p.js("board.previewRotation && board.previewRotation.piece.cell.name === 'h2'")
+        p.d.execute_script("document.getElementById('btn-rot-cw').dispatchEvent(new PointerEvent('pointerleave', {pointerType: 'mouse'}))")
         assert p.js("board.cellByName('h3').highlight")
         assert p.js("board.laserPreview() !== null"), "anteprima del laser assente"
         p.shot("02-selezione")
@@ -75,7 +97,7 @@ def main():
             history: [], lastMove: null, positions: [], drawClaimable: false, gameOver: null,
             pieces: [['Laser', 0, 10, 1, 'N'], ['Laser', 1, 1, 8, 'S'], ['King', 0, 5, 3, 'N'], ['King', 1, 5, 1, 'N']] }); 0""")
         p.tap_cell("j1")
-        p.click("#btn-rot-ccw")
+        p.click("#btn-rot-cw")
         p.wait("board.phase === 'fire'", 3)
         assert p.js("board.laserPreview().events.some(e => e.effect === 'king')"), "l'anteprima non segna il King"
         p.shot("06-mira-sul-king")
@@ -84,7 +106,7 @@ def main():
         assert "vince" in p.text("#go-title"), p.text("#go-title")
         p.shot("07-vittoria")
         p.click("#go-new")
-        p.wait("!board.gameOver && board.history.length === 0 && board.pieces.length === 26", 5)
+        p.wait("!board.gameOver && board.history.length === 0 && board.pieces.length === SETUPS[board.setupName].length + 2", 5)
         assert p.js("game.mode") == "ai" and p.js("!!game.ai")
         p.js(f"board.restore({__import__('json').dumps(snap)}); 0")
 
@@ -159,11 +181,13 @@ def main():
         p.shot("08-inizia-il-computer")
 
         step("tutte le configurazioni si avviano, con e senza varianti")
-        for name in ["ACE", "CURIOSITY", "GRAIL", "MERCURY", "SOPHIE"]:
+        for name in p.js("Object.keys(SETUPS)"):
             for variants in ["false", "true"]:
                 p.js(f"settings.setup = '{name}'; settings.variants = {{ prism: {variants}, halfMirror: {variants} }}; newGame('local'); 0")
                 n = p.js("board.pieces.length")
-                assert n == (30 if variants == "true" else 26), (name, variants, n)
+                base = p.js(f"SETUPS['{name}'].length + 2")
+                has = p.js(f"SETUPS['{name}'].some(([c]) => c === Prism)")
+                assert n == (base + 4 if variants == "true" and not has else base), (name, variants, n)
         p.check_no_errors()
     finally:
         p.quit()

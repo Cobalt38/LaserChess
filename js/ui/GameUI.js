@@ -56,8 +56,15 @@ class GameUI {
     const { el } = this;
     el.fireBtn.addEventListener("click", () => board.fireLaser());
     el.undoBtn.addEventListener("click", () => board.undoMove());
-    el.ccwBtn.addEventListener("click", () => board.rotateSelected(-1));
-    el.cwBtn.addEventListener("click", () => board.rotateSelected(1));
+    // Frecce di rotazione sulla board: col mouse sopra, l'anteprima mostra il raggio dopo la rotazione
+    [[el.ccwBtn, -1], [el.cwBtn, 1]].forEach(([btn, step]) => {
+      btn.addEventListener("click", () => board.rotateSelected(step));
+      btn.addEventListener("pointerenter", (e) => {
+        const piece = board.rotatable;
+        if (piece && e.pointerType === "mouse") board.previewRotation = { piece, rot: board.rotationFor(piece, step) };
+      });
+      btn.addEventListener("pointerleave", () => (board.previewRotation = null));
+    });
     el.newBtn.addEventListener("click", () => this.openNewGame());
     el.goNew.addEventListener("click", () => this.rematch());
     el.goClose.addEventListener("click", () => (el.gameover.hidden = true));
@@ -101,7 +108,8 @@ class GameUI {
     for (const name of Object.keys(SETUPS)) {
       const opt = document.createElement("option");
       opt.value = name;
-      opt.textContent = name === "ACE" ? "ACE (consigliata per iniziare)" : name;
+      opt.textContent = name === "PRISMA" ? "PRISMA (inventata, con i pezzi nuovi)"
+        : name === "ACE" ? "ACE (manuale, consigliata per iniziare)" : `${name} (manuale)`;
       select.append(opt);
     }
     const list = this.$("variant-list");
@@ -114,13 +122,20 @@ class GameUI {
       name.textContent = variant.label;
       const desc = document.createElement("small");
       desc.textContent = variant.description;
+      const note = document.createElement("small");
+      note.className = "included-note";
+      note.textContent = "Già nella disposizione scelta.";
       const text = document.createElement("span");
-      text.append(name, desc);
+      text.append(name, desc, note);
       const label = document.createElement("label");
       label.append(input, text);
       list.append(label);
     }
-    form.addEventListener("change", () => this.renderNewGameForm());
+    form.addEventListener("change", (e) => {
+      // Scelta delle varianti fatta qui (vale solo per le disposizioni che non le hanno già)
+      if (e.target.name === "variant" && !e.target.disabled) this.variantChoice[e.target.value] = e.target.checked;
+      this.renderNewGameForm();
+    });
     form.addEventListener("submit", (e) => {
       e.preventDefault();
       this.submitNewGame();
@@ -142,7 +157,7 @@ class GameUI {
     f.name0.value = settings.names[0];
     f.name1.value = settings.names[1];
     f.setup.value = settings.setup;
-    for (const input of this.newForm.querySelectorAll("[name=variant]")) input.checked = !!settings.variants[input.value];
+    this.variantChoice = { ...settings.variants };
     this.$("intro").hidden = settings.seenIntro;
     this.$("new-error").hidden = true;
     this.renderNewGameForm();
@@ -157,7 +172,15 @@ class GameUI {
     this.newForm.querySelector(".modes").hidden = onlineGame;
     for (const box of this.newForm.querySelectorAll("[data-mode]")) box.hidden = onlineGame || box.dataset.mode !== mode;
     this.$("setup-desc").textContent = SETUP_INFO[f.setup.value] || "";
-    const variants = [...this.newForm.querySelectorAll("[name=variant]:checked")].map((i) => i.value);
+    // Le varianti che la disposizione ha già (PRISMA) sono incluse e non si possono togliere
+    const present = new Set(SETUPS[f.setup.value].map(([PieceClass]) => PieceClass));
+    for (const input of this.newForm.querySelectorAll("[name=variant]")) {
+      const included = VARIANTS[input.value].pieces.some(([PieceClass]) => present.has(PieceClass));
+      input.disabled = included;
+      input.checked = included || !!this.variantChoice[input.value];
+      input.closest("label").classList.toggle("included", included);
+    }
+    const variants = [...this.newForm.querySelectorAll("[name=variant]:checked:not(:disabled)")].map((i) => i.value);
     const img = this.$("setup-preview");
     const src = this.actions.setupPreview(f.setup.value, variants);
     if (src) img.src = src;
@@ -188,7 +211,7 @@ class GameUI {
     }
     error.hidden = true;
     settings.setup = f.setup.value;
-    for (const input of this.newForm.querySelectorAll("[name=variant]")) settings.variants[input.value] = input.checked;
+    settings.variants = { ...this.variantChoice };
     settings.seenIntro = true;
     if (!this.online.active) {
       settings.mode = mode === "online" ? settings.mode : mode;
@@ -392,6 +415,7 @@ class GameUI {
   // ---------- Stato e suggerimenti ----------
 
   statusText() {
+    if (this.choosing) return { text: "Nuova partita", color: null };
     const b = this.board;
     const o = this.online;
     const ai = this.actions.game.ai;
@@ -428,6 +452,7 @@ class GameUI {
 
   // Cosa fare adesso: passo del turno (1 o 2), testo e pezzo da mostrare
   coach() {
+    if (this.choosing) return { step: 0, text: "Scegli come giocare nella finestra “Nuova partita”." };
     const b = this.board;
     const o = this.online;
     const p = b.activePlayer;
@@ -463,7 +488,7 @@ class GameUI {
     const piece = b.selected && b.selected.piece;
     if (piece) {
       const moves = piece.canBeMoved ? "Tocca una casella gialla per spostarlo" : "";
-      const rotates = piece.rotations().length > 0 ? "con ↺ ↻ lo ruoti" : "";
+      const rotates = piece.rotations().length > 0 ? "con le frecce ↺ ↻ accanto al pezzo lo ruoti" : "";
       const how = [moves, rotates].filter(Boolean).join(", oppure ");
       return { step: 1, piece, text: `${piece.type}: ${PIECE_INFO[piece.type] || ""} ${how ? how.charAt(0).toUpperCase() + how.slice(1) + "." : ""}` };
     }
@@ -476,6 +501,42 @@ class GameUI {
     return this.icons.get(key);
   }
 
+  // Frecce ↺ ↻ sugli angoli in alto della casella del pezzo selezionato (in basso se in alto non
+  // c'è spazio). Un pezzo con una sola rotazione (Laser, Switch...) ha una freccia sola
+  placeRotateHandles() {
+    const b = this.board;
+    const { el } = this;
+    const piece = this.choosing || b.dragging || b.menu ? null : b.rotatable;
+    let pos = null;
+    if (piece) {
+      const { x, y, size } = this.actions.cellOnScreen(piece.cell);
+      const d = Math.round(Math.max(34, Math.min(46, size * 0.62)));
+      const w = this.actions.stageSize().w;
+      const top = y - size / 2 - d / 2 >= 0;
+      const cy = top ? y - size / 2 : y + size / 2;
+      const clampX = (cx) => Math.max(d / 2, Math.min(w - d / 2, cx));
+      const single = piece.rotations().length === 1;
+      pos = `${d}|${Math.round(clampX(x - size / 2))}|${Math.round(clampX(x + size / 2))}|${Math.round(cy)}|${single}`;
+    }
+    if (!this.changed("handles", pos)) return;
+    if (!pos) {
+      el.ccwBtn.hidden = true;
+      el.cwBtn.hidden = true;
+      b.previewRotation = null;
+      return;
+    }
+    const [d, left, right, cy, single] = pos.split("|");
+    const place = (btn, cx) => {
+      btn.style.width = btn.style.height = `${d}px`;
+      btn.style.left = `${cx - d / 2}px`;
+      btn.style.top = `${cy - d / 2}px`;
+    };
+    place(el.ccwBtn, +left);
+    place(el.cwBtn, +right);
+    el.ccwBtn.hidden = single === "true";
+    el.cwBtn.hidden = false;
+  }
+
   // Aggiorna un pezzo di DOM solo se il valore è cambiato
   changed(key, value) {
     if (this.shown[key] === value) return false;
@@ -484,6 +545,7 @@ class GameUI {
   }
 
   update() {
+    this.choosing = this.$("dlg-new").open; // si sta scegliendo la nuova partita: la board è vuota
     const b = this.board;
     const { el } = this;
 
@@ -518,13 +580,7 @@ class GameUI {
       el.fireBtn.classList.toggle("ready", fire);
     }
     if (this.changed("undo", b.localCanUndo)) el.undoBtn.disabled = !b.localCanUndo;
-    const rot = !!b.rotatable;
-    if (this.changed("rot", rot)) {
-      el.ccwBtn.disabled = !rot;
-      el.cwBtn.disabled = !rot;
-      el.ccwBtn.classList.toggle("ready", rot);
-      el.cwBtn.classList.toggle("ready", rot);
-    }
+    this.placeRotateHandles();
 
     const claim = b.drawClaimable && b.phase === "move" && b.myTurn && !b.busy && !b.gameOver;
     if (this.changed("claim", claim)) el.drawBtn.hidden = !claim;
