@@ -136,6 +136,21 @@ def main():
         assert p.js("board.history[1].player.name") == "Computer"
         p.shot("04-dopo-il-computer")
 
+        step("frecce vicino a SPARA (⚙️ Opzioni): attive al primo tocco, niente frecce sulla board")
+        p.click("[data-open=dlg-settings]")
+        p.d.execute_script("const s = document.getElementById('opt-rotate'); s.value = 'bar'; s.dispatchEvent(new Event('change'));")
+        p.js("document.getElementById('dlg-settings').close(); 0")
+        cell = p.js("board.activePlayer.pieces.find(x => x.type === 'Deflector').cell.name")
+        p.tap_cell(cell)
+        p.wait("!document.getElementById('btn-rot-cw-bar').disabled", 3, "frecce in basso attive")
+        assert p.js("document.getElementById('btn-rot-cw').hidden"), "con le frecce in basso, sulla board non ce ne sono"
+        p.shot("04b-frecce-in-basso")
+        p.click("#btn-rot-cw-bar")
+        p.wait("board.phase === 'fire'", 3)
+        p.click("#btn-undo")
+        p.wait("board.phase === 'move'", 3)
+        p.js("settings.rotateButtons = 'piece'; applyOptions(); 0")
+
         step("fine partita: l'anteprima segna il King colpito, vinco e chiedo la rivincita")
         snap = p.js("board.snapshot()")
         p.js("""board.restore({ setup: 'ACE', players: board.players.map(p => p.baseName), turn: 0, phase: 'move',

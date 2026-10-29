@@ -6,7 +6,7 @@ class Tutorial {
   constructor(board, actions) {
     this.board = board;
     // { begin(): prepara la partita del tutorial, end(play): esce (play = partita contro il
-    //   computer), myName(), relayout() }
+    //   computer), myName(), relayout(), rotateBar(): frecce di rotazione vicino a SPARA }
     this.actions = actions;
     this.index = 0;
     this.state = "off"; // off | play | won | failed | finished
@@ -93,7 +93,7 @@ class Tutorial {
     } else {
       const rots = cell.piece.rotations();
       const arrow = t(rots.length === 1 ? "tut.arrowSingle" : rots[0] === rot ? "tut.arrowCcw" : "tut.arrowCw");
-      this.message = t("tut.hintRotate", { piece, arrow });
+      this.message = t(this.actions.rotateBar() ? "tut.hintRotateBar" : "tut.hintRotate", { piece, arrow });
     }
     this.render();
   }
@@ -144,7 +144,9 @@ class Tutorial {
     const step = b.phase === "fire" ? 2 : 1;
     if (this.message) return { step, text: this.message };
     if (b.phase === "fire") return { step, text: t("tut.moved") };
-    return { step, text: t(`lesson.${this.lesson.id}.text`) };
+    // (con le frecce vicino a SPARA, la lezione che le usa ha un testo suo)
+    const bar = this.actions.rotateBar() && STRINGS.it[`lesson.${this.lesson.id}.textBar`];
+    return { step, text: t(`lesson.${this.lesson.id}.text${bar ? "Bar" : ""}`) };
   }
 
   render() {

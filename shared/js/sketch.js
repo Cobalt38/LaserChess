@@ -36,6 +36,7 @@ function loadSettings() {
     lang: "auto", // lingua: "auto" (quella del dispositivo) o una di LANGUAGES (js/i18n)
     myName: "", // contro il computer e online
     preview: true, // linea tratteggiata del laser
+    rotateButtons: "piece", // frecce di rotazione: "piece" accanto al pezzo, "bar" vicino a SPARA
     coach: true, // suggerimenti sotto la board
     haptics: true, // vibrazione (solo nell'app)
     version: SETTINGS_VERSION,
@@ -56,6 +57,7 @@ function loadSettings() {
     // I nomi predefiniti di prima erano scritti in italiano: ora vuoti, così seguono la lingua
     s.names = s.names.map((name, i) => (name === `Giocatore ${i + 1}` ? "" : name));
     if (s.lang !== "auto" && !LANGUAGES[s.lang]) s.lang = "auto";
+    if (s.rotateButtons !== "bar") s.rotateButtons = "piece";
     return s;
   } catch (e) {
     return defaults;
@@ -183,6 +185,7 @@ function setup() {
   tutorial = new Tutorial(board, {
     myName,
     relayout: fitCanvas,
+    rotateBar: () => settings.rotateButtons === "bar",
     begin() {
       game.mode = "tutorial";
       game.ai = null;
@@ -381,6 +384,7 @@ function restoreLocalGame() {
 function applyOptions() {
   board.showPreview = settings.preview;
   document.getElementById("coach").hidden = !settings.coach;
+  document.getElementById("controls").classList.toggle("rot-bar-on", settings.rotateButtons === "bar");
   fitCanvas();
 }
 

@@ -38,6 +38,8 @@ class GameUI {
       undoBtn: $("btn-undo"),
       ccwBtn: $("btn-rot-ccw"),
       cwBtn: $("btn-rot-cw"),
+      ccwBar: $("btn-rot-ccw-bar"),
+      cwBar: $("btn-rot-cw-bar"),
       newBtn: $("btn-new"),
       drawBtn: $("btn-draw"),
       gameover: $("gameover"),
@@ -57,8 +59,9 @@ class GameUI {
     const { el } = this;
     el.fireBtn.addEventListener("click", () => this.requestFire());
     el.undoBtn.addEventListener("click", () => board.undoMove());
-    // Frecce di rotazione sulla board: col mouse sopra, l'anteprima mostra il raggio dopo la rotazione
-    [[el.ccwBtn, -1], [el.cwBtn, 1]].forEach(([btn, step]) => {
+    // Frecce di rotazione (sulla board o vicino a SPARA): col mouse sopra, l'anteprima mostra il
+    // raggio dopo la rotazione
+    [[el.ccwBtn, -1], [el.cwBtn, 1], [el.ccwBar, -1], [el.cwBar, 1]].forEach(([btn, step]) => {
       btn.addEventListener("click", () => board.rotateSelected(step));
       btn.addEventListener("pointerenter", (e) => {
         const piece = board.rotatable;
@@ -440,6 +443,13 @@ class GameUI {
       this.actions.saveSettings();
       this.actions.applyOptions();
     });
+    const rotate = this.$("opt-rotate");
+    rotate.value = settings.rotateButtons;
+    rotate.addEventListener("change", () => {
+      settings.rotateButtons = rotate.value;
+      this.actions.saveSettings();
+      this.actions.applyOptions();
+    });
     // Lingua: si ricarica la pagina (la partita riprende da dove era), così cambiano tutti i testi
     const lang = this.$("opt-lang");
     for (const [code, name] of [["auto", t("opt.lang.auto")], ...Object.entries(LANGUAGES)]) {
@@ -638,8 +648,10 @@ class GameUI {
     if (piece) {
       const moves = piece.canBeMoved ? t("coach.canMove") : "";
       const n = piece.rotations().length;
+      const bar = this.actions.settings.rotateButtons === "bar";
       const arrows = b.rotateMode || !piece.canBeMoved; // le frecce si vedono già
-      const rotates = n === 0 ? "" : !arrows ? t("coach.tapAgain") : n === 1 ? t("coach.canRotate1") : t("coach.canRotate2");
+      const rotates = n === 0 ? "" : bar ? t("coach.canRotateBar") : !arrows ? t("coach.tapAgain")
+        : n === 1 ? t("coach.canRotate1") : t("coach.canRotate2");
       const how = [moves, rotates].filter(Boolean).join(t("coach.or"));
       const move = how ? t("coach.yourMove", { how: how.charAt(0).toUpperCase() + how.slice(1) }) : "";
       return { step: 1, piece, text: t("coach.selected", { piece: pieceName(piece.type), info: pieceInfo(piece.type), move }).trim() };
@@ -659,9 +671,15 @@ class GameUI {
   placeRotateHandles() {
     const b = this.board;
     const { el } = this;
-    // Le frecce in modalità rotazione; per un pezzo che non si sposta (Laser) subito
     const rotatable = this.choosing || b.dragging ? null : b.rotatable;
-    const piece = rotatable && (b.rotateMode || !rotatable.canBeMoved) ? rotatable : null;
+    // Frecce vicino a SPARA (⚙️ Opzioni): attive appena si tocca un pezzo, la board resta libera
+    const bar = this.actions.settings.rotateButtons === "bar";
+    if (this.changed("rotateBar", `${bar}|${!!rotatable}`)) {
+      el.ccwBar.hidden = el.cwBar.hidden = !bar;
+      el.ccwBar.disabled = el.cwBar.disabled = !rotatable;
+    }
+    // Sulla board: in modalità rotazione; per un pezzo che non si sposta (Laser) subito
+    const piece = !bar && rotatable && (b.rotateMode || !rotatable.canBeMoved) ? rotatable : null;
     let pos = null;
     if (piece) {
       const { x, y, size } = this.actions.cellOnScreen(piece.cell);

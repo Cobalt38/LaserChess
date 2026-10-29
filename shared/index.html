@@ -80,6 +80,23 @@
             </svg>
             <span class="btn-label" aria-hidden="true" data-i18n="undo.label">Annulla</span>
           </button>
+          <!-- Frecce di rotazione qui invece che sul pezzo, se scelto in ⚙️ Opzioni -->
+          <button id="btn-rot-ccw-bar" type="button" class="round rot-bar" disabled hidden
+            title="Ruota in senso antiorario (Q)" aria-label="Ruota il pezzo in senso antiorario"
+            data-i18n-title="rot.ccw.title" data-i18n-aria-label="rot.ccw.aria">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 4v6h6" />
+              <path d="M3.5 10A9 9 0 1 1 6 17.5" />
+            </svg>
+          </button>
+          <button id="btn-rot-cw-bar" type="button" class="round rot-bar" disabled hidden
+            title="Ruota in senso orario (E)" aria-label="Ruota il pezzo in senso orario"
+            data-i18n-title="rot.cw.title" data-i18n-aria-label="rot.cw.aria">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M21 4v6h-6" />
+              <path d="M20.5 10A9 9 0 1 0 18 17.5" />
+            </svg>
+          </button>
           <button id="btn-fire" type="button" class="fire" aria-disabled="true">
             <svg class="fire-icon" viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="12" cy="12" r="7" />
@@ -335,6 +352,12 @@
       <div class="stack">
         <label class="field"><span data-i18n="opt.lang">Lingua · Language</span>
           <select id="opt-lang"></select>
+        </label>
+        <label class="field"><span data-i18n="opt.rotate">Frecce per ruotare i pezzi</span>
+          <select id="opt-rotate">
+            <option value="piece" data-i18n="opt.rotate.piece">Accanto al pezzo (toccandolo due volte)</option>
+            <option value="bar" data-i18n="opt.rotate.bar">In basso, vicino a SPARA</option>
+          </select>
         </label>
         <label class="check"><input type="checkbox" id="opt-sound"> <span data-i18n="opt.sound">Suoni</span></label>
         <label class="check app-only"><input type="checkbox" id="opt-haptics"> <span data-i18n="opt.haptics">Vibrazione</span></label>
