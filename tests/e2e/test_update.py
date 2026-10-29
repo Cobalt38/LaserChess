@@ -89,6 +89,15 @@ def main():
         p.click("#update-reload")
         p.wait("typeof board === 'object' && board.players.length === 2 && !document.getElementById('update-banner')", 20)
         assert p.js("board.positionKey() + board.phase") == key, "partita diversa dopo l'aggiornamento"
+
+        step("scheda nuova con il benvenuto aperto: l'avviso è dentro la finestra e Aggiorna funziona")
+        p.js("sessionStorage.clear(); 0")
+        p.d.refresh()
+        p.wait("typeof board === 'object' && document.getElementById('dlg-welcome').open", 20)
+        p.wait("(b => b && b.closest('#dlg-welcome'))(document.getElementById('update-banner'))", 10, "avviso dentro il benvenuto")
+        p.shot("avviso-nel-benvenuto")
+        p.click("#update-reload")
+        p.wait("typeof board === 'object' && board.players.length === 2 && !document.getElementById('update-banner')", 20)
         p.check_no_errors()
         print("OK: test_update")
     finally:

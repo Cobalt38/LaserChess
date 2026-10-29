@@ -732,7 +732,6 @@ kbd {
   display: none;
 }
 
-/* Versione web: è uscita una versione nuova, barra in alto con il pulsante per ricaricare (web/js/Updates.js) */
 #update-banner {
   position: fixed;
   top: max(10px, env(safe-area-inset-top));
@@ -754,6 +753,17 @@ kbd {
 
 #update-banner[hidden] {
   display: none;
+}
+
+/* Versione nuova (web/js/Updates.js, app/js/AppUpdates.js): barra in alto con il pulsante per
+   aggiornare; con una finestra aperta sta dentro la finestra (GameUI.placeUpdateBanner) */
+#update-banner.in-dialog {
+  position: static;
+  transform: none;
+  width: auto;
+  max-width: none;
+  flex-wrap: wrap;
+  box-shadow: none;
 }
 
 /* Messaggio breve in basso (nomi salvati, richiesta mandata...) */

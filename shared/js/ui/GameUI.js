@@ -805,6 +805,21 @@ class GameUI {
     });
   }
 
+  // Avviso di versione nuova (web/js/Updates.js, app/js/AppUpdates.js): una finestra aperta blocca il
+  // resto della pagina, quindi l'avviso va dentro la finestra in primo piano, sotto il titolo; quando
+  // non ce ne sono torna in cima alla pagina
+  placeUpdateBanner() {
+    const banner = document.getElementById("update-banner");
+    if (!banner) return;
+    const dialogs = document.querySelectorAll("dialog[open]");
+    const host = dialogs[dialogs.length - 1] || document.body;
+    if (banner.parentNode === host) return;
+    const title = host !== document.body && host.querySelector("h2");
+    if (title) title.after(banner);
+    else host.append(banner);
+    banner.classList.toggle("in-dialog", host !== document.body);
+  }
+
   // Aggiorna un pezzo di DOM solo se il valore è cambiato
   changed(key, value) {
     if (this.shown[key] === value) return false;
@@ -854,6 +869,7 @@ class GameUI {
     if (this.changed("undo", b.localCanUndo)) el.undoBtn.disabled = !b.localCanUndo;
     this.placeRotateHandles();
     this.placeKingTags();
+    this.placeUpdateBanner();
 
     const claim = b.drawClaimable && b.phase === "move" && b.myTurn && !b.busy && !b.gameOver;
     if (this.changed("claim", claim)) el.drawBtn.hidden = !claim;
