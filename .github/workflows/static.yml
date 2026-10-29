@@ -28,20 +28,59 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    env:
+      # L'APK per Android si costruisce solo se nei segreti del repository c'è la chiave di firma
+      # (vedi README, "Scaricare l'app dal sito"): senza, si pubblica solo la versione web
+      HAS_SIGNING_KEY: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Tutta la storia: il numero di build dell'app è il numero di commit
+          fetch-depth: 0
       - name: Setup Pages
         uses: actions/configure-pages@v5
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
       - name: Build
         # Unisce shared/ e web/ in web/dist, con il commit negli indirizzi di JS e CSS e in
         # version.json: dopo ogni pubblicazione il browser scarica i file nuovi invece di usare
-        # quelli in cache (vedi web/build.mjs). Node c'è già sulle macchine di GitHub
+        # quelli in cache (vedi web/build.mjs)
         run: node web/build.mjs "${GITHUB_SHA::7}"
+      - name: Java (app per Android)
+        if: env.HAS_SIGNING_KEY == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - name: App per Android, scaricabile dal sito
+        # APK firmato in web/dist/download, con latest.json per il controllo degli aggiornamenti
+        # dell'app (app/publish-apk.mjs). Se qualcosa va storto, la versione web si pubblica lo stesso
+        if: env.HAS_SIGNING_KEY == 'true'
+        continue-on-error: true
+        working-directory: app
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          APP_CHANNEL: github
+        run: |
+          npm ci
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/release.jks
+          printf 'storeFile=release.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
+            "$ANDROID_KEYSTORE_PASSWORD" "$ANDROID_KEY_ALIAS" "$ANDROID_KEY_PASSWORD" > android/keystore.properties
+          node build.mjs
+          npx cap sync android
+          (cd android && ./gradlew assembleRelease --no-daemon)
+          node publish-apk.mjs ../web/dist
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Solo la versione web: l'app (app/) non serve sul sito
+          # Solo la versione web (con l'APK, se c'è): il resto di app/ non serve sul sito
           path: 'web/dist'
       - name: Deploy to GitHub Pages
         id: deployment

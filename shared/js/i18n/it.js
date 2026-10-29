@@ -247,8 +247,12 @@ STRINGS.it = {
   "lesson.shield.title": "Aggira lo scudo",
   "lesson.shield.text": "Il Defender ferma il raggio con lo scudo (se lo colpisci di lato o da dietro, invece, viene eliminato). Il King arancione è dietro lo scudo: sposta uno dei tuoi Deflector sulla strada del raggio per arrivarci da sopra.",
 
-  // Opzioni e versione nuova (web)
+  // Opzioni, versione nuova, app da scaricare
   "opt.lang.auto": "Automatica (lingua del dispositivo)",
+  "download.size": "APK · {mb} MB",
+  "update.app.banner": "C'è una versione nuova dell'app.",
+  "update.app.download": "Scarica",
+  "update.app.later": "Più tardi",
   "update.banner": "C'è una versione nuova del gioco. La partita in corso riprende da dove era.",
   "update.reload": "Aggiorna",
 };

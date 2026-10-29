@@ -136,6 +136,9 @@
       <button id="welcome-resume" type="button" class="accent big" hidden><span data-i18n="welcome.resume">▶ Riprendi la partita</span> <span class="sub"></span></button>
       <button id="welcome-learn" type="button" class="accent big"><span data-i18n="welcome.learn">🎓 Impara a giocare</span> <span class="sub" data-i18n="welcome.learnSub">2 minuti</span></button>
       <button id="welcome-play" type="button" class="big">▶ Gioca subito</button>
+      <!-- Solo nel browser, se sul sito c'è l'APK (web/js/AppDownload.js) -->
+      <a class="download-app" data-app-download hidden download href="download/laserchess.apk"><span
+          data-i18n="download.app">📱 Scarica l'app per Android</span> <small class="download-size"></small></a>
     </dialog>
 
     <dialog id="dlg-new" aria-labelledby="dlg-new-title">
@@ -317,6 +320,11 @@
       <label class="field lang-field"><span data-i18n="opt.lang">Lingua · Language</span>
         <select id="opt-lang"></select>
       </label>
+      <p class="download-box" data-app-download hidden>
+        <a class="download-app" download href="download/laserchess.apk"><span
+            data-i18n="download.app">📱 Scarica l'app per Android</span> <small class="download-size"></small></a>
+        <span class="muted small" data-i18n="download.note">Android chiederà il permesso di installare app scaricate dal browser.</span>
+      </p>
       <p class="fineprint"><span data-i18n="help.credits">Regole e disposizioni iniziali dal manuale di Laser Chess (ThinkFun),
         tranne PRISMA. Versione</span> <span id="app-version"></span>.
         <a id="privacy-link" href="privacy.html" target="_blank" rel="noopener">Privacy</a></p>

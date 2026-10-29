@@ -2,7 +2,7 @@
   "name": "laserchess",
   "version": "1.0.0",
   "private": true,
-  "description": "Laser Chess per Android e iOS (Capacitor): il gioco \u00e8 in ../shared, lo stesso della versione web",
+  "description": "Laser Chess per Android e iOS (Capacitor): il gioco è in ../shared, lo stesso della versione web",
   "packageManager": "npm@10.9.2",
   "scripts": {
     "app:www": "node build.mjs",
@@ -16,6 +16,7 @@
   "dependencies": {
     "@capacitor/android": "8.6.0",
     "@capacitor/app": "8.1.2",
+    "@capacitor/browser": "8.0.5",
     "@capacitor/clipboard": "8.0.1",
     "@capacitor/core": "8.6.0",
     "@capacitor/haptics": "8.0.2",

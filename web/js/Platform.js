@@ -3,9 +3,11 @@
 const Platform = {
   isApp: false,
 
-  // All'avvio del gioco (setup): controllo delle versioni nuove pubblicate (Updates.js)
+  // All'avvio del gioco (setup): controllo delle versioni nuove pubblicate (Updates.js) e link
+  // per scaricare l'app per Android, se sul sito c'è (AppDownload.js)
   start() {
     new UpdateCheck();
+    new AppDownload();
   },
 
   // Gioco pronto sullo schermo
@@ -20,6 +22,11 @@ const Platform = {
   },
 
   privacyUrl: "privacy.html",
+
+  // Apre un indirizzo fuori dal gioco, in una scheda nuova
+  openExternal(url) {
+    window.open(url, "_blank", "noopener");
+  },
 
   canShare() {
     return !!navigator.share;

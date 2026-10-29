@@ -98,6 +98,8 @@ STRINGS.en = {
   "opt.haptics": "Vibration",
   "opt.lang": "Language · Lingua",
   "help.credits": "Rules and starting layouts from the Laser Chess manual (ThinkFun), except PRISMA. Version",
+  "download.app": "📱 Download the Android app",
+  "download.note": "Android will ask for permission to install apps downloaded from the browser.",
 
   // ---------- Code (see it.js) ----------
   "list.and": " and ",
@@ -336,6 +338,10 @@ STRINGS.en = {
   "lesson.shield.text": "The Defender stops the beam with its shield (hit it from the side or from behind, though, and it's destroyed). The orange King is behind the shield: move one of your Deflectors into the path of the beam to reach it from above.",
 
   "opt.lang.auto": "Automatic (device language)",
+  "download.size": "APK · {mb} MB",
+  "update.app.banner": "A new version of the app is available.",
+  "update.app.download": "Download",
+  "update.app.later": "Later",
   "update.banner": "A new version of the game is available. Your current game will resume where it was.",
   "update.reload": "Update",
 };

@@ -25,8 +25,10 @@ const Platform = {
     }
   },
 
+  // All'avvio del gioco: l'app scaricata dal sito controlla se ce n'è una più nuova (AppUpdates.js)
   start() {
     document.documentElement.classList.add("app");
+    new AppUpdateCheck();
   },
 
   // Gioco pronto sullo schermo: via la schermata iniziale, barra di stato scura
@@ -49,6 +51,11 @@ const Platform = {
   },
 
   privacyUrl: PUBLIC_URL + "privacy.html",
+
+  // Apre un indirizzo nel browser del telefono (pagina della privacy, APK da scaricare)
+  openExternal(url) {
+    this.call("Browser", "open", { url });
+  },
 
   canShare() {
     return true;

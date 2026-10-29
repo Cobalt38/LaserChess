@@ -29,6 +29,12 @@ def step(msg):
 def main():
     site = tempfile.mkdtemp(prefix="laserchess-site-")
     subprocess.run(["node", os.path.join(ROOT, "web", "build.mjs"), "aaa1111", site], check=True)
+    # Come fa il workflow con app/publish-apk.mjs: l'APK e latest.json in download/
+    os.makedirs(os.path.join(site, "download"))
+    with open(os.path.join(site, "download", "laserchess.apk"), "wb") as f:
+        f.write(b"apk finto")
+    with open(os.path.join(site, "download", "latest.json"), "w") as f:
+        f.write('{ "build": 99, "version": "1.0.0-aaa1111", "url": "download/laserchess.apk", "size": 4200000 }\n')
     server = http.server.ThreadingHTTPServer(("127.0.0.1", PORT), functools.partial(Quiet, directory=site))
     threading.Thread(target=server.serve_forever, daemon=True).start()
 
@@ -41,6 +47,11 @@ def main():
         assert srcs and all(s.endswith("?v=aaa1111") for s in srcs), srcs
         assert p.js("document.querySelector('link[rel=stylesheet]').getAttribute('href')") == "css/style.css?v=aaa1111"
         assert p.js("document.getElementById('app-version').textContent") == "aaa1111"
+
+        step("sul sito c'è l'APK: nel benvenuto il link per scaricare l'app per Android")
+        p.wait("!document.querySelector('.welcome [data-app-download]').hidden", 5, "link dell'app")
+        assert p.js("document.querySelector('.welcome a.download-app').getAttribute('href')") == "download/laserchess.apk?v=99"
+        assert "4.0 MB" in p.text(".welcome a.download-app"), p.text(".welcome a.download-app")
 
         step("stessa versione sul server: nessun avviso")
         p.click("#welcome-play")

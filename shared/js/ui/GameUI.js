@@ -89,6 +89,11 @@ class GameUI {
       actions.startTutorial();
     });
     $("privacy-link").href = Platform.privacyUrl; // nell'app: la pagina del sito pubblicato
+    $("privacy-link").addEventListener("click", (e) => {
+      if (!Platform.isApp) return; // nel browser basta il link
+      e.preventDefault();
+      Platform.openExternal(Platform.privacyUrl);
+    });
     const version = document.querySelector('meta[name="version"]');
     $("app-version").textContent = version ? version.content : "dev";
     el.goNew.addEventListener("click", () => this.rematch());

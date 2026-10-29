@@ -5,7 +5,9 @@
 // - <!-- @platform -->: gli script di Capacitor (core e plugin: vibrazione, condivisione, tasto
 //   Indietro...), che registrano i plugin in window.Capacitor.Plugins, e poi i file di app/js
 //   (l'adattatore del gioco per l'app), copiati in www/platform;
-// - la versione negli indirizzi degli script e in version.json (package.json + commit);
+// - la versione negli indirizzi degli script e in version.json (package.json + commit), il numero
+//   di build (quanti commit ci sono: cresce sempre) e il canale (APP_CHANNEL: "github" per l'APK
+//   pubblicato sul sito, che controlla da solo se ne è uscito uno più nuovo; "local" se manca);
 // - niente zoom con due dita.
 // Poi scrive id, nome e versione nel progetto iOS (Android li legge da solo in app/build.gradle).
 // Uso, dalla cartella app/: node build.mjs (oppure npm run app:www)
@@ -33,12 +35,17 @@ if (!existsSync(join(SHARED, "index.html"))) fail(`non trovo ${join(SHARED, "ind
 const [major, minor, patch] = pkg.version.split(/[.-]/).map(Number);
 if (!(minor < 100 && patch < 100)) fail(`package.json: minor e patch devono essere sotto 100 (${pkg.version})`);
 let commit = "nogit";
+let build = 0;
 try {
-  commit = execSync("git rev-parse --short HEAD", { cwd: APP, stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+  const git = (args) => execSync(`git ${args}`, { cwd: APP, stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+  commit = git("rev-parse --short HEAD");
+  build = Number(git("rev-list --count HEAD"));
 } catch (e) {
   // non è un repository git: basta la versione di package.json
 }
 const version = `${pkg.version}-${commit}`;
+const channel = process.env.APP_CHANNEL || "local";
+if (!/^[a-z]+$/.test(channel)) fail(`APP_CHANNEL non valido: ${channel}`);
 const v = `?v=${version}`;
 
 // 1. Il gioco, così com'è
@@ -86,7 +93,9 @@ placeholder("platform", [...capFiles, ...platform.map((f) => `platform/${f}`)]);
 // 4. Versione, come fa la build web per GitHub Pages
 html = html.replaceAll('?v=dev"', `${v}"`);
 if (!html.includes('<meta name="version" content="dev">')) fail('in shared/index.html non trovo <meta name="version" content="dev">');
-html = html.replace('<meta name="version" content="dev">', `<meta name="version" content="${version}">`);
+html = html.replace('<meta name="version" content="dev">', `<meta name="version" content="${version}">
+    <meta name="app-build" content="${build}">
+    <meta name="app-channel" content="${channel}">`);
 
 // 5. Niente zoom con due dita (la board si adatta già allo schermo)
 const viewport = /<meta name="viewport" content="([^"]*)"/;
@@ -95,8 +104,8 @@ html = html.replace(viewport, (tag, content) =>
   content.includes("user-scalable") ? tag : `<meta name="viewport" content="${content}, maximum-scale=1, user-scalable=no"`);
 
 writeFileSync(join(WWW, "index.html"), html);
-writeFileSync(join(WWW, "version.json"), JSON.stringify({ version }) + "\n");
-console.log(`www/ pronta: versione ${version}, plugin ${plugins.map((p) => p.split("/")[1]).join(", ")}, ` +
+writeFileSync(join(WWW, "version.json"), JSON.stringify({ version, build, channel }) + "\n");
+console.log(`www/ pronta: versione ${version}, build ${build}, canale ${channel}, plugin ${plugins.map((p) => p.split("/")[1]).join(", ")}, ` +
   `adattatore ${platform.join(", ") || "(nessun file in app/js)"}`);
 
 // Progetto iOS: id, nome e versione presi da capacitor.config.json e package.json, come fa

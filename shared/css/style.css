@@ -890,6 +890,29 @@ button .sub {
   opacity: 0.8;
 }
 
+/* Link per scaricare l'app per Android (solo nel browser, web/js/AppDownload.js) */
+a.download-app {
+  display: block;
+  text-align: center;
+  padding: 6px 0;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+a.download-app small {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.download-box {
+  margin-top: 16px;
+  text-align: center;
+}
+
+.download-box .muted {
+  display: block;
+}
+
 /* Finestra Nuova partita */
 .tutorial-link {
   display: block;

@@ -171,6 +171,7 @@ web/                    versione per il browser (GitHub Pages)
   build.mjs             shared/ + web/ -> web/dist, con la versione
   js/Platform.js        Platform per il browser
   js/Updates.js         avviso "c'è una versione nuova"
+  js/AppDownload.js     link "Scarica l'app per Android", se sul sito c'è l'APK
   privacy.html          informativa sulla privacy (anche per l'app)
 app/                    app per Android e iOS (Capacitor), vedi sotto
 tests/
@@ -226,6 +227,40 @@ adb install -r android/app/build/outputs/apk/debug/app-debug.apk
 Oppure si apre la cartella `app/android` in Android Studio (o `corepack npm run app:android`, che
 su Linux vuole il percorso di Android Studio in `CAPACITOR_ANDROID_STUDIO_PATH`).
 
+### Scaricare l'app dal sito
+
+A ogni push su `master`, se nei segreti del repository c'è la chiave di firma, il workflow di GitHub
+Pages costruisce anche l'APK firmato e lo mette sul sito: `download/laserchess.apk`, con
+`download/latest.json` (numero di build, versione, dimensione; li scrive `app/publish-apk.mjs`).
+Nel browser, il benvenuto e le Regole mostrano allora **📱 Scarica l'app per Android** (non su
+iPhone e iPad). Senza la chiave il workflow pubblica solo la versione web e il link non si vede.
+
+L'APK del sito ha il canale `github` (`APP_CHANNEL`, scritto da `build.mjs` nella pagina): all'avvio,
+e tornando nell'app dopo almeno un'ora, legge `latest.json` sul sito e, se c'è una build più nuova,
+mostra una barra con **Scarica** (l'APK si apre nel browser del telefono; installandolo sopra, la
+partita salvata resta) e **Più tardi** (non lo ripropone fino alla build successiva). Il numero di
+build è il numero di commit (`git rev-list --count HEAD`), quindi ogni push fa una build nuova. Le
+app costruite in locale (`app:apk`, canale `local`) e quella di Google Play non controllano.
+
+La chiave di firma è `app/android/laserchess-release.jks`, con le password in
+`app/android/keystore.properties` (tutti e due fuori da git). **Fanne una copia di sicurezza fuori
+dal computer**: senza, chi ha installato l'APK del sito dovrà disinstallarlo per avere quello firmato
+con una chiave nuova. Per metterla nei segreti del repository (una volta sola):
+
+```
+cd app/android
+PASS=$(sed -n 's/^storePassword=//p' keystore.properties)
+base64 -w0 laserchess-release.jks | gh secret set ANDROID_KEYSTORE_BASE64
+printf '%s' "$PASS" | gh secret set ANDROID_KEYSTORE_PASSWORD
+printf '%s' "$PASS" | gh secret set ANDROID_KEY_PASSWORD
+printf 'laserchess' | gh secret set ANDROID_KEY_ALIAS
+gh workflow run static.yml      # ripubblica subito, con l'APK
+```
+
+Android installa un APK sopra un altro solo se sono firmati con la stessa chiave: l'APK di debug
+costruito in locale, quello del sito e quello di Google Play (firmato da Google) non si aggiornano
+l'uno con l'altro; per passare da uno all'altro si disinstalla prima.
+
 ### Pubblicare su Google Play
 
 Testi e immagini per la scheda, risposte per la Play Console e passi da fare a mano (test chiuso,
@@ -238,7 +273,8 @@ privacy, nome): [app/store/README.md](app/store/README.md). Qui sotto la parte t
 2. **Versione**: solo in `app/package.json` (`"version": "1.0.0"`). Il `versionCode` che Google Play
    vuole sempre più grande si calcola da lì: `1.2.3` -> 10203. Prima di ogni caricamento si aumenta la
    versione (minor e patch fino a 99).
-3. **Chiave di caricamento**, una volta sola:
+3. **Chiave di caricamento**: va bene la stessa dell'APK del sito (`laserchess-release.jks`, con
+   `keystore.properties` già pronto; vedi sopra). Per farne una a parte, una volta sola:
 
    ```
    cd app/android
@@ -294,7 +330,8 @@ app/
   package.json         dipendenze (Capacitor, plugin, p5 e PeerJS da copiare) e comandi app:*
   capacitor.config.json  nome, id, colori, barre di sistema, schermata di avvio
   build.mjs            shared/ -> www/ per l'app
-  js/                  adattatore del gioco per l'app (copiato in www/platform)
+  publish-apk.mjs      APK firmato e latest.json nella versione web (lo usa il workflow)
+  js/                  adattatore del gioco per l'app (copiato in www/platform) e controllo degli aggiornamenti
   resources/           sorgenti di icona e schermata di avvio
   android/  ios/       progetti nativi (generati da Capacitor, poi adattati)
 ```
