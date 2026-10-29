@@ -28,6 +28,7 @@ def main():
         p.click("#lesson-hint")
         assert p.js("board.hintCells.map(c => c.name).join()") == "j5"
         p.tap_cell("j5")
+        p.tap_cell("j5")  # secondo tocco: le frecce di rotazione
         p.click("#btn-rot-cw")
         p.wait("board.phase === 'fire'", 3)
         p.wait("document.getElementById('hint').classList.contains('good')", 3, "avviso verde: il raggio va sul King")
@@ -79,10 +80,15 @@ def main():
         p.tap_cell("h5")  # Deflector arancione in ACE
         p.wait("document.getElementById('hint').textContent.includes('Deflector di Computer')", 3)
 
-        step("tocco un mio Deflector: suggerimento, caselle evidenziate, ↺ ↻ attivi")
+        step("tocco un mio Deflector: suggerimento e caselle evidenziate; al secondo tocco ↺ ↻")
         p.tap_cell("h2")
         p.wait("board.selected && board.selected.name === 'h2'", 3)
         p.wait("document.getElementById('hint').textContent.startsWith('Deflector')", 3)
+        time.sleep(0.3)
+        assert p.js("document.getElementById('btn-rot-cw').hidden"), "al primo tocco le frecce non devono coprire le caselle vicine"
+        assert "toccalo di nuovo" in p.text("#hint"), p.text("#hint")
+        p.tap_cell("h2")
+        p.wait("board.rotateMode && board.selected && board.selected.name === 'h2'", 3)
         # Le frecce di rotazione compaiono sulla board, sulla casella del pezzo selezionato
         p.wait("!document.getElementById('btn-rot-cw').hidden && !document.getElementById('btn-rot-ccw').hidden", 3)
         assert p.js("""(() => {
@@ -115,7 +121,8 @@ def main():
         p.click("#btn-undo")
         p.wait("board.phase === 'move' && board.cellByName('h2').piece", 3)
         p.tap_cell("h2")
-        p.wait("board.rotatable !== null", 3)
+        p.tap_cell("h2")
+        p.wait("board.rotatable !== null && board.rotateMode", 3)
         rot = p.js("board.cellByName('h2').piece.rot")
         p.click("#btn-rot-cw")
         p.wait("board.phase === 'fire'", 3)
@@ -272,7 +279,7 @@ def main():
 
         step("lingua: dalle Regole passo all'inglese, la pagina si ricarica tradotta")
         p.js("for (const d of document.querySelectorAll('dialog[open]')) d.close(); 0")
-        p.click("[data-open=dlg-help]")
+        p.click("[data-open=dlg-settings]")
         p.d.execute_script("const s = document.getElementById('opt-lang'); s.value = 'en'; s.dispatchEvent(new Event('change'));")
         p.wait("typeof board === 'object' && board.players.length === 2 && document.documentElement.lang === 'en'", 20)
         assert p.text("#btn-fire") == "FIRE", p.text("#btn-fire")

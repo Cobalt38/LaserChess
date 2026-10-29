@@ -39,7 +39,6 @@ class GameUI {
       ccwBtn: $("btn-rot-ccw"),
       cwBtn: $("btn-rot-cw"),
       newBtn: $("btn-new"),
-      soundBtn: $("btn-sound"),
       drawBtn: $("btn-draw"),
       gameover: $("gameover"),
       goTitle: $("go-title"),
@@ -99,10 +98,6 @@ class GameUI {
     el.goNew.addEventListener("click", () => this.rematch());
     el.goClose.addEventListener("click", () => (el.gameover.hidden = true));
     el.drawBtn.addEventListener("click", () => board.claimDraw());
-    el.soundBtn.addEventListener("click", () => {
-      actions.setMuted(!actions.settings.muted);
-      this.renderSound();
-    });
 
     // Pulsanti che aprono le finestre (data-open="id della <dialog>")
     for (const btn of document.querySelectorAll("[data-open]")) {
@@ -112,7 +107,6 @@ class GameUI {
     this.initNewGameForm();
     this.initNamesForm();
     this.initOptions();
-    this.renderSound();
     // Storico aperto se c'è spazio (barra laterale), chiuso sul telefono in verticale
     el.historyBox.open = !matchMedia(STACKED_QUERY).matches;
     el.historyBox.addEventListener("toggle", () => actions.relayout());
@@ -426,6 +420,9 @@ class GameUI {
     const preview = this.$("opt-preview");
     const coach = this.$("opt-coach");
     const haptics = this.$("opt-haptics");
+    const sound = this.$("opt-sound");
+    sound.checked = !settings.muted;
+    sound.addEventListener("change", () => this.actions.setMuted(!sound.checked));
     preview.checked = settings.preview;
     coach.checked = settings.coach;
     haptics.checked = settings.haptics;
@@ -521,13 +518,6 @@ class GameUI {
     t.hidden = false;
     clearTimeout(this.toastTimer);
     this.toastTimer = setTimeout(() => (t.hidden = true), ms);
-  }
-
-  renderSound() {
-    const muted = this.actions.settings.muted;
-    this.el.soundBtn.querySelector(".ico").textContent = muted ? "🔇" : "🔊";
-    this.el.soundBtn.querySelector(".label").textContent = t(muted ? "sound.off" : "sound.on");
-    this.el.soundBtn.setAttribute("aria-pressed", String(!muted));
   }
 
   // ---------- Stato e suggerimenti ----------
@@ -648,7 +638,8 @@ class GameUI {
     if (piece) {
       const moves = piece.canBeMoved ? t("coach.canMove") : "";
       const n = piece.rotations().length;
-      const rotates = n === 1 ? t("coach.canRotate1") : n > 1 ? t("coach.canRotate2") : "";
+      const arrows = b.rotateMode || !piece.canBeMoved; // le frecce si vedono già
+      const rotates = n === 0 ? "" : !arrows ? t("coach.tapAgain") : n === 1 ? t("coach.canRotate1") : t("coach.canRotate2");
       const how = [moves, rotates].filter(Boolean).join(t("coach.or"));
       const move = how ? t("coach.yourMove", { how: how.charAt(0).toUpperCase() + how.slice(1) }) : "";
       return { step: 1, piece, text: t("coach.selected", { piece: pieceName(piece.type), info: pieceInfo(piece.type), move }).trim() };
@@ -668,7 +659,9 @@ class GameUI {
   placeRotateHandles() {
     const b = this.board;
     const { el } = this;
-    const piece = this.choosing || b.dragging || b.menu ? null : b.rotatable;
+    // Le frecce in modalità rotazione; per un pezzo che non si sposta (Laser) subito
+    const rotatable = this.choosing || b.dragging ? null : b.rotatable;
+    const piece = rotatable && (b.rotateMode || !rotatable.canBeMoved) ? rotatable : null;
     let pos = null;
     if (piece) {
       const { x, y, size } = this.actions.cellOnScreen(piece.cell);

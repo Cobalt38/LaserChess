@@ -15,7 +15,10 @@ class Board {
     this.pieces = [];
     this.selected = null; // Cell selezionata
     this.press = null; // pressione in corso su un pezzo: { piece, from, start, time, dragging }
-    this.menu = null; // ActionMenu aperto
+    // Pezzo selezionato in modalità rotazione: si vedono le frecce ↺ ↻ (secondo tocco sul pezzo,
+    // pressione prolungata o tasto destro). Al primo tocco solo le caselle dove spostarlo, così le
+    // frecce non coprono le caselle vicine mentre si sceglie dove andare
+    this.rotateMode = false;
     this.pointer = null; // ultima posizione del puntatore (coordinate board)
     this.beam = null; // LaserBeam in volo o dell'ultimo colpo
     this.bounces = 0; // riflessi del colpo in corso (per i suoni)
@@ -250,7 +253,7 @@ class Board {
     this.pieces = [];
     this.selected = null;
     this.press = null;
-    this.menu = null;
+    this.rotateMode = false;
     this.beam = null;
     this.effects = [];
     this.shake = 0;
@@ -595,13 +598,12 @@ class Board {
       }
     }
 
-    // Pressione prolungata su un pezzo senza trascinarlo: menu
+    // Pressione prolungata su un pezzo senza trascinarlo: modalità rotazione
     if (this.press && !this.press.dragging) {
       this.press.time += dt;
       if (this.press.time >= LONG_PRESS) {
-        const { piece } = this.press;
         this.press = null;
-        this.openMenu(piece);
+        this.enterRotateMode();
       }
     }
 
@@ -635,9 +637,9 @@ class Board {
   }
 
   // ---------- Input ----------
-  // Sinistro/tocco: seleziona. Trascinare un pezzo su una casella evidenziata lo muove.
-  // Destro o pressione prolungata: menu del pezzo (rotazioni). Poi si spara col pulsante,
-  // oppure si annulla la mossa.
+  // Sinistro/tocco: seleziona; tocco su una casella evidenziata (o trascinamento): il pezzo ci va.
+  // Secondo tocco sul pezzo, pressione prolungata o tasto destro: modalità rotazione (frecce ↺ ↻,
+  // GameUI). Poi si spara col pulsante, oppure si annulla la mossa.
 
   clearSelection() {
     if (this.selected) {
@@ -648,13 +650,13 @@ class Board {
       }
     }
     this.selected = null;
+    this.rotateMode = false;
   }
 
   cancelSelection() {
     if (this.busy) return;
     if (this.dragging) this.pointerCancel();
     this.press = null;
-    this.menu = null;
     this.clearSelection();
   }
 
@@ -676,17 +678,14 @@ class Board {
     }
   }
 
-  openMenu(piece) {
-    const rots = piece.rotations();
-    if (rots.length === 0) {
-      this.onEvent("deny"); // niente da fare con questo pezzo (es. King)
+  // Frecce di rotazione per il pezzo selezionato (se si può ruotare)
+  enterRotateMode() {
+    const piece = this.selected && this.selected.piece;
+    if (!piece || piece.rotations().length === 0) {
+      this.onEvent("deny"); // niente da ruotare (es. King)
       return;
     }
-    const items = rots.map((rot, i) => ({
-      icon: rots.length === 1 ? "single" : i === 0 ? "ccw" : "cw",
-      run: () => this.rotatePiece(piece, rot),
-    }));
-    this.menu = new ActionMenu(piece, items);
+    this.rotateMode = true;
     this.onEvent("popup");
   }
 
@@ -695,13 +694,6 @@ class Board {
     if (this.gameOver || this.busy) return;
     if (!this.myTurn) {
       this.onEvent("notYourTurn");
-      return;
-    }
-    if (this.menu) {
-      const item = this.menu.itemAt(p);
-      this.menu = null;
-      if (item) item.run();
-      else this.clearSelection();
       return;
     }
     const cell = this.cellAt(p);
@@ -717,12 +709,14 @@ class Board {
       this.movePiece(selected, cell);
       return;
     }
+    // Secondo tocco sul pezzo già selezionato: si passa dallo spostamento alla rotazione e ritorno
+    const again = !!cell && cell === this.selected && !!cell.piece && !this.rotateMode;
     this.clearSelection();
     if (!cell) return;
     this.selectCell(cell);
     if (this.selected !== cell || !cell.piece) return; // casella vuota o pezzo avversario
-    if (button === 2) this.openMenu(cell.piece);
-    else this.press = { piece: cell.piece, from: cell, start: p, time: 0, dragging: false };
+    if (again || button === 2) this.enterRotateMode();
+    if (button !== 2) this.press = { piece: cell.piece, from: cell, start: p, time: 0, dragging: false };
   }
 
   pointerMove(p) {
@@ -796,7 +790,6 @@ class Board {
     for (const e of this.effects) e.show();
     pop();
 
-    if (this.menu) this.menu.show(this.pointer);
   }
 
   // Dove andrebbe il laser di chi deve muovere: con la disposizione attuale o, mentre si trascina

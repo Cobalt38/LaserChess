@@ -247,7 +247,7 @@ function onBack() {
     over.hidden = true;
     return;
   }
-  if (board.selected || board.menu) {
+  if (board.selected) {
     board.cancelSelection();
     return;
   }

@@ -4,7 +4,7 @@
 // traducono entrambi; tests/rules.test.js controlla che non manchi nessuna chiave.
 // Per aggiungere una lingua: un file come en.js, il suo <script> in index.html e una voce in LANGUAGES.
 //
-// La lingua si sceglie in Regole › Opzioni; "auto" (predefinita) segue quella del dispositivo.
+// La lingua si sceglie in ⚙️ Opzioni; "auto" (predefinita) segue quella del dispositivo.
 // Cambiandola la pagina si ricarica (la partita riprende da dove era), così anche i testi calcolati
 // all'avvio sono nella lingua nuova.
 

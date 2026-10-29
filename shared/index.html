@@ -107,7 +107,7 @@
         <button id="btn-online" type="button" data-open="dlg-online"><span class="ico" aria-hidden="true">🌐</span><span class="label">Online</span></button>
         <button type="button" data-open="dlg-names"><span class="ico" aria-hidden="true">👥</span><span class="label" data-i18n="menu.names">Nomi</span></button>
         <button type="button" data-open="dlg-help"><span class="ico" aria-hidden="true">❓</span><span class="label" data-i18n="menu.rules">Regole</span></button>
-        <button id="btn-sound" type="button" aria-pressed="true"><span class="ico" aria-hidden="true">🔊</span><span class="label">Audio</span></button>
+        <button type="button" data-open="dlg-settings"><span class="ico" aria-hidden="true">⚙️</span><span class="label" data-i18n="menu.settings">Opzioni</span></button>
       </nav>
     </div>
 
@@ -281,7 +281,7 @@
       <h3 data-i18n="help.turn">Il turno</h3>
       <ol class="help">
         <li data-i18n="help.turn1"><strong>Sposta</strong> un tuo pezzo di una casella (anche in diagonale) <em>oppure</em>
-          <strong>ruotalo</strong> con le frecce gialle accanto al pezzo.</li>
+          <strong>ruotalo</strong>: toccalo di nuovo e usa le frecce gialle.</li>
         <li data-i18n="help.turn2"><strong>Spara</strong>: il raggio parte dal tuo Laser. Si spara sempre, anche se non colpisce nulla.</li>
       </ol>
       <p class="muted" data-i18n="help.mirrors">Gli specchi verdi deviano il raggio. Un pezzo colpito dove non ha lo specchio viene eliminato.</p>
@@ -304,22 +304,15 @@
         <summary data-i18n="help.commands">Comandi</summary>
         <ul class="help">
           <li data-i18n="help.cmd1">Tocca un tuo pezzo, poi tocca una casella gialla per spostarlo (oppure trascinalo).</li>
-          <li data-i18n="help.cmd2">Le frecce gialle <strong>↺ ↻</strong> accanto al pezzo toccato lo ruotano (anche con una pressione lunga sul pezzo).</li>
+          <li data-i18n="help.cmd2">Tocca di nuovo il pezzo (o tienilo premuto) per le frecce gialle <strong>↺ ↻</strong> che lo ruotano.</li>
           <li data-i18n="help.cmd3"><strong>SPARA</strong> (o tocca il tuo Laser) chiude il turno.</li>
           <li data-i18n="help.cmd4"><strong>↶ Annulla</strong> rimette a posto la mossa, finché non spari.</li>
           <li data-i18n="help.cmd5">Se la stessa posizione si presenta tre volte, chi deve muovere può dichiarare patta.</li>
           <li class="kbd-only" data-i18n="help.keys">Tastiera: <kbd>Q</kbd> <kbd>E</kbd> ruotano, <kbd>Spazio</kbd> spara,
             <kbd>Ctrl</kbd>+<kbd>Z</kbd> annulla, <kbd>Esc</kbd> deseleziona, <kbd>R</kbd> ricomincia. Col mouse:
-            tasto destro sul pezzo per ruotarlo; sopra una freccia, la linea tratteggiata mostra il raggio ruotato.</li>
+            tasto destro sul pezzo per le frecce di rotazione; sopra una freccia, la linea tratteggiata mostra il raggio ruotato.</li>
         </ul>
       </details>
-      <h3 data-i18n="help.options">Opzioni</h3>
-      <label class="check"><input type="checkbox" id="opt-preview"> <span data-i18n="opt.preview">Mostra dove andrà il raggio (linea tratteggiata)</span></label>
-      <label class="check"><input type="checkbox" id="opt-coach"> <span data-i18n="opt.coach">Mostra i suggerimenti sotto la board</span></label>
-      <label class="check app-only"><input type="checkbox" id="opt-haptics"> <span data-i18n="opt.haptics">Vibrazione</span></label>
-      <label class="field lang-field"><span data-i18n="opt.lang">Lingua · Language</span>
-        <select id="opt-lang"></select>
-      </label>
       <p class="download-box" data-app-download hidden>
         <a class="download-app" download href="download/laserchess.apk"><span
             data-i18n="download.app">📱 Scarica l'app per Android</span> <small class="download-size"></small></a>
@@ -328,6 +321,20 @@
       <p class="fineprint"><span data-i18n="help.credits">Regole e disposizioni iniziali dal manuale di Laser Chess (ThinkFun),
         tranne PRISMA. Versione</span> <span id="app-version"></span>.
         <a id="privacy-link" href="privacy.html" target="_blank" rel="noopener">Privacy</a></p>
+    </dialog>
+
+    <dialog id="dlg-settings" aria-labelledby="dlg-settings-title">
+      <form method="dialog" class="dialog-close"><button aria-label="Chiudi" data-i18n-aria-label="dialog.close">✕</button></form>
+      <h2 id="dlg-settings-title" data-i18n="settings.title">Opzioni</h2>
+      <div class="stack">
+        <label class="field"><span data-i18n="opt.lang">Lingua · Language</span>
+          <select id="opt-lang"></select>
+        </label>
+        <label class="check"><input type="checkbox" id="opt-sound"> <span data-i18n="opt.sound">Suoni</span></label>
+        <label class="check app-only"><input type="checkbox" id="opt-haptics"> <span data-i18n="opt.haptics">Vibrazione</span></label>
+        <label class="check"><input type="checkbox" id="opt-preview"> <span data-i18n="opt.preview">Mostra dove andrà il raggio (linea tratteggiata)</span></label>
+        <label class="check"><input type="checkbox" id="opt-coach"> <span data-i18n="opt.coach">Mostra i suggerimenti sotto la board</span></label>
+      </div>
     </dialog>
 
     <!-- Domanda sì/no dentro la pagina (confirm() bloccherebbe il gioco e la connessione online) -->
@@ -366,7 +373,6 @@
     <script src="js/core/LaserBeam.js?v=dev"></script>
     <script src="js/fx/Effects.js?v=dev"></script>
     <script src="js/fx/Sound.js?v=dev"></script>
-    <script src="js/ui/ActionMenu.js?v=dev"></script>
     <script src="js/core/Board.js?v=dev"></script>
     <!-- Computer: motore delle regole, ricerca della mossa, avversario -->
     <script src="js/ai/Engine.js?v=dev"></script>

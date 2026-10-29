@@ -612,9 +612,11 @@ dialog p {
   accent-color: var(--accent);
 }
 
-/* Lingua, nelle opzioni */
-.lang-field {
-  margin-top: 8px;
+/* Regole: il tutorial in cima, staccato dal testo */
+#help-tutorial {
+  display: block;
+  width: 100%;
+  margin-bottom: 16px;
 }
 
 kbd {
@@ -936,10 +938,14 @@ details.setup-box[open] {
 }
 
 /* Il pulsante per iniziare resta in vista in fondo alla finestra */
+#dlg-new {
+  padding-bottom: 0; /* lo prende la barra con "Inizia la partita" */
+}
+
 .sticky-actions {
   position: sticky;
   bottom: 0;
-  margin: 0 -20px -20px;
+  margin: 0 -20px;
   padding: 10px 20px 16px;
   background: var(--panel-2);
   border-top: 1px solid var(--line);

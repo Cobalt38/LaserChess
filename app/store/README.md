@@ -110,7 +110,7 @@ the enemy King wins. Watch out for your own: if the beam hits it, you lose.
 ```
 
 The screenshots are in Italian; for the English listing you can take them again with the game set to
-English (Rules › Options › Language).
+English (⚙️ Settings › Language).
 
 ## Immagini
 

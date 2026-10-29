@@ -33,7 +33,7 @@ const BEAM_LINGER = 3; // secondi in cui il raggio dell'ultimo colpo resta visib
 
 // Input
 const DRAG_THRESHOLD = 6; // unità board: oltre questo spostamento la pressione diventa trascinamento
-const LONG_PRESS = 0.45; // secondi di pressione per aprire il menu del pezzo
+const LONG_PRESS = 0.8; // secondi di pressione su un pezzo per le frecce di rotazione
 
 // Colore, laser e caselle riservate (helix) di ciascun giocatore, in ordine di aggiunta
 const PLAYER_SLOTS = [

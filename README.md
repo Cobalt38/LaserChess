@@ -10,8 +10,9 @@ Vince chi colpisce per primo il King avversario con il proprio laser. A ogni tur
 un proprio pezzo di una casella (anche in diagonale) **oppure** lo si ruota, poi si spara.
 
 - **Tocca** un tuo pezzo, poi tocca una casella evidenziata per spostarlo (oppure **trascinalo**)
-- Le frecce **↺ ↻** che compaiono accanto al pezzo selezionato lo ruotano (anche **Q**/**E**, tasto
-  destro o pressione lunga sul pezzo); col mouse sopra una freccia l'anteprima mostra il raggio ruotato
+- Per ruotarlo **toccalo di nuovo** (o tienilo premuto, o tasto destro): compaiono le frecce **↺ ↻**.
+  Al primo tocco si vedono solo le caselle dove spostarlo, così le frecce non le coprono. Anche
+  **Q**/**E**; col mouse sopra una freccia l'anteprima mostra il raggio ruotato
 - Poi premi **SPARA** (oppure **Spazio**, o tocca il tuo laser)
 - Prima di sparare una **linea tratteggiata** mostra dove andrà il raggio e segna con un mirino
   i pezzi che verrebbero eliminati
@@ -22,7 +23,7 @@ un proprio pezzo di una casella (anche in diagonale) **oppure** lo si ruota, poi
 Sotto la board un riquadro spiega sempre cosa fare: l'obiettivo, i due passi del turno, il passo
 attuale e cosa fa il pezzo che hai toccato (anche se è dell'avversario). Guarda anche l'anteprima
 del laser: avvisa in rosso se il tuo raggio colpirebbe il tuo King (e prima di sparare chiede
-conferma) e in verde se colpirebbe quello avversario. Si può nascondere da **Regole**.
+conferma) e in verde se colpirebbe quello avversario. Si può nascondere da **⚙️ Opzioni**.
 All'inizio della partita due etichette indicano i King ("Il tuo King", "King avversario"); dopo
 ogni colpo un messaggio dice quali pezzi sono stati eliminati. SPARA toccato prima di muovere
 spiega cosa fare.
@@ -75,7 +76,7 @@ versione pubblicata, quindi l'amico può giocare dal browser anche senza l'app.
 ## Lingue
 
 Il gioco è in italiano e in inglese. Segue la lingua del dispositivo (inglese se non è nessuna
-delle due) e si cambia in **Regole › Opzioni › Lingua**: la pagina si ricarica e la partita riprende
+delle due) e si cambia in **⚙️ Opzioni › Lingua**: la pagina si ricarica e la partita riprende
 da dove era.
 
 - I testi della pagina restano scritti in italiano in `shared/index.html`; gli elementi da tradurre
@@ -166,7 +167,6 @@ shared/                 il gioco, uguale nelle due versioni
       GameUI.js         barra laterale e finestre: stato, suggerimenti e avvisi, comandi, storico, benvenuto, nuova partita, nomi, regole
       Tutorial.js       tutorial: carica le lezioni, giudica il colpo, aiuto
       OnlinePanel.js    finestra "Gioca online": generatore del link, ingresso, stato connessione
-      ActionMenu.js     menu del pezzo (rotazioni)
 web/                    versione per il browser (GitHub Pages)
   build.mjs             shared/ + web/ -> web/dist, con la versione
   js/Platform.js        Platform per il browser
