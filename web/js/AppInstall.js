@@ -1,13 +1,12 @@
-// Il gioco come app, dal browser (nel benvenuto e in ⚙️ Opzioni, elementi con data-get-app):
-// - Android: "📱 Installa l'app", senza APK e senza avvisi di sicurezza (manifest.webmanifest e sw.js,
-//   che la fa funzionare anche senza internet). Se il browser è pronto (Chrome manda
-//   beforeinstallprompt solo dopo un po' che si usa il sito; Firefox mai) apre la sua finestra di
-//   installazione, altrimenti spiega come farlo dal menu del browser;
-// - computer: lo stesso pulsante, solo se il browser offre l'installazione;
-// - iPhone e iPad: come aggiungerla alla schermata Home da Safari;
-// - nelle Opzioni, su Android, anche l'APK (download/latest.json, lo mette il workflow di GitHub
-//   Pages con app/publish-apk.mjs).
-// Già aperto come app installata: niente.
+// Il gioco come app, dal browser, senza APK e senza avvisi di sicurezza (manifest.webmanifest e sw.js,
+// che la fa funzionare anche senza internet):
+// - nel benvenuto "📱 Installa l'app": se il browser offre l'installazione (Chrome ed Edge mandano
+//   beforeinstallprompt, ma solo dopo un po' che si usa il sito; Firefox e Safari mai) apre la sua
+//   finestra, altrimenti apre la sezione Installa in ⚙️ Opzioni;
+// - la sezione Installa (elementi con data-get-app="all") dice quale browser e sistema si stanno
+//   usando e i passi per installarla lì; su Android c'è anche l'APK (download/latest.json, lo mette
+//   il workflow di GitHub Pages con app/publish-apk.mjs).
+// Già aperto come app installata: nel benvenuto niente, nella sezione "già installata".
 
 // Chrome offre l'installazione con un evento che può arrivare prima dell'avvio del gioco
 let installPrompt = null;
@@ -17,20 +16,48 @@ window.addEventListener("beforeinstallprompt", (e) => {
   if (window.appInstall) window.appInstall.render();
 });
 
+// Sistema e browser dal nome che il browser dà di sé (navigator.userAgent)
+function detectPlatform(ua) {
+  // (gli iPad recenti si presentano come un Mac, ma col touch)
+  const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  const os = ios ? "ios" : /Android/.test(ua) ? "android" : /Windows/.test(ua) ? "windows"
+    : /Mac OS X|Macintosh/.test(ua) ? "mac" : /Linux|CrOS/.test(ua) ? "linux" : "other";
+  const browser = /SamsungBrowser/.test(ua) ? "samsung" : /EdgA|EdgiOS|Edg\//.test(ua) ? "edge"
+    : /OPR\/|Opera/.test(ua) ? "opera" : /FxiOS|Firefox\//.test(ua) ? "firefox"
+      : /CriOS|Chrome\//.test(ua) ? "chrome" : /Safari\//.test(ua) ? "safari" : "other";
+  return { os, browser };
+}
+
+// Chiave dei passi (install.steps.<chiave> in js/i18n) per sistema e browser
+function installSteps({ os, browser }) {
+  if (os === "ios") return browser === "safari" ? "safariIos" : "otherIos";
+  if (os === "android") {
+    return { chrome: "chromeAndroid", firefox: "firefoxAndroid", samsung: "samsung", edge: "edgeAndroid" }[browser] || "otherAndroid";
+  }
+  return { chrome: "chromeDesktop", opera: "chromeDesktop", edge: "edgeDesktop", safari: "safariMac", firefox: "firefoxDesktop" }[browser]
+    || "otherDesktop";
+}
+
+const BROWSER_NAMES = { chrome: "Chrome", firefox: "Firefox", samsung: "Samsung Internet", edge: "Edge", opera: "Opera", safari: "Safari" };
+const OS_NAMES = { android: "Android", ios: "iPhone/iPad", windows: "Windows", mac: "macOS", linux: "Linux" };
+
 class AppInstall {
   constructor() {
     window.appInstall = this;
     this.boxes = [...document.querySelectorAll("[data-get-app]")];
+    this.section = document.getElementById("install-section");
     this.apk = null; // contenuto di download/latest.json, se c'è
     this.installed = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
-    this.ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
-    this.android = /Android/.test(navigator.userAgent);
-    this.howto = false; // pulsante toccato quando il browser non offriva l'installazione
+    this.platform = detectPlatform(navigator.userAgent);
+    this.steps = installSteps(this.platform);
+    // Firefox e altri browser sul computer non installano le app web: lì c'è solo la spiegazione
+    this.installable = !["firefoxDesktop", "otherDesktop"].includes(this.steps);
     for (const box of this.boxes) {
       box.querySelector(".install-app").addEventListener("click", () => this.install());
     }
     window.addEventListener("appinstalled", () => {
       this.installed = true;
+      this.renderSteps();
       this.render();
     });
     // Copia per giocare senza internet: solo nella versione pubblicata (in locale i file cambiano)
@@ -38,7 +65,8 @@ class AppInstall {
     if ("serviceWorker" in navigator && version && version.content !== "dev") {
       navigator.serviceWorker.register("sw.js").catch(() => { });
     }
-    if (!this.installed && this.android) this.loadApk();
+    if (!this.installed && this.platform.os === "android") this.loadApk();
+    this.renderSteps();
     this.render();
   }
 
@@ -52,27 +80,43 @@ class AppInstall {
     this.render();
   }
 
+  // Browser e sistema riconosciuti, e i passi per installare il gioco lì
+  renderSteps() {
+    const { os, browser } = this.platform;
+    this.section.querySelector(".install-where").textContent = this.installed ? t("install.installed")
+      : t("install.where", { browser: BROWSER_NAMES[browser] || t("install.otherBrowser"), os: OS_NAMES[os] || t("install.otherOs") });
+    const list = this.section.querySelector(".install-steps");
+    list.replaceChildren();
+    if (this.installed) return;
+    for (const step of t(`install.steps.${this.steps}`).split("|")) {
+      const li = document.createElement("li");
+      li.textContent = step;
+      list.append(li);
+    }
+  }
+
   async install() {
     if (!installPrompt) {
-      this.howto = true; // come installarla dal menu del browser
-      this.render();
+      // Niente finestra del browser: i passi, nelle Opzioni
+      const dialog = document.getElementById("dlg-settings");
+      if (!dialog.open) dialog.showModal();
+      this.section.scrollIntoView({ block: "start" });
       return;
     }
     installPrompt.prompt();
     const { outcome } = await installPrompt.userChoice;
     installPrompt = null; // si può usare una volta sola
     if (outcome === "accepted") this.installed = true;
+    this.renderSteps();
     this.render();
   }
 
   render() {
     for (const box of this.boxes) {
-      const canInstall = !this.installed && (this.android || !!installPrompt);
-      const iosHint = !this.installed && this.ios;
-      const apk = !this.installed && this.android && !!this.apk && box.dataset.getApp === "all";
-      box.querySelector(".install-app").hidden = !canInstall;
-      box.querySelector(".install-howto").hidden = !(canInstall && this.howto && !installPrompt);
-      box.querySelector(".install-ios").hidden = !iosHint;
+      const inSection = box === this.section;
+      const apk = !this.installed && !!this.apk && inSection;
+      // Nel benvenuto il pulsante apre l'installazione o i passi; nella sezione solo se il browser la offre
+      box.querySelector(".install-app").hidden = this.installed || !(inSection ? installPrompt : this.installable);
       const link = box.querySelector(".download-app");
       if (link) link.hidden = !apk;
       const note = box.querySelector(".download-note");
@@ -82,7 +126,7 @@ class AppInstall {
         link.href = `${this.apk.url}?v=${this.apk.build}`;
         link.querySelector(".download-size").textContent = t("download.size", { mb: (this.apk.size / 1048576).toFixed(1) });
       }
-      box.hidden = !(canInstall || iosHint || apk);
+      box.hidden = inSection ? false : this.installed || !this.installable;
     }
   }
 }

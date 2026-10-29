@@ -156,8 +156,6 @@
       <!-- Solo nel browser: il gioco come app (web/js/AppInstall.js) -->
       <div class="get-app" data-get-app hidden>
         <button type="button" class="install-app" hidden data-i18n="install.button">📱 Installa l'app</button>
-        <p class="install-howto muted small" hidden data-i18n="install.howto">Apri il menu ⋮ del browser e scegli “Installa” (o “Aggiungi a schermata Home”).</p>
-        <p class="install-ios muted small" hidden data-i18n="install.ios">Per averlo come app: in Safari tocca Condividi, poi “Aggiungi alla schermata Home”.</p>
       </div>
     </dialog>
 
@@ -357,11 +355,11 @@
         <label class="check"><input type="checkbox" id="opt-coach"> <span data-i18n="opt.coach">Mostra i suggerimenti sotto la board</span></label>
       </div>
       <!-- Solo nel browser: il gioco come app (web/js/AppInstall.js) -->
-      <div class="get-app download-box" data-get-app="all" hidden>
-        <h3 data-i18n="settings.app">App</h3>
+      <div id="install-section" class="get-app download-box" data-get-app="all" hidden>
+        <h3 data-i18n="settings.app">Installa l'app</h3>
+        <p class="install-where muted small"></p>
         <button type="button" class="install-app accent" hidden data-i18n="install.button">📱 Installa l'app</button>
-        <p class="install-howto muted small" hidden data-i18n="install.howto">Apri il menu ⋮ del browser e scegli “Installa” (o “Aggiungi a schermata Home”).</p>
-        <p class="install-ios muted small" hidden data-i18n="install.ios">Per averlo come app: in Safari tocca Condividi, poi “Aggiungi alla schermata Home”.</p>
+        <ol class="install-steps help"></ol>
         <a class="download-app" hidden download href="download/laserchess.apk"><span
             data-i18n="download.app">Oppure scarica l'APK per Android</span> <small class="download-size"></small></a>
         <span class="download-note muted small" hidden data-i18n="download.note">Android chiederà il permesso di installare app scaricate dal browser.</span>

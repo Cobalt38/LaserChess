@@ -50,11 +50,16 @@ def main():
         assert p.js("document.querySelector('link[rel=stylesheet]').getAttribute('href')") == "css/style.css?v=aaa1111"
         assert p.js("document.getElementById('app-version').textContent") == "aaa1111"
 
-        step("Android, browser senza beforeinstallprompt: Installa l'app spiega come fare dal menu")
+        step("Firefox su Android: Installa l'app apre la sezione Installa con i passi per Firefox")
         p.wait("!document.querySelector('.welcome .install-app').hidden", 5, "pulsante Installa l'app")
         assert not p.js("document.querySelector('.welcome .download-app')"), "nel benvenuto niente APK"
         p.click(".welcome .install-app")
-        p.wait("!document.querySelector('.welcome .install-howto').hidden", 3, "istruzioni dal menu")
+        p.wait("document.getElementById('dlg-settings').open", 3, "sezione Installa nelle Opzioni")
+        assert p.text("#install-section .install-where") == "Browser: Firefox su Android", p.text("#install-section .install-where")
+        steps = p.js("[...document.querySelectorAll('#install-section .install-steps li')].map(li => li.textContent)")
+        assert len(steps) == 3 and "⋮" in steps[0] and "Installa" in steps[1], steps
+        p.shot("sezione-installa")
+        p.js("document.getElementById('dlg-settings').close(); 0")
 
         step("installabile come app: manifest e service worker con il gioco salvato per giocare senza rete")
         assert p.js("document.querySelector('link[rel=manifest]').getAttribute('href')") == "manifest.webmanifest"

@@ -940,6 +940,10 @@ a.download-app small {
   margin: 0 0 4px;
 }
 
+.install-steps {
+  margin: 4px 0 0;
+}
+
 .download-box a.download-app {
   text-align: left;
 }
