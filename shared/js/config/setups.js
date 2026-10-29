@@ -175,39 +175,27 @@ const SETUPS = {
   ],
 };
 
-// Descrizione delle configurazioni: prima la nostra, poi quelle del manuale nel suo ordine
-// (il manuale consiglia ACE per iniziare e le altre quando si conosce il gioco)
-const SETUP_INFO = {
-  PRISMA: "Inventata per questo gioco, con i pezzi nuovi: lo specchio semitrasparente accanto al Laser manda metà del raggio sul Prism al centro, che lo divide in tre.",
-  ACE: "La disposizione classica del manuale: consigliata per le prime partite.",
-  CURIOSITY: "Per chi conosce già il gioco. Uno Switch accanto ai Defender del King.",
-  GRAIL: "Per chi conosce già il gioco. Il King parte in seconda fila, circondato dai suoi pezzi.",
-  MERCURY: "Per chi conosce già il gioco. Uno Switch parte nella fila di fondo avversaria.",
-  SOPHIE: "Per chi conosce già il gioco. Un Defender girato di lato e Switch più avanzati.",
-};
+// La descrizione di ogni configurazione è nei testi (js/i18n), chiave setup.<nome>
 
 // Tutte le classi dei pezzi per nome: servono per ricostruire una partita ricevuta online.
 // Un pezzo nuovo va aggiunto anche qui.
 const PIECE_TYPES = { Laser, King, Defender, Deflector, Switch, Prism, HalfMirror };
 
 // Pezzi inventati, attivabili dalla finestra "Nuova partita". Per un pezzo nuovo basta aggiungere
-// una voce: il primo pezzo è del blu, il secondo dell'arancione nella casella a specchio.
+// una voce: il primo pezzo è del blu, il secondo dell'arancione nella casella a specchio. Nome e
+// descrizione sono nei testi (js/i18n): variant.<chiave>.label / .desc, piece.<classe>, info.<classe>.
 // Una variante non si aggiunge alle disposizioni che hanno già quel pezzo (es. PRISMA).
 // La casella indicata è quella preferita: se in una configurazione è occupata, o se da lì
 // qualcuno potrebbe eliminare un pezzo avversario alla prima mossa, il pezzo va nella casella
 // libera più vicina dove questo non succede (vedi Board.placeVariants).
 const VARIANTS = {
   prism: {
-    label: "Prism",
-    description: "Divide il raggio: prosegue dritto e si apre ai due lati",
     pieces: [
       [Prism, 0, 9, 7, "S"],
       [Prism, 1, 2, 2, "S"],
     ],
   },
   halfMirror: {
-    label: "Specchio semitrasparente",
-    description: "Metà del raggio passa, metà viene riflessa. Non può essere eliminato",
     pieces: [
       [HalfMirror, 0, 7, 2, "NE"],
       [HalfMirror, 1, 4, 7, "NE"],

@@ -23,7 +23,9 @@ class Board {
     this.shake = 0; // intensità dello scuotimento della board
     this.hitKings = []; // re colpiti dall'ultimo colpo
     this.gameOver = null; // { winner: Player | null, reason: "king" | "repetition" }
-    this.history = []; // mosse giocate: { n, player, text, hits: [testo] }
+    // Mosse giocate: { n, player, move, hits }. move: { type: "move" | "swap" | "rotate", piece, ... },
+    // hits: [{ piece, owner, cell, king }]. Dati, non testo: la UI li scrive nella lingua scelta
+    this.history = [];
     this.historyVersion = 0; // cambia a ogni modifica dello storico (la UI ridisegna la lista)
     this.lastMove = null; // { cells: [Cell], player }: evidenziata sulla board
     this.positions = new Map(); // disposizione dei pezzi -> volte in cui si è presentata
@@ -303,6 +305,7 @@ class Board {
     this.turn = 0; // inizia il primo giocatore (blu)
     this.version++;
     this.recordPosition();
+    this.onEvent("start");
   }
 
   endTurn() {
@@ -351,9 +354,9 @@ class Board {
 
   // Mossa fatta (spostamento o rotazione): va annotata e poi bisogna sparare.
   // undo() la rimette com'era finché non si spara
-  record(text, cells, undo) {
+  record(move, cells, undo) {
     this.pendingUndo = { undo, lastMove: this.lastMove, drawClaimable: this.drawClaimable };
-    this.history.push({ n: this.history.length + 1, player: this.activePlayer, text, hits: [] });
+    this.history.push({ n: this.history.length + 1, player: this.activePlayer, move, hits: [] });
     this.historyVersion++;
     this.lastMove = { cells, player: this.activePlayer };
     this.beam = null; // via il raggio del turno precedente, se si vede ancora
@@ -367,8 +370,8 @@ class Board {
     const other = target.piece; // c'è solo se lo Switch fa uno scambio
     this.record(
       other
-        ? `${piece.type} ${from.name} ⇄ ${other.type} ${target.name}`
-        : `${piece.type} ${from.name} → ${target.name}`,
+        ? { type: "swap", piece: piece.type, from: from.name, other: other.type, to: target.name }
+        : { type: "move", piece: piece.type, from: from.name, to: target.name },
       [from, target],
       () => this.slide(piece, from, other) // lo Switch, muovendosi su "other", rifà lo scambio al contrario
     );
@@ -398,7 +401,7 @@ class Board {
 
   rotatePiece(piece, rot) {
     const old = piece.rot;
-    this.record(`ruota ${piece.type} ${piece.cell.name} (${old} → ${rot})`, [piece.cell],
+    this.record({ type: "rotate", piece: piece.type, at: piece.cell.name, from: old, to: rot }, [piece.cell],
       () => this.turnPiece(piece, old));
     this.turnPiece(piece, rot);
     this.emit({ type: "rotate", at: piece.cell.name, rot });
@@ -479,7 +482,7 @@ class Board {
     this.onEvent(effect, { piece });
     const entry = this.history[this.history.length - 1];
     if (entry) {
-      entry.hits.push(`${effect === "king" ? "👑" : "💥"} ${piece.type} di ${piece.player.name} (${piece.cell.name})`);
+      entry.hits.push({ piece: piece.type, owner: this.players.indexOf(piece.player), cell: piece.cell.name, king: effect === "king" });
       this.historyVersion++;
     }
   }
@@ -548,7 +551,7 @@ class Board {
       pieces: this.pieces.map((p) => [p.type, idx(p.player), p.cell.rx, p.cell.ry, p.rot]),
       turn: this.turn,
       phase: this.phase,
-      history: this.history.map((e) => ({ n: e.n, player: idx(e.player), text: e.text, hits: e.hits })),
+      history: this.history.map((e) => ({ n: e.n, player: idx(e.player), move: e.move, text: e.text, hits: e.hits })),
       lastMove: this.lastMove && { cells: this.lastMove.cells.map((c) => c.name), player: idx(this.lastMove.player) },
       positions: [...this.positions],
       drawClaimable: this.drawClaimable,
@@ -569,7 +572,8 @@ class Board {
     }
     this.turn = s.turn;
     this.phase = s.phase;
-    this.history = s.history.map((e) => ({ n: e.n, player: players[e.player], text: e.text, hits: e.hits }));
+    // (text: partite salvate da una versione che scriveva lo storico in italiano)
+    this.history = s.history.map((e) => ({ n: e.n, player: players[e.player], move: e.move, text: e.text, hits: e.hits }));
     this.historyVersion++;
     this.lastMove = s.lastMove && {
       cells: s.lastMove.cells.map((name) => this.cellByName(name)),

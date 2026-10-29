@@ -36,9 +36,9 @@ La finestra **Nuova partita** sceglie:
 - **contro il computer** (Facile, Medio, Difficile; Facile per chi non ha ancora scelto; si può
   giocare col blu o con l'arancione),
   **in due sullo stesso schermo** oppure **online**;
-- la **disposizione iniziale**: PRISMA (predefinita, inventata per questo gioco: Prism e specchio
-  semitrasparente sono già in campo) oppure quelle del manuale, ACE (consigliata dal manuale per
-  iniziare), CURIOSITY, GRAIL, MERCURY, SOPHIE;
+- la **disposizione iniziale**: ACE (predefinita, consigliata dal manuale per iniziare), le altre del
+  manuale (CURIOSITY, GRAIL, MERCURY, SOPHIE) oppure PRISMA, inventata per questo gioco (Prism e
+  specchio semitrasparente sono già in campo);
 - le **varianti** con i pezzi inventati (Prism e specchio semitrasparente). I loro pezzi vanno
   in caselle scelte in modo che alla prima mossa nessuno possa eliminare un pezzo avversario
   (le disposizioni del manuale sono già così).
@@ -71,6 +71,26 @@ con collegamento diretto, l'altro giocatore può vedere il tuo indirizzo IP.
 Il link funziona dalla versione pubblicata su GitHub Pages: se apri la pagina dal disco, il link
 punta a un file sul tuo computer e il tuo amico non può aprirlo. Dall'app il link punta sempre alla
 versione pubblicata, quindi l'amico può giocare dal browser anche senza l'app.
+
+## Lingue
+
+Il gioco è in italiano e in inglese. Segue la lingua del dispositivo (inglese se non è nessuna
+delle due) e si cambia in **Regole › Opzioni › Lingua**: la pagina si ricarica e la partita riprende
+da dove era.
+
+- I testi della pagina restano scritti in italiano in `shared/index.html`; gli elementi da tradurre
+  hanno `data-i18n="chiave"` (il contenuto) o `data-i18n-title`, `-aria-label`, `-placeholder`,
+  `-alt` (gli attributi).
+- I testi scritti dal codice passano da `t("chiave", { nome: ... })`: l'italiano è in
+  `shared/js/i18n/it.js`, l'inglese (di tutti e due i tipi) in `shared/js/i18n/en.js`.
+- Per aggiungere una lingua: copia `en.js` (es. `es.js`, con `STRINGS.es = {...}`) e traducilo,
+  aggiungi il suo `<script>` in `shared/index.html` dopo `en.js` e una voce in `LANGUAGES`
+  (`shared/js/i18n/i18n.js`).
+- `tests/rules.test.js` controlla che ogni lingua abbia tutte le chiavi, con gli stessi `{segnaposto}`,
+  e che il codice non usi chiavi inesistenti.
+
+Lo storico delle mosse è salvato come dati (pezzo, caselle, rotazione) e scritto nella lingua di chi
+guarda, anche online.
 
 ## Due versioni, un solo gioco
 
@@ -122,6 +142,9 @@ shared/                 il gioco, uguale nelle due versioni
       constants.js      dimensioni, direzioni, colori, velocità del laser, caselle riservate
       setups.js         configurazioni iniziali del manuale e varianti con i pezzi inventati
       lessons.js        lezioni del tutorial
+    i18n/
+      i18n.js           lingua scelta, t(), traduzione della pagina
+      it.js  en.js      testi del codice in italiano; in inglese anche quelli della pagina
     core/
       Board.js          regole e stato della partita: turni, mosse, annulla, patta, anteprima del laser, disegno
       Cell.js           casella della board
@@ -157,7 +180,9 @@ tests/
 ```
 
 Per aggiungere un pezzo inventato: crea la sua classe in `shared/js/pieces/variants/`, aggiungila in
-`shared/index.html` e in `shared/js/config/setups.js` (tra i `PIECE_TYPES` e nelle `VARIANTS`). Il computer
+`shared/index.html` e in `shared/js/config/setups.js` (tra i `PIECE_TYPES` e nelle `VARIANTS`), e
+scrivi nome e descrizione in ogni lingua (`piece.<Classe>`, `info.<Classe>`, `variant.<chiave>.label`
+e `.desc` in `shared/js/i18n/`). Il computer
 legge le regole del pezzo (`hit`, `rotations`, `canMoveTo`) dalla classe, quindi lo usa da solo.
 La casella scritta in `VARIANTS` è quella preferita: se da lì si potrebbe eliminare un pezzo
 avversario alla prima mossa, il gioco sceglie la casella libera più vicina dove non succede, e

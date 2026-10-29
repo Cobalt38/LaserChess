@@ -3,11 +3,11 @@
 // (vedi view in sketch.js), quindi il suo laser spara sempre verso l'alto.
 // pieces: come in SETUPS (i Laser li aggiunge la board, nei soliti angoli).
 // hint: la soluzione, mostrata da "Aiuto": il pezzo in "at", da ruotare verso "rot" o spostare in "to".
+// id: titolo e testo sono nei testi (js/i18n), chiavi lesson.<id>.title e lesson.<id>.text.
 // tests/rules.test.js controlla che all'inizio il raggio non vinca e che la soluzione vinca.
 const LESSONS = [
   {
-    title: "Ruota uno specchio",
-    text: "Il tuo Laser, in basso a destra, spara verso l'alto e gli specchi verdi deviano il raggio. Tocca il tuo Deflector e ruotalo con le frecce gialle finché la linea tratteggiata arriva al King arancione. Poi premi SPARA.",
+    id: "rotate",
     pieces: [
       [Deflector, 0, 10, 5, "SE"],
       [King, 0, 6, 1, "N"],
@@ -16,8 +16,7 @@ const LESSONS = [
     hint: { at: "j5", rot: "SW" },
   },
   {
-    title: "Sposta un pezzo",
-    text: "Invece di ruotare puoi spostare un pezzo di una casella, anche in diagonale. Tocca il Deflector e poi una casella gialla (o trascinalo): mettilo sulla strada del raggio.",
+    id: "move",
     pieces: [
       [Deflector, 0, 9, 6, "SW"],
       [King, 0, 6, 1, "N"],
@@ -26,8 +25,7 @@ const LESSONS = [
     hint: { at: "i6", to: "j6" },
   },
   {
-    title: "Non colpire il tuo King",
-    text: "Il mirino rosso segna i pezzi che il raggio eliminerebbe: qui è sul TUO King, e se lo colpisci perdi. Ruota il Deflector in mezzo alla board per mandare il raggio sul King arancione.",
+    id: "ownKing",
     pieces: [
       [Deflector, 0, 10, 5, "SW"],
       [Deflector, 0, 5, 5, "SE"],
@@ -37,8 +35,7 @@ const LESSONS = [
     hint: { at: "e5", rot: "NE" },
   },
   {
-    title: "Aggira lo scudo",
-    text: "Il Defender ferma il raggio con lo scudo (se lo colpisci di lato o da dietro, invece, viene eliminato). Il King arancione è dietro lo scudo: sposta uno dei tuoi Deflector sulla strada del raggio per arrivarci da sopra.",
+    id: "shield",
     pieces: [
       [Deflector, 0, 10, 4, "SW"],
       [Deflector, 0, 8, 3, "NE"],

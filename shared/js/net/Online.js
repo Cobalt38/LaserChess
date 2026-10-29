@@ -16,7 +16,7 @@
 //   sullo stesso codice (il link mandato all'amico non cambia mai);
 // - codice e partita sono salvati in sessionStorage: ricaricando la pagina si rientra.
 
-const NET_PROTOCOL = 2; // da aumentare se cambia il formato dei messaggi
+const NET_PROTOCOL = 3; // da aumentare se cambia il formato dei messaggi (3: storico come dati)
 const ROOM_PREFIX = "laserchess-cobalt38-v1-"; // id PeerJS = prefisso + codice partita
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // niente 0/O e 1/I, che si confondono
 const CODE_LENGTH = 6;
@@ -98,7 +98,7 @@ class Online {
 
   libraryMissing() {
     if (typeof Peer !== "undefined") return false;
-    this.fail("Non riesco a caricare la libreria per il gioco online: controlla la connessione e ricarica la pagina.");
+    this.fail(t("online.err.lib"));
     return true;
   }
 
@@ -168,11 +168,11 @@ class Online {
         return;
       }
       if (err.type === "browser-incompatible") {
-        this.fail("Questo browser non supporta il gioco online.");
+        this.fail(t("online.err.browser"));
         return;
       }
       if (this.state === "creating" && this.attempt >= 3) {
-        this.fail("Impossibile raggiungere il server di contatto: controlla la connessione e riprova.");
+        this.fail(t("online.err.server"));
         return;
       }
       this.scheduleRetry();
@@ -186,7 +186,7 @@ class Online {
   join(text, resume = false) {
     const code = normalizeCode(text);
     if (code.length !== CODE_LENGTH) {
-      this.fail("Il codice della partita è di 6 caratteri.");
+      this.fail(t("online.err.codeLength"));
       return;
     }
     // Nuovo tentativo sulla stessa partita (dopo un errore di rete o una connessione persa)
@@ -212,16 +212,16 @@ class Online {
       if (this.peer !== peer) return;
       if (this.connected) return; // la partita in corso non si butta via
       if (err.type === "browser-incompatible") {
-        this.fail("Questo browser non supporta il gioco online.");
+        this.fail(t("online.err.browser"));
         return;
       }
       // Prima volta e codice inesistente: è sbagliato il codice
       if (err.type === "peer-unavailable" && !this.resuming) {
-        this.fail("Partita non trovata: controlla il codice o fatti mandare un link nuovo.");
+        this.fail(t("online.err.notFound"));
         return;
       }
       if (!this.resuming && this.attempt >= 2) {
-        this.fail("Non riesco a collegarmi alla partita: controlla la connessione e riprova.");
+        this.fail(t("online.err.connect"));
         return;
       }
       this.scheduleRetry();
@@ -337,7 +337,7 @@ class Online {
         return; // basta che sia arrivato (lastSeen)
       case "hello":
         if (msg.protocol !== NET_PROTOCOL) {
-          this.fail("Avete due versioni diverse del gioco: ricaricate entrambi la pagina.");
+          this.fail(t("online.err.version"));
           return;
         }
         this.setOpponentName(msg.name);
@@ -372,7 +372,7 @@ class Online {
   }
 
   setOpponentName(name) {
-    this.opponentName = String(name || "Avversario").slice(0, 16);
+    this.opponentName = String(name || t("name.opponent")).slice(0, 16);
     this.board.renamePlayer(1 - this.myIndex, this.opponentName);
   }
 

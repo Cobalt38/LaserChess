@@ -12,11 +12,12 @@ const view = { x: 0, y: 0, scale: 1, turns: 0 };
 const STACKED_QUERY = "(max-width: 760px) and (orientation: portrait)";
 const SETTINGS_KEY = "laserchess.settings"; // dove: Platform.settingsStorage()
 // Da aumentare quando cambia un'impostazione predefinita da applicare anche a chi le ha già salvate
-// (2: la disposizione predefinita diventa PRISMA)
-const SETTINGS_VERSION = 2;
+// (2: la disposizione predefinita diventa PRISMA; 3: torna ACE, più semplice per chi inizia)
+const SETTINGS_VERSION = 3;
 const GAME_KEY = "laserchess.game"; // partita in corso (non online), in Platform.gameStorage()
 const RUN_KEY = "laserchess.run"; // in sessionStorage: questa scheda (o avvio dell'app) è già partita
 const settings = loadSettings();
+applyLanguage(); // i testi della pagina nella lingua scelta (js/i18n), prima che si veda
 // Scheda nuova o app appena avviata (non una pagina ricaricata): si parte dal benvenuto
 const firstRun = startRun();
 let activePointer = null; // un solo dito/puntatore alla volta sulla board
@@ -29,9 +30,10 @@ function loadSettings() {
     mode: "ai", // modalità della prossima partita: "ai" o "local" (online si sceglie a parte)
     aiLevel: "easy", // per chi non ha mai giocato; chi ha già scelto un livello lo tiene
     humanSide: 0, // contro il computer: 0 blu (muove per primo), 1 arancione
-    setup: "PRISMA",
+    setup: "ACE",
     variants: { prism: false, halfMirror: false },
-    names: ["Giocatore 1", "Giocatore 2"], // partita sullo stesso schermo
+    names: ["", ""], // partita sullo stesso schermo (vuoto: "Giocatore 1" nella lingua scelta)
+    lang: "auto", // lingua: "auto" (quella del dispositivo) o una di LANGUAGES (js/i18n)
     myName: "", // contro il computer e online
     preview: true, // linea tratteggiata del laser
     coach: true, // suggerimenti sotto la board
@@ -44,13 +46,16 @@ function loadSettings() {
     if (storage !== window.localStorage) localStorage.removeItem(SETTINGS_KEY);
     const saved = JSON.parse(storage.getItem(SETTINGS_KEY)) || {};
     const s = { ...defaults, ...saved, variants: { ...defaults.variants, ...saved.variants } };
-    if (!(saved.version >= 2)) s.setup = defaults.setup;
+    if (!(saved.version >= 3)) s.setup = defaults.setup;
     s.version = SETTINGS_VERSION;
     if (!SETUPS[s.setup]) s.setup = defaults.setup;
     if (!AI_LEVELS[s.aiLevel]) s.aiLevel = defaults.aiLevel;
     if (s.mode !== "ai" && s.mode !== "local") s.mode = defaults.mode;
     if (s.humanSide !== 0 && s.humanSide !== 1) s.humanSide = 0;
     if (!Array.isArray(s.names) || s.names.length !== 2) s.names = defaults.names;
+    // I nomi predefiniti di prima erano scritti in italiano: ora vuoti, così seguono la lingua
+    s.names = s.names.map((name, i) => (name === `Giocatore ${i + 1}` ? "" : name));
+    if (s.lang !== "auto" && !LANGUAGES[s.lang]) s.lang = "auto";
     return s;
   } catch (e) {
     return defaults;
@@ -76,7 +81,7 @@ function startRun() {
 }
 
 function myName() {
-  return settings.myName.trim() || "Giocatore";
+  return settings.myName.trim() || t("name.default");
 }
 
 function setup() {
@@ -128,11 +133,11 @@ function setup() {
         online.answerNewGame(true);
         return;
       }
-      ui.ask("Nuova partita?", `${name} vuole ricominciare da capo. Accetti?`, "Accetta", "Rifiuta")
+      ui.ask(t("ask.newGameRequest.title"), t("ask.newGameRequest.text", { name }), t("ask.newGameRequest.yes"), t("ask.newGameRequest.no"))
         .then((ok) => online.answerNewGame(ok));
     },
     onNewGameReply(accepted) {
-      ui.toast(accepted ? "Nuova partita!" : `${online.opponentName || "L'avversario"} preferisce finire questa partita.`);
+      ui.toast(accepted ? t("toast.newGame") : t("toast.declined", { name: online.opponentName || t("name.theOpponent") }));
     },
     onChange() {
       syncMode();
@@ -153,11 +158,13 @@ function setup() {
     welcomeArt,
     startTutorial,
     relayout: fitCanvas,
-    // Centro e lato di una casella in pixel dentro #stage (per le frecce di rotazione)
+    // Centro e lato di una casella in pixel dentro #stage, e la casella in un punto di #stage
+    // (per frecce di rotazione ed etichette)
     cellOnScreen(cell) {
       const p = boardToScreen(cell.center.x, cell.center.y);
       return { x: p.x, y: p.y, size: cell.size * view.scale };
     },
+    cellAtScreen: (x, y) => board.cellAt(toBoard(x, y)),
     stageSize: () => ({ w: width, h: height }),
     setMuted(muted) {
       settings.muted = muted;
@@ -254,10 +261,10 @@ function onBack() {
 // Tutorial dall'inizio. Online no: la partita è con l'amico
 async function startTutorial() {
   if (online.active) {
-    ui.toast("Esci prima dalla partita online (finestra 🌐 Online).");
+    ui.toast(t("toast.leaveOnlineFirst"));
     return;
   }
-  if (game.mode !== "tutorial" && !(await ui.confirmLoseGame("La partita in corso andrà persa."))) return;
+  if (game.mode !== "tutorial" && !(await ui.confirmLoseGame())) return;
   tutorial.start();
 }
 
@@ -300,15 +307,16 @@ function newGame(mode = game.mode) {
   game.ai = null;
   let names;
   if (mode === "online") {
-    names = [myName(), online.opponentName || "Avversario"];
+    names = [myName(), online.opponentName || t("name.opponent")];
   } else if (mode === "ai") {
     const human = settings.humanSide;
-    names = human === 0 ? [myName(), "Computer"] : ["Computer", myName()];
+    const computer = t("name.computer");
+    names = human === 0 ? [myName(), computer] : [computer, myName()];
     board.localIndex = human;
     board.opponentReady = true;
     game.ai = new AIPlayer(board, 1 - human, settings.aiLevel);
   } else {
-    names = [...settings.names];
+    names = settings.names.map((name, i) => name || t("name.player", { n: i + 1 }));
     board.localIndex = null;
     board.opponentReady = false;
   }

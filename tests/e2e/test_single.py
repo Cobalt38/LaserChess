@@ -47,14 +47,14 @@ def main():
         p.click("#lesson-exit")
         p.wait("!tutorial.active && document.getElementById('dlg-new').open", 3)
 
-        step("finestra Nuova partita: contro il computer, Facile, PRISMA")
+        step("finestra Nuova partita: contro il computer, Facile, ACE")
         assert p.js("document.querySelector('#new-form').elements.mode.value") == "ai"
         assert p.js("document.querySelector('#new-form').elements.level.value") == "easy", "per chi inizia il livello è Facile"
         assert p.visible("#new-start"), "Inizia la partita deve essere in vista senza scorrere"
         assert p.js("!!document.getElementById('setup-preview').src"), "anteprima della disposizione mancante"
-        assert p.js("document.getElementById('setup-select').value") == "PRISMA", "PRISMA deve essere la predefinita"
-        assert p.js("[...document.querySelectorAll('[name=variant]')].every(i => i.disabled && i.checked)"), \
-            "con PRISMA le varianti sono già incluse"
+        assert p.js("document.getElementById('setup-select').value") == "ACE", "ACE deve essere la predefinita"
+        assert p.js("[...document.querySelectorAll('[name=variant]')].every(i => !i.disabled && !i.checked)"), \
+            "con ACE le varianti si possono scegliere e all'inizio sono spente"
         # Dietro la finestra la board è vuota: dove ci sarebbe il King blu c'è il nero della casella
         p.wait("document.getElementById('dlg-new').open && typeof board === 'object'", 3)
         assert max(p.pixel("e1")) < 40, f"la board deve essere vuota, al posto del King c'è {p.pixel('e1')}"
@@ -64,8 +64,8 @@ def main():
         p.click("#new-start")
         p.wait("!document.getElementById('dlg-new').open")
         assert p.js("game.mode") == "ai" and p.js("board.localIndex") == 0
-        assert p.js("board.setupName") == "PRISMA"
-        assert p.js("board.pieces.filter(p => p.type === 'Prism' || p.type === 'HalfMirror').length") == 4
+        assert p.js("board.setupName") == "ACE"
+        assert p.js("board.pieces.filter(p => p.type === 'Prism' || p.type === 'HalfMirror').length") == 0
         p.wait("Math.max(...(" + "(() => { const c = board.cellByName('e1').center; const q = boardToScreen(c.x, c.y), d = pixelDensity(); return [...drawingContext.getImageData(Math.round(q.x * d), Math.round(q.y * d), 1, 1).data].slice(0, 3); })()" + ")) > 60", 3, "pezzi visibili dopo l'inizio")
         assert p.js("game.ai.side") == 1
         p.wait("document.getElementById('hint').textContent.includes('Tocca uno dei tuoi pezzi blu')", 3)
@@ -269,6 +269,18 @@ def main():
                 base = p.js(f"SETUPS['{name}'].length + 2")
                 has = p.js(f"SETUPS['{name}'].some(([c]) => c === Prism)")
                 assert n == (base + 4 if variants == "true" and not has else base), (name, variants, n)
+
+        step("lingua: dalle Regole passo all'inglese, la pagina si ricarica tradotta")
+        p.js("for (const d of document.querySelectorAll('dialog[open]')) d.close(); 0")
+        p.click("[data-open=dlg-help]")
+        p.d.execute_script("const s = document.getElementById('opt-lang'); s.value = 'en'; s.dispatchEvent(new Event('change'));")
+        p.wait("typeof board === 'object' && board.players.length === 2 && document.documentElement.lang === 'en'", 20)
+        assert p.text("#btn-fire") == "FIRE", p.text("#btn-fire")
+        assert p.text("[data-open=dlg-help] .label") == "Rules"
+        p.wait("document.getElementById('hint').textContent.startsWith('Tap one of your blue pieces')", 5, "suggerimento in inglese")
+        p.tap_cell("e2")
+        p.wait("board.selected !== null", 3)
+        p.shot("09-inglese")
         p.check_no_errors()
     finally:
         p.quit()

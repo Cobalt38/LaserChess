@@ -48,12 +48,12 @@ class OnlinePanel {
     el.copyBtn.addEventListener("click", () => this.copyLink());
     el.shareBtn.hidden = !Platform.canShare();
     el.shareBtn.addEventListener("click", () => {
-      Platform.share({ title: "Laser Chess", text: "Ti sfido a Laser Chess!", url: online.inviteLink });
+      Platform.share({ title: "Laser Chess", text: t("online.shareText"), url: online.inviteLink });
     });
     el.link.addEventListener("focus", () => el.link.select());
     el.reconnectBtn.addEventListener("click", () => online.retryNow());
     el.leaveBtn.addEventListener("click", async () => {
-      if (online.connected && !(await actions.ask("Uscire dalla partita online?", "L'altro giocatore resterà da solo.", "Esci", "Resta"))) return;
+      if (online.connected && !(await actions.ask(t("ask.leave.title"), t("ask.leave.text"), t("ask.leave.yes"), t("ask.leave.no")))) return;
       online.leave();
       // Il link d'invito non serve più: lo tolgo dall'indirizzo, così ricaricando non si rientra
       history.replaceState(null, "", location.href.split(/[?#]/)[0]);
@@ -66,7 +66,7 @@ class OnlinePanel {
     const name = this.el.name.value.trim();
     const o = this.online;
     if (name && o.opponentName && sameName(name, o.opponentName)) {
-      this.actions.toast(`${o.opponentName} si chiama già così: scegli un nome diverso.`);
+      this.actions.toast(t("toast.nameTakenBy", { name: o.opponentName }));
       this.el.name.value = settings.myName;
       return;
     }
@@ -75,9 +75,9 @@ class OnlinePanel {
     this.actions.saveSettings();
     if (changed) o.rename(this.actions.myName());
     if (feedback) {
-      this.el.nameSave.textContent = "Salvato ✓";
+      this.el.nameSave.textContent = t("online.saved");
       clearTimeout(this.savedTimer);
-      this.savedTimer = setTimeout(() => (this.el.nameSave.textContent = "Salva"), 1500);
+      this.savedTimer = setTimeout(() => (this.el.nameSave.textContent = t("online.save")), 1500);
     }
   }
 
@@ -93,8 +93,8 @@ class OnlinePanel {
   copyLink() {
     const { link, copyBtn } = this.el;
     const done = () => {
-      copyBtn.textContent = "Copiato!";
-      setTimeout(() => (copyBtn.textContent = "Copia link"), 1500);
+      copyBtn.textContent = t("online.copied");
+      setTimeout(() => (copyBtn.textContent = t("online.copy")), 1500);
     };
     Platform.copy(link.value).then((ok) => {
       if (ok) {
@@ -112,26 +112,22 @@ class OnlinePanel {
 
   message() {
     const o = this.online;
-    const who = o.opponentName || "L'avversario";
+    const who = o.opponentName || t("name.theOpponent");
     switch (o.state) {
       case "error":
         return { text: o.error, error: true };
       case "creating":
-        return { text: "Creo la partita…" };
+        return { text: t("online.msg.creating") };
       case "hosting":
-        return { text: "In attesa che il tuo amico apra il link…" };
+        return { text: t("online.msg.hosting") };
       case "joining":
-        return { text: o.attempt > 0 ? `Mi collego alla partita ${o.code}… (tentativo ${o.attempt + 1})` : `Mi collego alla partita ${o.code}…` };
+        return { text: o.attempt > 0 ? t("online.msg.joiningRetry", { code: o.code, n: o.attempt + 1 }) : t("online.msg.joining", { code: o.code }) };
       case "connected":
-        return { text: `🟢 Collegato con ${who}. Giochi con ${o.role === "host" ? "il blu" : "l'arancione"}.` };
+        return { text: t("online.msg.connected", { name: who, color: t(o.role === "host" ? "online.asBlue" : "online.asOrange") }) };
       case "lost":
-        return o.role === "host"
-          ? { text: `🟠 ${who} si è disconnesso. La partita resta qui: può rientrare riaprendo lo stesso link.` }
-          : { text: "🟠 Connessione persa: mi ricollego da solo, non serve ricaricare la pagina." };
+        return { text: o.role === "host" ? t("online.msg.lostHost", { name: who }) : t("online.msg.lostGuest") };
       default:
-        return this.invited
-          ? { text: "Ti hanno invitato a una partita: scegli il tuo nome e premi Entra." }
-          : { text: "" };
+        return { text: this.invited ? t("online.msg.invited") : "" };
     }
   }
 
@@ -152,17 +148,11 @@ class OnlinePanel {
     el.msg.classList.toggle("error", !!error);
     el.reconnectBtn.hidden = !(o.role === "guest" && (s === "lost" || (s === "joining" && o.attempt > 0)));
     el.leaveBtn.hidden = !o.active;
-    el.leaveBtn.textContent = s === "hosting" || s === "creating" ? "Annulla" : "Esci dalla partita online";
+    el.leaveBtn.textContent = t(s === "hosting" || s === "creating" ? "online.cancel" : "online.leave");
 
-    const [ico, label] = {
-      creating: ["🟡", "Creo…"],
-      hosting: ["🟡", "In attesa"],
-      joining: ["🟡", "Collego…"],
-      connected: ["🟢", "Online"],
-      lost: ["🟠", "Riconnetto"],
-    }[s] || ["🌐", "Online"];
-    el.openBtn.querySelector(".ico").textContent = ico;
-    el.openBtn.querySelector(".label").textContent = label;
+    const ico = { creating: "🟡", hosting: "🟡", joining: "🟡", connected: "🟢", lost: "🟠" }[s];
+    el.openBtn.querySelector(".ico").textContent = ico || "🌐";
+    el.openBtn.querySelector(".label").textContent = t(ico ? `online.btn.${s}` : "online.btn.off");
 
     // Appena collegati la finestra si chiude da sola: si gioca
     if (s === "connected" && this.lastState !== "connected") {

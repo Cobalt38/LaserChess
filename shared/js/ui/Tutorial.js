@@ -47,7 +47,7 @@ class Tutorial {
     this.state = "play";
     this.message = "";
     this.ownLost = [];
-    b.setup("Tutorial", [this.actions.myName(), "Arancione"], [], this.lesson.pieces);
+    b.setup("Tutorial", [this.actions.myName(), t("tut.orange")], [], this.lesson.pieces);
     b.localIndex = 0;
     b.opponentReady = true;
     b.start();
@@ -87,12 +87,13 @@ class Tutorial {
     const { at, to, rot } = this.lesson.hint;
     const cell = b.cellByName(at);
     b.hintCells = to ? [cell, b.cellByName(to)] : [cell];
+    const piece = pieceName(cell.piece.type);
     if (to) {
-      this.message = `💡 Sposta il ${cell.piece.type} evidenziato sulla casella evidenziata accanto, poi premi SPARA.`;
+      this.message = t("tut.hintMove", { piece });
     } else {
       const rots = cell.piece.rotations();
-      const arrow = rots.length === 1 ? "con la freccia gialla" : rots[0] === rot ? "con la freccia ↺" : "con la freccia ↻";
-      this.message = `💡 Tocca il ${cell.piece.type} evidenziato e ruotalo ${arrow}, poi premi SPARA.`;
+      const arrow = t(rots.length === 1 ? "tut.arrowSingle" : rots[0] === rot ? "tut.arrowCcw" : "tut.arrowCw");
+      this.message = t("tut.hintRotate", { piece, arrow });
     }
     this.render();
   }
@@ -112,40 +113,38 @@ class Tutorial {
     b.hintCells = [];
     if (go && go.winner === b.players[0]) {
       this.state = "won";
-      this.message = this.index + 1 < LESSONS.length
-        ? "✓ Bravo! Il raggio ha colpito il King arancione. Premi Avanti per la prossima lezione."
-        : "✓ Bravo! Hai colpito il King anche da dietro lo scudo. Premi Avanti.";
+      this.message = t(this.index + 1 < LESSONS.length ? "tut.won" : "tut.wonLast");
     } else {
       this.state = "failed";
-      if (go && go.winner) this.message = "Il raggio ha colpito il tuo King: in una partita vera avresti perso. Premi Riprova.";
-      else if (go) this.message = "Il raggio ha colpito tutti e due i King. Premi Riprova.";
-      else if (this.ownLost.length) this.message = `Il raggio ha eliminato il tuo ${this.ownLost[0].type}: l'ha colpito dove non c'è lo specchio. Premi Riprova.`;
-      else this.message = "Il raggio non è arrivato al King arancione. Premi Riprova (o 💡 Aiuto).";
+      if (go && go.winner) this.message = t("tut.failOwnKing");
+      else if (go) this.message = t("tut.failBoth");
+      else if (this.ownLost.length) this.message = t("tut.failOwnPiece", { piece: pieceName(this.ownLost[0].type) });
+      else this.message = t("tut.failMiss");
     }
     this.render();
   }
 
   status() {
-    return this.state === "finished" ? "Tutorial finito!" : `Tutorial · ${this.index + 1} di ${LESSONS.length}`;
+    return this.state === "finished" ? t("tut.finishedStatus") : t("tut.status", { n: this.index + 1, total: LESSONS.length });
   }
 
   title() {
-    return this.state === "finished" ? "Pronto per una partita vera" : this.lesson.title;
+    return t(this.state === "finished" ? "tut.finishedTitle" : `lesson.${this.lesson.id}.title`);
   }
 
   // Testo per il riquadro dei suggerimenti (vedi GameUI.coach)
   coach() {
     const b = this.board;
     if (this.state === "finished") {
-      return { step: 0, kind: "good", text: "🎉 Hai finito il tutorial! Ora prova una partita vera contro il computer. Nelle Regole trovi cosa fa ogni pezzo." };
+      return { step: 0, kind: "good", text: t("tut.finished") };
     }
     if (this.state === "won") return { step: 0, kind: "good", text: this.message };
     if (this.state === "failed") return { step: 0, kind: "danger", text: this.message };
-    if (b.busy) return { step: 2, text: "Il raggio viaggia…" };
+    if (b.busy) return { step: 2, text: t("tut.flying") };
     const step = b.phase === "fire" ? 2 : 1;
     if (this.message) return { step, text: this.message };
-    if (b.phase === "fire") return { step, text: "Mossa fatta! Ora premi SPARA. Se la linea tratteggiata non arriva al King arancione, premi ↶ Annulla e riprova." };
-    return { step, text: this.lesson.text };
+    if (b.phase === "fire") return { step, text: t("tut.moved") };
+    return { step, text: t(`lesson.${this.lesson.id}.text`) };
   }
 
   render() {
@@ -153,7 +152,7 @@ class Tutorial {
     el.hint.hidden = state !== "play" && state !== "failed";
     el.retry.hidden = state !== "failed";
     el.next.hidden = state !== "won" && state !== "finished";
-    el.next.textContent = state === "finished" ? "Gioca contro il computer" : this.index + 1 < LESSONS.length ? "Avanti →" : "Fine →";
-    el.exit.textContent = state === "finished" ? "Altre partite" : "Esci";
+    el.next.textContent = t(state === "finished" ? "tut.playAi" : this.index + 1 < LESSONS.length ? "tut.next" : "tut.end");
+    el.exit.textContent = t(state === "finished" ? "tut.more" : "tut.exit");
   }
 }

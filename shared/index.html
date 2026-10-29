@@ -29,14 +29,16 @@
       <!-- Board. I pulsanti di rotazione compaiono accanto al pezzo selezionato (li posiziona GameUI) -->
       <main id="stage">
         <button id="btn-rot-ccw" type="button" class="rotate-handle" hidden
-          title="Ruota in senso antiorario (Q)" aria-label="Ruota il pezzo in senso antiorario">
+          title="Ruota in senso antiorario (Q)" aria-label="Ruota il pezzo in senso antiorario"
+          data-i18n-title="rot.ccw.title" data-i18n-aria-label="rot.ccw.aria">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M3 4v6h6" />
             <path d="M3.5 10A9 9 0 1 1 6 17.5" />
           </svg>
         </button>
         <button id="btn-rot-cw" type="button" class="rotate-handle" hidden
-          title="Ruota in senso orario (E)" aria-label="Ruota il pezzo in senso orario">
+          title="Ruota in senso orario (E)" aria-label="Ruota il pezzo in senso orario"
+          data-i18n-title="rot.cw.title" data-i18n-aria-label="rot.cw.aria">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M21 4v6h-6" />
             <path d="M20.5 10A9 9 0 1 0 18 17.5" />
@@ -48,11 +50,11 @@
       </main>
 
       <!-- Istruzioni sempre visibili: i due passi del turno e un suggerimento su cosa fare adesso -->
-      <section id="coach" aria-label="Come si gioca">
-        <p class="goal" id="goal">🎯 Colpisci il <strong>King</strong> avversario, proteggi il tuo</p>
+      <section id="coach" aria-label="Come si gioca" data-i18n-aria-label="coach.aria">
+        <p class="goal" id="goal" data-i18n="goal">🎯 Colpisci il <strong>King</strong> avversario, proteggi il tuo</p>
         <ol class="steps">
-          <li id="step-move"><span class="num">1</span><span>Sposta <em>o</em> ruota un tuo pezzo</span></li>
-          <li id="step-fire"><span class="num">2</span><span>Spara il laser</span></li>
+          <li id="step-move"><span class="num">1</span><span data-i18n="step.move">Sposta <em>o</em> ruota un tuo pezzo</span></li>
+          <li id="step-fire"><span class="num">2</span><span data-i18n="step.fire">Spara il laser</span></li>
         </ol>
         <div class="hint">
           <img id="hint-icon" alt="" hidden>
@@ -60,8 +62,8 @@
         </div>
         <!-- Tutorial: comandi della lezione (li mostra js/ui/Tutorial.js) -->
         <div id="lesson-actions" class="lesson-actions" hidden>
-          <button id="lesson-hint" type="button">💡 Aiuto</button>
-          <button id="lesson-retry" type="button">↻ Riprova</button>
+          <button id="lesson-hint" type="button" data-i18n="lesson.hint">💡 Aiuto</button>
+          <button id="lesson-retry" type="button" data-i18n="lesson.retry">↻ Riprova</button>
           <button id="lesson-next" type="button" class="accent">Avanti →</button>
           <button id="lesson-exit" type="button">Esci</button>
         </div>
@@ -70,12 +72,13 @@
       <div id="controls">
         <div class="fire-row">
           <button id="btn-undo" type="button" class="round labeled" disabled
-            title="Annulla la mossa (Ctrl+Z)" aria-label="Annulla la mossa">
+            title="Annulla la mossa (Ctrl+Z)" aria-label="Annulla la mossa"
+            data-i18n-title="undo.title" data-i18n-aria-label="undo.aria">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M9 14 4 9l5-5" />
               <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
             </svg>
-            <span class="btn-label" aria-hidden="true">Annulla</span>
+            <span class="btn-label" aria-hidden="true" data-i18n="undo.label">Annulla</span>
           </button>
           <button id="btn-fire" type="button" class="fire" aria-disabled="true">
             <svg class="fire-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -83,26 +86,27 @@
               <path d="M12 1.5v5M12 17.5v5M1.5 12h5M17.5 12h5" />
               <circle cx="12" cy="12" r="2" class="fire-dot" />
             </svg>
-            <span>SPARA</span>
+            <span data-i18n="fire.label">SPARA</span>
           </button>
         </div>
         <button id="btn-draw" type="button" class="accent" hidden
-          title="La stessa posizione si è presentata tre volte">Dichiara patta (posizione ripetuta)</button>
+          title="La stessa posizione si è presentata tre volte"
+          data-i18n-title="draw.title" data-i18n="draw.label">Dichiara patta (posizione ripetuta)</button>
       </div>
 
-      <section id="history-panel" aria-label="Storico delle mosse">
+      <section id="history-panel" aria-label="Storico delle mosse" data-i18n-aria-label="history.aria">
         <details id="history-box">
-          <summary>Mosse <span id="history-count" class="count"></span><span id="history-last" class="last"></span></summary>
+          <summary><span data-i18n="history.title">Mosse</span> <span id="history-count" class="count"></span><span id="history-last" class="last"></span></summary>
           <ol id="history"></ol>
         </details>
       </section>
 
       <!-- Icona + nome; dove lo spazio è poco si vede il nome corto sotto l'icona -->
       <nav id="menu" aria-label="Menu">
-        <button id="btn-new" type="button"><span class="ico" aria-hidden="true">➕</span><span class="long">Nuova partita</span><span class="short" aria-hidden="true">Nuova</span></button>
+        <button id="btn-new" type="button"><span class="ico" aria-hidden="true">➕</span><span class="long" data-i18n="menu.new">Nuova partita</span><span class="short" aria-hidden="true" data-i18n="menu.newShort">Nuova</span></button>
         <button id="btn-online" type="button" data-open="dlg-online"><span class="ico" aria-hidden="true">🌐</span><span class="label">Online</span></button>
-        <button type="button" data-open="dlg-names"><span class="ico" aria-hidden="true">👥</span><span class="label">Nomi</span></button>
-        <button type="button" data-open="dlg-help"><span class="ico" aria-hidden="true">❓</span><span class="label">Regole</span></button>
+        <button type="button" data-open="dlg-names"><span class="ico" aria-hidden="true">👥</span><span class="label" data-i18n="menu.names">Nomi</span></button>
+        <button type="button" data-open="dlg-help"><span class="ico" aria-hidden="true">❓</span><span class="label" data-i18n="menu.rules">Regole</span></button>
         <button id="btn-sound" type="button" aria-pressed="true"><span class="ico" aria-hidden="true">🔊</span><span class="label">Audio</span></button>
       </nav>
     </div>
@@ -113,7 +117,7 @@
         <p id="go-text"></p>
         <div class="row">
           <button id="go-new" type="button" class="accent">Nuova partita</button>
-          <button id="go-close" type="button">Guarda la board</button>
+          <button id="go-close" type="button" data-i18n="go.close">Guarda la board</button>
         </div>
       </div>
     </div>
@@ -124,69 +128,71 @@
     <!-- Scheda nuova o app appena aperta: obiettivo in due righe, la partita salvata da riprendere
          e la scelta tra tutorial e partita nuova -->
     <dialog id="dlg-welcome" class="welcome" aria-labelledby="welcome-title">
-      <h2 id="welcome-title">Benvenuto in Laser Chess!</h2>
+      <h2 id="welcome-title" data-i18n="welcome.title">Benvenuto in Laser Chess!</h2>
       <img id="welcome-art" class="welcome-art" alt="" hidden>
-      <p class="lead">Ognuno ha un <strong>laser</strong>. Vince chi colpisce per primo il
+      <p class="lead" data-i18n="welcome.lead">Ognuno ha un <strong>laser</strong>. Vince chi colpisce per primo il
         <strong>King</strong> avversario.</p>
-      <p class="muted">A ogni turno sposti o ruoti un tuo pezzo, poi spari. Gli specchi verdi deviano il raggio.</p>
-      <button id="welcome-resume" type="button" class="accent big" hidden>▶ Riprendi la partita <span class="sub"></span></button>
-      <button id="welcome-learn" type="button" class="accent big">🎓 Impara a giocare <span class="sub">2 minuti</span></button>
+      <p class="muted" data-i18n="welcome.text">A ogni turno sposti o ruoti un tuo pezzo, poi spari. Gli specchi verdi deviano il raggio.</p>
+      <button id="welcome-resume" type="button" class="accent big" hidden><span data-i18n="welcome.resume">▶ Riprendi la partita</span> <span class="sub"></span></button>
+      <button id="welcome-learn" type="button" class="accent big"><span data-i18n="welcome.learn">🎓 Impara a giocare</span> <span class="sub" data-i18n="welcome.learnSub">2 minuti</span></button>
       <button id="welcome-play" type="button" class="big">▶ Gioca subito</button>
     </dialog>
 
     <dialog id="dlg-new" aria-labelledby="dlg-new-title">
-      <form method="dialog" class="dialog-close"><button aria-label="Chiudi">✕</button></form>
-      <h2 id="dlg-new-title">Nuova partita</h2>
-      <button id="new-tutorial" type="button" class="tutorial-link">🎓 Non sai giocare? <strong>Fai il tutorial</strong> (2 minuti)</button>
+      <form method="dialog" class="dialog-close"><button aria-label="Chiudi" data-i18n-aria-label="dialog.close">✕</button></form>
+      <h2 id="dlg-new-title" data-i18n="new.title">Nuova partita</h2>
+      <button id="new-tutorial" type="button" class="tutorial-link" data-i18n="new.tutorial">🎓 Non sai giocare? <strong>Fai il tutorial</strong> (2 minuti)</button>
       <form id="new-form" class="stack">
         <fieldset class="choice modes">
-          <legend>Come vuoi giocare?</legend>
-          <label><input type="radio" name="mode" value="ai"><span>🤖 Contro il computer</span></label>
-          <label><input type="radio" name="mode" value="local"><span>👥 In due, sullo stesso schermo</span></label>
-          <label><input type="radio" name="mode" value="online"><span>🌐 Online, con un amico</span></label>
+          <legend data-i18n="new.modes">Come vuoi giocare?</legend>
+          <label><input type="radio" name="mode" value="ai"><span data-i18n="new.mode.ai">🤖 Contro il computer</span></label>
+          <label><input type="radio" name="mode" value="local"><span data-i18n="new.mode.local">👥 In due, sullo stesso schermo</span></label>
+          <label><input type="radio" name="mode" value="online"><span data-i18n="new.mode.online">🌐 Online, con un amico</span></label>
         </fieldset>
 
         <div class="stack" data-mode="ai">
           <fieldset class="choice segmented">
-            <legend>Livello</legend>
-            <label><input type="radio" name="level" value="easy"><span>Facile</span></label>
-            <label><input type="radio" name="level" value="medium"><span>Medio</span></label>
-            <label><input type="radio" name="level" value="hard"><span>Difficile</span></label>
+            <legend data-i18n="new.level">Livello</legend>
+            <label><input type="radio" name="level" value="easy"><span data-i18n="level.easy">Facile</span></label>
+            <label><input type="radio" name="level" value="medium"><span data-i18n="level.medium">Medio</span></label>
+            <label><input type="radio" name="level" value="hard"><span data-i18n="level.hard">Difficile</span></label>
           </fieldset>
-          <p class="muted small">Prima partita? Scegli Facile.</p>
+          <p class="muted small" data-i18n="new.levelHint">Prima partita? Scegli Facile.</p>
           <fieldset class="choice segmented">
-            <legend>Chi muove per primo?</legend>
-            <label><input type="radio" name="side" value="0"><span><span class="dot blue"></span> Inizio io</span></label>
-            <label><input type="radio" name="side" value="1"><span><span class="dot orange"></span> Inizia il computer</span></label>
+            <legend data-i18n="new.side">Chi muove per primo?</legend>
+            <label><input type="radio" name="side" value="0"><span><span class="dot blue"></span> <span data-i18n="new.side.me">Inizio io</span></span></label>
+            <label><input type="radio" name="side" value="1"><span><span class="dot orange"></span> <span data-i18n="new.side.ai">Inizia il computer</span></span></label>
           </fieldset>
-          <p class="muted small">Chi inizia gioca col blu. Se inizia il computer, tu sei l'arancione
+          <p class="muted small" data-i18n="new.sideHint">Chi inizia gioca col blu. Se inizia il computer, tu sei l'arancione
             e la board si gira per avere i tuoi pezzi in basso.</p>
-          <label class="field">Il tuo nome
-            <input name="myName" maxlength="16" autocomplete="nickname" placeholder="Giocatore">
+          <label class="field"><span data-i18n="field.myName">Il tuo nome</span>
+            <input name="myName" maxlength="16" autocomplete="nickname" placeholder="Giocatore" data-i18n-placeholder="name.default">
           </label>
         </div>
 
         <div class="stack" data-mode="local">
           <label class="field player-field"><span class="dot blue"></span>
-            <input name="name0" maxlength="16" placeholder="Giocatore 1" aria-label="Nome del giocatore blu (inizia)"></label>
+            <input name="name0" maxlength="16" placeholder="Giocatore 1" aria-label="Nome del giocatore blu (inizia)"
+              data-i18n-placeholder="name.player1" data-i18n-aria-label="new.name0.aria"></label>
           <label class="field player-field"><span class="dot orange"></span>
-            <input name="name1" maxlength="16" placeholder="Giocatore 2" aria-label="Nome del giocatore arancione"></label>
-          <p class="muted small">Il blu fa la prima mossa.</p>
+            <input name="name1" maxlength="16" placeholder="Giocatore 2" aria-label="Nome del giocatore arancione"
+              data-i18n-placeholder="name.player2" data-i18n-aria-label="new.name1.aria"></label>
+          <p class="muted small" data-i18n="new.blueFirst">Il blu fa la prima mossa.</p>
         </div>
 
-        <p class="muted" data-mode="online">Nella prossima finestra crei un link da mandare a un amico,
+        <p class="muted" data-mode="online" data-i18n="new.onlineHint">Nella prossima finestra crei un link da mandare a un amico,
           oppure entri nella partita di un amico con il suo codice.</p>
 
         <details id="setup-box" class="setup-box">
-          <summary>Disposizione dei pezzi: <strong id="setup-name"></strong></summary>
+          <summary><span data-i18n="new.setupBox">Disposizione dei pezzi:</span> <strong id="setup-name"></strong></summary>
           <div class="stack">
-            <label class="field">Disposizione iniziale
+            <label class="field"><span data-i18n="new.setup">Disposizione iniziale</span>
               <select name="setup" id="setup-select"></select>
             </label>
             <p id="setup-desc" class="muted small"></p>
-            <img id="setup-preview" class="setup-preview" alt="Anteprima della disposizione iniziale">
+            <img id="setup-preview" class="setup-preview" alt="Anteprima della disposizione iniziale" data-i18n-alt="new.preview">
             <details class="variants-box">
-              <summary>Varianti: pezzi inventati</summary>
+              <summary data-i18n="new.variants">Varianti: pezzi inventati</summary>
               <div id="variant-list" class="variants"></div>
             </details>
           </div>
@@ -201,114 +207,118 @@
     </dialog>
 
     <dialog id="dlg-online" aria-labelledby="dlg-online-title">
-      <form method="dialog" class="dialog-close"><button aria-label="Chiudi">✕</button></form>
-      <h2 id="dlg-online-title">Gioca online</h2>
-      <p class="muted">Crea un link e mandalo al tuo amico: quando lo apre, la partita parte.
+      <form method="dialog" class="dialog-close"><button aria-label="Chiudi" data-i18n-aria-label="dialog.close">✕</button></form>
+      <h2 id="dlg-online-title" data-i18n="online.title">Gioca online</h2>
+      <p class="muted" data-i18n="online.intro">Crea un link e mandalo al tuo amico: quando lo apre, la partita parte.
         Niente indirizzi IP da scambiare.</p>
       <form id="my-name-form" class="field">
-        <label for="my-name">Il tuo nome</label>
+        <label for="my-name" data-i18n="field.myName">Il tuo nome</label>
         <div class="row">
-          <input id="my-name" maxlength="16" autocomplete="nickname" placeholder="Giocatore">
-          <button id="my-name-save" type="submit">Salva</button>
+          <input id="my-name" maxlength="16" autocomplete="nickname" placeholder="Giocatore" data-i18n-placeholder="name.default">
+          <button id="my-name-save" type="submit" data-i18n="online.save">Salva</button>
         </div>
       </form>
 
       <div id="online-start" class="stack">
-        <button id="btn-host" type="button" class="accent">🔗 Crea link partita</button>
-        <p class="muted small">Disposizione e varianti sono quelle scelte in “Nuova partita”.</p>
-        <p class="divider"><span>oppure entra in una partita</span></p>
+        <button id="btn-host" type="button" class="accent" data-i18n="online.host">🔗 Crea link partita</button>
+        <p class="muted small" data-i18n="online.hostNote">Disposizione e varianti sono quelle scelte in “Nuova partita”.</p>
+        <p class="divider"><span data-i18n="online.or">oppure entra in una partita</span></p>
         <form id="join-form" class="row">
           <input id="join-code" autocomplete="off" autocapitalize="characters" spellcheck="false"
-            placeholder="Codice o link" aria-label="Codice o link della partita">
-          <button type="submit">Entra</button>
+            placeholder="Codice o link" aria-label="Codice o link della partita"
+            data-i18n-placeholder="online.code" data-i18n-aria-label="online.code.aria">
+          <button type="submit" data-i18n="online.join">Entra</button>
         </form>
       </div>
 
       <div id="online-room" class="stack" hidden>
-        <p class="muted">Manda questo link al tuo amico:</p>
-        <input id="invite-link" readonly aria-label="Link della partita">
+        <p class="muted" data-i18n="online.sendLink">Manda questo link al tuo amico:</p>
+        <input id="invite-link" readonly aria-label="Link della partita" data-i18n-aria-label="online.link.aria">
         <div class="row">
-          <button id="btn-copy" type="button" class="accent">Copia link</button>
-          <button id="btn-share" type="button">Condividi…</button>
+          <button id="btn-copy" type="button" class="accent" data-i18n="online.copy">Copia link</button>
+          <button id="btn-share" type="button" data-i18n="online.share">Condividi…</button>
         </div>
-        <p class="muted">Oppure detta il codice: <strong id="room-code" class="code"></strong></p>
+        <p class="muted"><span data-i18n="online.dictate">Oppure detta il codice:</span> <strong id="room-code" class="code"></strong></p>
       </div>
 
       <p id="online-msg" class="online-msg" aria-live="polite" hidden></p>
       <div class="row">
-        <button id="btn-reconnect" type="button" class="accent" hidden>Riprova ora</button>
+        <button id="btn-reconnect" type="button" class="accent" hidden data-i18n="online.retry">Riprova ora</button>
         <button id="btn-leave" type="button" hidden>Esci dalla partita online</button>
       </div>
 
-      <p class="fineprint">I due browser si collegano direttamente con WebRTC, una connessione cifrata.
+      <p class="fineprint" data-i18n="online.fineprint">I due browser si collegano direttamente con WebRTC, una connessione cifrata.
         Il server gratuito di PeerJS serve solo a farli trovare tramite il codice. Come in ogni gioco
         con collegamento diretto, il tuo amico può vedere il tuo indirizzo IP: gioca con chi conosci.</p>
     </dialog>
 
     <dialog id="dlg-names" aria-labelledby="dlg-names-title">
-      <form method="dialog" class="dialog-close"><button aria-label="Chiudi">✕</button></form>
-      <h2 id="dlg-names-title">Nomi dei giocatori</h2>
+      <form method="dialog" class="dialog-close"><button aria-label="Chiudi" data-i18n-aria-label="dialog.close">✕</button></form>
+      <h2 id="dlg-names-title" data-i18n="names.title">Nomi dei giocatori</h2>
       <form id="names-form" class="stack">
         <label class="field player-field"><span class="dot" id="name-dot-0"></span>
-          <input id="name-0" maxlength="16" aria-label="Nome del giocatore blu"></label>
+          <input id="name-0" maxlength="16" aria-label="Nome del giocatore blu" data-i18n-aria-label="names.blue.aria"></label>
         <label class="field player-field"><span class="dot" id="name-dot-1"></span>
-          <input id="name-1" maxlength="16" aria-label="Nome del giocatore arancione"></label>
+          <input id="name-1" maxlength="16" aria-label="Nome del giocatore arancione" data-i18n-aria-label="names.orange.aria"></label>
         <p id="names-note" class="muted small" hidden></p>
         <p id="names-error" class="form-error" role="alert" hidden></p>
         <div class="row">
-          <button type="submit" class="accent">Salva</button>
-          <button type="button" id="names-cancel">Annulla</button>
+          <button type="submit" class="accent" data-i18n="online.save">Salva</button>
+          <button type="button" id="names-cancel" data-i18n="common.cancel">Annulla</button>
         </div>
       </form>
     </dialog>
 
     <dialog id="dlg-help" aria-labelledby="dlg-help-title">
-      <form method="dialog" class="dialog-close"><button aria-label="Chiudi">✕</button></form>
-      <h2 id="dlg-help-title">Regole</h2>
-      <button id="help-tutorial" type="button" class="accent">🎓 Impara giocando: il tutorial</button>
-      <p>Vince chi colpisce per primo il <strong>King</strong> avversario con il proprio laser.
+      <form method="dialog" class="dialog-close"><button aria-label="Chiudi" data-i18n-aria-label="dialog.close">✕</button></form>
+      <h2 id="dlg-help-title" data-i18n="help.title">Regole</h2>
+      <button id="help-tutorial" type="button" class="accent" data-i18n="help.tutorial">🎓 Impara giocando: il tutorial</button>
+      <p data-i18n="help.goal">Vince chi colpisce per primo il <strong>King</strong> avversario con il proprio laser.
         Se il raggio colpisce il tuo King, perdi.</p>
-      <h3>Il turno</h3>
+      <h3 data-i18n="help.turn">Il turno</h3>
       <ol class="help">
-        <li><strong>Sposta</strong> un tuo pezzo di una casella (anche in diagonale) <em>oppure</em>
+        <li data-i18n="help.turn1"><strong>Sposta</strong> un tuo pezzo di una casella (anche in diagonale) <em>oppure</em>
           <strong>ruotalo</strong> con le frecce gialle accanto al pezzo.</li>
-        <li><strong>Spara</strong>: il raggio parte dal tuo Laser. Si spara sempre, anche se non colpisce nulla.</li>
+        <li data-i18n="help.turn2"><strong>Spara</strong>: il raggio parte dal tuo Laser. Si spara sempre, anche se non colpisce nulla.</li>
       </ol>
-      <p class="muted">Gli specchi verdi deviano il raggio. Un pezzo colpito dove non ha lo specchio viene eliminato.</p>
-      <h3>Cosa vedi sulla board</h3>
+      <p class="muted" data-i18n="help.mirrors">Gli specchi verdi deviano il raggio. Un pezzo colpito dove non ha lo specchio viene eliminato.</p>
+      <h3 data-i18n="help.marks">Cosa vedi sulla board</h3>
       <ul class="marks">
         <li><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M4 30 L20 30 L20 6" fill="none" stroke="rgb(255,50,50)" stroke-width="3" stroke-dasharray="4 6" stroke-linecap="round"/></svg>
-          <span><strong>Linea tratteggiata</strong>: dove andrà il raggio se spari adesso.</span></li>
+          <span data-i18n="help.mark.dash"><strong>Linea tratteggiata</strong>: dove andrà il raggio se spari adesso.</span></li>
         <li><svg viewBox="0 0 40 40" aria-hidden="true"><g fill="none" stroke="rgb(255,60,50)" stroke-width="3"><circle cx="20" cy="20" r="14"/><path d="M12 12 28 28M12 28 28 12"/></g></svg>
-          <span><strong>Mirino rosso</strong>: il pezzo che il raggio eliminerebbe. Guarda di chi è: se è il tuo King, perdi!</span></li>
+          <span data-i18n="help.mark.cross"><strong>Mirino rosso</strong>: il pezzo che il raggio eliminerebbe. Guarda di chi è: se è il tuo King, perdi!</span></li>
         <li><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="3" y="3" width="34" height="34" fill="rgba(200,200,50,0.3)" stroke="#555"/></svg>
-          <span><strong>Caselle gialle</strong>: dove puoi spostare il pezzo che hai toccato.</span></li>
+          <span data-i18n="help.mark.yellow"><strong>Caselle gialle</strong>: dove puoi spostare il pezzo che hai toccato.</span></li>
         <li><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="5" y="5" width="30" height="30" rx="5" fill="rgba(140,190,240,0.15)" stroke="rgb(140,190,240)" stroke-width="3"/></svg>
-          <span><strong>Bordo colorato</strong>: l'ultima mossa.</span></li>
+          <span data-i18n="help.mark.last"><strong>Bordo colorato</strong>: l'ultima mossa.</span></li>
         <li><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="3" y="3" width="34" height="34" fill="rgba(50,100,150,0.45)"/></svg>
-          <span><strong>Caselle colorate ai bordi</strong>: ci entrano solo i pezzi di quel colore.</span></li>
+          <span data-i18n="help.mark.reserved"><strong>Caselle colorate ai bordi</strong>: ci entrano solo i pezzi di quel colore.</span></li>
       </ul>
-      <h3>I pezzi</h3>
+      <h3 data-i18n="help.pieces">I pezzi</h3>
       <ul id="legend" class="legend"></ul>
       <details class="more">
-        <summary>Comandi</summary>
+        <summary data-i18n="help.commands">Comandi</summary>
         <ul class="help">
-          <li>Tocca un tuo pezzo, poi tocca una casella gialla per spostarlo (oppure trascinalo).</li>
-          <li>Le frecce gialle <strong>↺ ↻</strong> accanto al pezzo toccato lo ruotano (anche con una pressione lunga sul pezzo).</li>
-          <li><strong>SPARA</strong> (o tocca il tuo Laser) chiude il turno.</li>
-          <li><strong>↶ Annulla</strong> rimette a posto la mossa, finché non spari.</li>
-          <li>Se la stessa posizione si presenta tre volte, chi deve muovere può dichiarare patta.</li>
-          <li class="kbd-only">Tastiera: <kbd>Q</kbd> <kbd>E</kbd> ruotano, <kbd>Spazio</kbd> spara,
+          <li data-i18n="help.cmd1">Tocca un tuo pezzo, poi tocca una casella gialla per spostarlo (oppure trascinalo).</li>
+          <li data-i18n="help.cmd2">Le frecce gialle <strong>↺ ↻</strong> accanto al pezzo toccato lo ruotano (anche con una pressione lunga sul pezzo).</li>
+          <li data-i18n="help.cmd3"><strong>SPARA</strong> (o tocca il tuo Laser) chiude il turno.</li>
+          <li data-i18n="help.cmd4"><strong>↶ Annulla</strong> rimette a posto la mossa, finché non spari.</li>
+          <li data-i18n="help.cmd5">Se la stessa posizione si presenta tre volte, chi deve muovere può dichiarare patta.</li>
+          <li class="kbd-only" data-i18n="help.keys">Tastiera: <kbd>Q</kbd> <kbd>E</kbd> ruotano, <kbd>Spazio</kbd> spara,
             <kbd>Ctrl</kbd>+<kbd>Z</kbd> annulla, <kbd>Esc</kbd> deseleziona, <kbd>R</kbd> ricomincia. Col mouse:
             tasto destro sul pezzo per ruotarlo; sopra una freccia, la linea tratteggiata mostra il raggio ruotato.</li>
         </ul>
       </details>
-      <h3>Opzioni</h3>
-      <label class="check"><input type="checkbox" id="opt-preview"> Mostra dove andrà il raggio (linea tratteggiata)</label>
-      <label class="check"><input type="checkbox" id="opt-coach"> Mostra i suggerimenti sotto la board</label>
-      <label class="check app-only"><input type="checkbox" id="opt-haptics"> Vibrazione</label>
-      <p class="fineprint">Regole e disposizioni iniziali dal manuale di Laser Chess (ThinkFun),
-        tranne PRISMA. Versione <span id="app-version"></span>.
+      <h3 data-i18n="help.options">Opzioni</h3>
+      <label class="check"><input type="checkbox" id="opt-preview"> <span data-i18n="opt.preview">Mostra dove andrà il raggio (linea tratteggiata)</span></label>
+      <label class="check"><input type="checkbox" id="opt-coach"> <span data-i18n="opt.coach">Mostra i suggerimenti sotto la board</span></label>
+      <label class="check app-only"><input type="checkbox" id="opt-haptics"> <span data-i18n="opt.haptics">Vibrazione</span></label>
+      <label class="field lang-field"><span data-i18n="opt.lang">Lingua · Language</span>
+        <select id="opt-lang"></select>
+      </label>
+      <p class="fineprint"><span data-i18n="help.credits">Regole e disposizioni iniziali dal manuale di Laser Chess (ThinkFun),
+        tranne PRISMA. Versione</span> <span id="app-version"></span>.
         <a id="privacy-link" href="privacy.html" target="_blank" rel="noopener">Privacy</a></p>
     </dialog>
 
@@ -325,6 +335,10 @@
     <!-- L'ordine conta: ogni file usa le classi/costanti di quelli sopra -->
     <!-- Configurazione -->
     <script src="js/config/constants.js?v=dev"></script>
+    <!-- Lingue: prima di tutto quello che usa t() -->
+    <script src="js/i18n/i18n.js?v=dev"></script>
+    <script src="js/i18n/it.js?v=dev"></script>
+    <script src="js/i18n/en.js?v=dev"></script>
     <!-- Logica di base -->
     <script src="js/core/Player.js?v=dev"></script>
     <script src="js/core/Cell.js?v=dev"></script>

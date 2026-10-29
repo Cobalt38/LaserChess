@@ -36,8 +36,9 @@ firma il file `.aab` è nel README principale ("Pubblicare su Google Play").
    - Pubblico di destinazione: la scelta più semplice è "13 anni e più". Includere i minori di 13 anni
      attiva i requisiti del programma Famiglie (più controlli sulla parte online).
 6. **Scheda dello Store**: testi e immagini qui sotto.
-7. Paesi: l'interfaccia è solo in italiano. Pubblicare solo in Italia (e Svizzera italiana, San
-   Marino...) evita recensioni negative di chi non la capisce.
+7. Paesi e lingue: il gioco è in italiano e in inglese (segue la lingua del telefono). Aggiungi la
+   scheda in inglese qui sotto come traduzione (en-US) della scheda italiana: chi ha il telefono in
+   un'altra lingua vede la scheda e il gioco in inglese.
 
 ### Sicurezza dei dati (Data safety)
 
@@ -76,9 +77,40 @@ colpisce per primo il King avversario. Attento al tuo: se il raggio lo colpisce,
 • Sei disposizioni iniziali e due pezzi inventati: il Prism, che divide il raggio in tre, e lo
   specchio semitrasparente, che ne lascia passare metà
 • Niente pubblicità, niente account, nessun dato raccolto
+• In italiano e in inglese
 ```
 
 **Categoria**: Giochi › Da tavolo (o Strategia). **Tag**: strategia, a turni, due giocatori.
+
+## Store listing (English, en-US)
+
+**Name**: `Laser Chess` (see the name note above)
+
+**Short description** (max 80): `Mirrors and lasers: hit the enemy King before it hits yours.`
+
+**Full description**:
+
+```
+A turn-based strategy game with lasers and mirrors, for one or two players.
+
+Each player has a laser. Every turn you move or rotate one of your pieces, then fire: green
+mirrors bounce the beam, and pieces hit where they have no mirror are destroyed. The first to hit
+the enemy King wins. Watch out for your own: if the beam hits it, you lose.
+
+• Two-minute tutorial: four lessons on the real board, with a hint that shows the solution
+• Play against the computer, three levels (works offline too)
+• Two players on the same phone, passing it back and forth
+• Online with a friend: send them a link and they can play from the browser, no app needed
+• Before firing, a dashed line shows where the beam will go, and a warning stops you if you're
+  about to hit your own King
+• Six starting layouts and two invented pieces: the Prism, which splits the beam in three, and the
+  half mirror, which lets half of it through
+• No ads, no account, no data collected
+• In English and Italian
+```
+
+The screenshots are in Italian; for the English listing you can take them again with the game set to
+English (Rules › Options › Language).
 
 ## Immagini
 

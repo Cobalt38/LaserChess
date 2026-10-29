@@ -1,18 +1,17 @@
 // Collega la parte HTML (stato, suggerimenti, comandi, storico, finestre, fine partita) alla board.
 // update() gira a ogni frame ma tocca il DOM solo quando qualcosa è cambiato.
 
-// Cosa fa ogni pezzo: nei suggerimenti quando lo si tocca e nella legenda delle regole
-const PIECE_INFO = {
-  King: "Se il laser lo colpisce, da qualunque lato, la partita è persa. Si sposta di una casella ma non ruota.",
-  Laser: "Spara il raggio. Non si sposta e non può essere eliminato, ma si può girare.",
-  Deflector: "Lo specchio verde devia il raggio di 90°. Se il raggio lo colpisce sugli altri lati, viene eliminato.",
-  Defender: "Lo scudo davanti ferma il raggio. Se il raggio lo colpisce di lato o da dietro, viene eliminato.",
-  Switch: "Specchio su entrambi i lati: devia sempre il raggio e non può essere eliminato. Può scambiarsi di posto con un Deflector o un Defender vicino.",
-};
-for (const variant of Object.values(VARIANTS)) {
-  const text = variant.description.charAt(0).toLowerCase() + variant.description.slice(1);
-  for (const [PieceClass] of variant.pieces) PIECE_INFO[PieceClass.name] = `${variant.label} (variante): ${text}.`;
-}
+// Nome del pezzo e cosa fa (nei suggerimenti quando lo si tocca e nella legenda delle regole),
+// nella lingua scelta: chiavi piece.<tipo> e info.<tipo> in js/i18n
+const pieceName = (type) => t(`piece.${type}`);
+const pieceInfo = (type) => t(`info.${type}`);
+// "Deflector di Mario"
+const pieceOf = (piece) => t("piece.of", { piece: pieceName(piece.type), name: piece.player.name });
+// "blu" / "arancione"
+const colorName = (board, player) => t(player === board.players[0] ? "color.blue" : "color.orange");
+
+// Per quanto si vedono le etichette sui King all'inizio di una partita (ms)
+const KING_TAG_TIME = 6000;
 
 class GameUI {
   constructor(board, online, actions) {
@@ -130,10 +129,10 @@ class GameUI {
     const resume = this.$("welcome-resume");
     resume.hidden = !resumable;
     this.$("welcome-learn").classList.toggle("accent", !resumable);
-    this.$("welcome-play").textContent = resumable ? "➕ Nuova partita" : "▶ Gioca subito";
+    this.$("welcome-play").textContent = t(resumable ? "welcome.newGame" : "welcome.play");
     if (resumable) {
       const n = this.board.history.length;
-      resume.querySelector(".sub").textContent = `${this.subText()} · ${n} ${n === 1 ? "mossa" : "mosse"}`;
+      resume.querySelector(".sub").textContent = `${this.subText()} · ${n === 1 ? t("moves.one") : t("moves.many", { n })}`;
     }
     this.openDialog("dlg-welcome");
   }
@@ -145,10 +144,10 @@ class GameUI {
     if (!b.localCanFire) {
       if (b.gameOver || b.busy || this.choosing) return;
       if (!b.myTurn) {
-        this.toast(b.activePlayer ? `Aspetta: tocca a ${b.activePlayer.name}.` : "La partita non è iniziata.");
+        this.toast(b.activePlayer ? t("toast.waitTurn", { name: b.activePlayer.name }) : t("toast.notStarted"));
         this.nudge(this.$("status"));
       } else {
-        this.toast("Prima sposta o ruota uno dei tuoi pezzi, poi spari.");
+        this.toast(t("toast.moveFirst"));
         this.nudge(this.el.stepMove);
       }
       return;
@@ -156,7 +155,7 @@ class GameUI {
     const question = this.ownLossQuestion();
     if (question) {
       Platform.haptic("warn");
-      if (!(await this.ask(question.title, question.text, "Spara lo stesso", "Annulla la mossa"))) {
+      if (!(await this.ask(question.title, question.text, t("ask.fireAnyway"), t("ask.undoMove")))) {
         b.undoMove();
         return;
       }
@@ -173,11 +172,11 @@ class GameUI {
     if (own.length === 0) return null;
     if (own.some((e) => e.effect === "king")) {
       return hits.some((e) => e.effect === "king" && e.piece.player !== p)
-        ? { title: "Colpisci tutti e due i King?", text: "Il raggio colpisce entrambi i King: la partita finisce patta." }
-        : { title: "Colpisci il tuo King?", text: "Con questa mossa il tuo raggio colpisce il tuo King e perdi la partita." };
+        ? { title: t("ask.bothKings.title"), text: t("ask.bothKings.text") }
+        : { title: t("ask.ownKing.title"), text: t("ask.ownKing.text") };
     }
-    const names = own.map((e) => e.piece.type).join(" e ");
-    return { title: "Elimini un tuo pezzo?", text: `Con questa mossa il tuo raggio elimina il tuo ${names}.` };
+    const pieces = listText(own.map((e) => pieceName(e.piece.type)));
+    return { title: t("ask.ownPiece.title"), text: t("ask.ownPiece.text", { pieces }) };
   }
 
   openDialog(id) {
@@ -196,23 +195,22 @@ class GameUI {
     for (const name of Object.keys(SETUPS)) {
       const opt = document.createElement("option");
       opt.value = name;
-      opt.textContent = name === "PRISMA" ? "PRISMA (inventata, con i pezzi nuovi)"
-        : name === "ACE" ? "ACE (manuale, consigliata per iniziare)" : `${name} (manuale)`;
+      opt.textContent = name === "PRISMA" || name === "ACE" ? t(`setup.option.${name}`) : t("setup.option.manual", { name });
       select.append(opt);
     }
     const list = this.$("variant-list");
-    for (const [key, variant] of Object.entries(VARIANTS)) {
+    for (const key of Object.keys(VARIANTS)) {
       const input = document.createElement("input");
       input.type = "checkbox";
       input.name = "variant";
       input.value = key;
       const name = document.createElement("strong");
-      name.textContent = variant.label;
+      name.textContent = t(`variant.${key}.label`);
       const desc = document.createElement("small");
-      desc.textContent = variant.description;
+      desc.textContent = t(`variant.${key}.desc`);
       const note = document.createElement("small");
       note.className = "included-note";
-      note.textContent = "Già nella disposizione scelta.";
+      note.textContent = t("variant.included");
       const text = document.createElement("span");
       text.append(name, desc, note);
       const label = document.createElement("label");
@@ -242,7 +240,7 @@ class GameUI {
     f.level.value = settings.aiLevel;
     f.side.value = String(settings.humanSide);
     f.myName.value = settings.myName;
-    f.name0.value = settings.names[0];
+    f.name0.value = settings.names[0]; // vuoti: si vede il nome predefinito
     f.name1.value = settings.names[1];
     f.setup.value = settings.setup;
     this.variantChoice = { ...settings.variants };
@@ -259,7 +257,7 @@ class GameUI {
     // Online (host) si sceglie solo disposizione e varianti della prossima partita
     this.newForm.querySelector(".modes").hidden = onlineGame;
     for (const box of this.newForm.querySelectorAll("[data-mode]")) box.hidden = onlineGame || box.dataset.mode !== mode;
-    this.$("setup-desc").textContent = SETUP_INFO[f.setup.value] || "";
+    this.$("setup-desc").textContent = t(`setup.${f.setup.value}`);
     this.$("setup-name").textContent = f.setup.value;
     // Le varianti che la disposizione ha già (PRISMA) sono incluse e non si possono togliere
     const present = new Set(SETUPS[f.setup.value].map(([PieceClass]) => PieceClass));
@@ -275,8 +273,8 @@ class GameUI {
     if (src) img.src = src;
     img.hidden = !src;
     this.$("new-start").textContent = onlineGame
-      ? "Ricomincia la partita online"
-      : mode === "online" ? "Continua" : "Inizia la partita";
+      ? t("new.restartOnline")
+      : t(mode === "online" ? "new.continue" : "new.start");
   }
 
   async submitNewGame() {
@@ -284,16 +282,16 @@ class GameUI {
     const f = this.newForm.elements;
     const error = this.$("new-error");
     const mode = this.online.active ? "online" : f.mode.value;
-    const name0 = f.name0.value.trim() || "Giocatore 1";
-    const name1 = f.name1.value.trim() || "Giocatore 2";
+    const name0 = f.name0.value.trim() || t("name.player", { n: 1 });
+    const name1 = f.name1.value.trim() || t("name.player", { n: 2 });
     if (mode === "local" && sameName(name0, name1)) {
-      error.textContent = "I due giocatori devono avere nomi diversi.";
+      error.textContent = t("error.sameNames");
       error.hidden = false;
       f.name1.focus();
       return;
     }
-    if (mode === "ai" && sameName(f.myName.value.trim() || "Giocatore", "Computer")) {
-      error.textContent = "Scegli un nome diverso da “Computer”.";
+    if (mode === "ai" && sameName(f.myName.value.trim() || t("name.default"), t("name.computer"))) {
+      error.textContent = t("error.notComputer", { name: t("name.computer") });
       error.hidden = false;
       f.myName.focus();
       return;
@@ -306,7 +304,7 @@ class GameUI {
       settings.aiLevel = f.level.value;
       settings.humanSide = Number(f.side.value);
       settings.myName = f.myName.value.trim();
-      settings.names = [name0, name1];
+      settings.names = [f.name0.value.trim(), f.name1.value.trim()]; // vuoti: nome predefinito
     }
     this.actions.saveSettings();
     this.$("dlg-new").close();
@@ -318,10 +316,10 @@ class GameUI {
   }
 
   // Chiede conferma solo se c'è una partita in corso
-  async confirmLoseGame(text = "La partita in corso andrà persa.") {
+  async confirmLoseGame(text = t("ask.restart.text")) {
     const b = this.board;
     if (b.history.length === 0 || b.gameOver) return true;
-    return this.ask("Ricominciare?", text, "Sì, ricomincia", "No, continuo");
+    return this.ask(t("ask.restart.title"), text, t("ask.restart.yes"), t("ask.restart.no"));
   }
 
   // Tasto R: ricomincia con le stesse scelte
@@ -342,13 +340,14 @@ class GameUI {
   async requestNewGame(ask = true) {
     const o = this.online;
     if (!o.connected) {
-      this.toast("Non sei collegato all'altro giocatore.");
+      this.toast(t("toast.notConnected"));
       return;
     }
     const b = this.board;
     if (ask && b.history.length > 0 && !b.gameOver &&
-      !(await this.ask("Nuova partita?", `Chiedo a ${o.opponentName || "chi ospita"} di ricominciare?`, "Chiedi", "Annulla"))) return;
-    if (o.requestNewGame()) this.toast(`Richiesta mandata a ${o.opponentName || "chi ospita"}…`);
+      !(await this.ask(t("ask.requestNew.title"), t("ask.requestNew.text", { name: o.opponentName || t("name.host") }),
+        t("ask.requestNew.yes"), t("common.cancel")))) return;
+    if (o.requestNewGame()) this.toast(t("toast.requestSent", { name: o.opponentName || t("name.host") }));
   }
 
   // ---------- Nomi ----------
@@ -377,14 +376,12 @@ class GameUI {
     const { settings } = this.actions;
     this.names.forEach((input, i) => {
       const player = this.board.players[i];
-      input.value = player ? player.baseName : settings.names[i];
+      input.value = player ? player.baseName : settings.names[i] || t("name.player", { n: i + 1 });
       input.readOnly = !editable.includes(i);
     });
     const note = this.$("names-note");
     note.hidden = this.mode === "local";
-    note.textContent = this.mode === "online"
-      ? "Puoi cambiare solo il tuo nome: l'altro lo sceglie il tuo amico."
-      : "Puoi cambiare il tuo nome; il computer si chiama Computer.";
+    note.textContent = this.mode === "online" ? t("names.noteOnline") : t("names.noteAi", { name: t("name.computer") });
     this.$("names-error").hidden = true;
   }
 
@@ -393,13 +390,11 @@ class GameUI {
     const editable = this.editableNames();
     const values = this.names.map((input) => input.value.trim());
     editable.forEach((i) => {
-      if (!values[i]) values[i] = this.mode === "local" ? `Giocatore ${i + 1}` : "Giocatore";
+      if (!values[i]) values[i] = this.mode === "local" ? t("name.player", { n: i + 1 }) : t("name.default");
     });
     const error = this.$("names-error");
     if (sameName(values[0], values[1])) {
-      error.textContent = editable.length === 2
-        ? "I due giocatori devono avere nomi diversi."
-        : "L'altro giocatore si chiama già così: scegli un nome diverso.";
+      error.textContent = editable.length === 2 ? t("error.sameNames") : t("error.nameTaken");
       error.hidden = false;
       return;
     }
@@ -416,7 +411,7 @@ class GameUI {
     }
     this.actions.saveSettings();
     this.$("dlg-names").close();
-    this.toast("Nomi salvati ✓");
+    this.toast(t("toast.namesSaved"));
   }
 
   // ---------- Regole e opzioni ----------
@@ -443,21 +438,40 @@ class GameUI {
       this.actions.saveSettings();
       this.actions.applyOptions();
     });
+    // Lingua: si ricarica la pagina (la partita riprende da dove era), così cambiano tutti i testi
+    const lang = this.$("opt-lang");
+    for (const [code, name] of [["auto", t("opt.lang.auto")], ...Object.entries(LANGUAGES)]) {
+      const opt = document.createElement("option");
+      opt.value = code;
+      opt.textContent = name;
+      lang.append(opt);
+    }
+    lang.value = settings.lang;
+    lang.addEventListener("change", () => {
+      settings.lang = lang.value;
+      this.actions.saveSettings();
+      location.reload();
+    });
   }
 
   renderLegend() {
     const ul = this.$("legend");
     if (ul.childElementCount > 0) return;
     const player = new Player("", PLAYER_SLOTS[0].color);
-    for (const [name, text] of Object.entries(PIECE_INFO)) {
+    // Prima i pezzi del manuale, poi quelli inventati delle varianti
+    const types = ["King", "Laser", "Deflector", "Defender", "Switch"];
+    for (const variant of Object.values(VARIANTS)) {
+      for (const [PieceClass] of variant.pieces) if (!types.includes(PieceClass.name)) types.push(PieceClass.name);
+    }
+    for (const type of types) {
       const li = document.createElement("li");
       const img = document.createElement("img");
       img.alt = "";
-      img.src = this.actions.pieceIcon(PIECE_TYPES[name], player) || "";
+      img.src = this.actions.pieceIcon(PIECE_TYPES[type], player) || "";
       const title = document.createElement("strong");
-      title.textContent = name;
+      title.textContent = pieceName(type);
       const desc = document.createElement("span");
-      desc.textContent = text;
+      desc.textContent = pieceInfo(type);
       const body = document.createElement("div");
       body.append(title, desc);
       li.append(img, body);
@@ -468,7 +482,7 @@ class GameUI {
   // ---------- Messaggi ----------
 
   // Domanda sì/no nella pagina; risolve true/false
-  ask(title, text, yes = "Sì", no = "No") {
+  ask(title, text, yes = t("common.yes"), no = t("common.no")) {
     const dlg = this.$("dlg-ask");
     if (this.pendingAsk) this.pendingAsk(false);
     this.$("ask-title").textContent = title;
@@ -507,50 +521,54 @@ class GameUI {
   renderSound() {
     const muted = this.actions.settings.muted;
     this.el.soundBtn.querySelector(".ico").textContent = muted ? "🔇" : "🔊";
-    this.el.soundBtn.querySelector(".label").textContent = muted ? "Muto" : "Audio";
+    this.el.soundBtn.querySelector(".label").textContent = t(muted ? "sound.off" : "sound.on");
     this.el.soundBtn.setAttribute("aria-pressed", String(!muted));
   }
 
   // ---------- Stato e suggerimenti ----------
 
   statusText() {
-    if (this.choosing) return { text: "Nuova partita", color: null };
+    if (this.choosing) return { text: t("status.newGame"), color: null };
     if (this.tutorial && this.tutorial.active) return { text: this.tutorial.status(), color: PLAYER_SLOTS[0].color };
     const b = this.board;
     const o = this.online;
     const ai = this.actions.game.ai;
     if (b.gameOver) {
       const w = b.gameOver.winner;
-      return { text: w ? `${w.name} vince!` : "Patta", color: w ? w.pColor : null };
+      return { text: w ? t("status.wins", { name: w.name }) : t("status.draw"), color: w ? w.pColor : null };
     }
-    const who = o.opponentName || "L'avversario";
-    if (o.state === "creating") return { text: "Creo la partita…", color: null };
-    if (o.state === "hosting") return { text: "In attesa dell'avversario…", color: null };
-    if (o.state === "joining") return { text: "Collegamento alla partita…", color: null };
+    const who = o.opponentName || t("name.theOpponent");
+    if (o.state === "creating") return { text: t("status.creating"), color: null };
+    if (o.state === "hosting") return { text: t("status.hosting"), color: null };
+    if (o.state === "joining") return { text: t("status.joining"), color: null };
     if (o.state === "lost") {
-      return { text: o.role === "host" ? `${who} si è disconnesso…` : "Connessione persa: mi ricollego…", color: null };
+      return { text: o.role === "host" ? t("status.lostHost", { name: who }) : t("status.lostGuest"), color: null };
     }
     const p = b.activePlayer;
     if (!p) return { text: "Laser Chess", color: null };
     const mine = b.localIndex !== null && p === b.localPlayer;
     const theirs = b.localIndex !== null && !mine;
     let text;
-    if (b.busy) text = `${p.name} spara…`;
-    else if (ai && theirs) text = b.phase === "fire" ? `${p.name} sta per sparare…` : `${p.name} pensa…`;
-    else if (b.phase === "fire") text = mine ? "Spara il laser!" : theirs ? `${p.name} sta per sparare…` : `${p.name}, spara il laser!`;
-    else if (mine) text = `Tocca a te, ${p.name}`;
-    else if (theirs) text = `Turno di ${p.name}`;
-    else text = `Turno di ${p.name} (${p === b.players[0] ? "blu" : "arancione"})`;
+    const name = p.name;
+    if (b.busy) text = t("status.fires", { name });
+    else if (ai && theirs) text = t(b.phase === "fire" ? "status.aboutToFire" : "status.thinking", { name });
+    else if (b.phase === "fire") text = mine ? t("status.fireNow") : t(theirs ? "status.aboutToFire" : "status.fireNamed", { name });
+    else if (mine) text = t("status.yourTurn", { name });
+    else if (theirs) text = t("status.turnOf", { name });
+    else text = t("status.turnOfColor", { name, color: colorName(b, p) });
     return { text, color: p.pColor };
   }
 
   subText() {
     if (this.tutorial && this.tutorial.active) return this.tutorial.title();
     const setup = this.board.setupName || "";
-    if (this.mode === "online") return `Online${this.online.opponentName ? ` con ${this.online.opponentName}` : ""} · ${setup}`;
+    if (this.mode === "online") {
+      const name = this.online.opponentName;
+      return name ? t("sub.onlineWith", { name, setup }) : t("sub.online", { setup });
+    }
     const ai = this.actions.game.ai;
-    if (this.mode === "ai" && ai) return `Contro il computer · ${AI_LEVELS[ai.level].label} · ${setup}`;
-    return `In due sullo stesso schermo · ${setup}`;
+    if (this.mode === "ai" && ai) return t("sub.ai", { level: t(`level.${ai.level}`), setup });
+    return t("sub.local", { setup });
   }
 
   // Cosa fare adesso: passo del turno (1 o 2), testo, pezzo da mostrare e tono del messaggio
@@ -566,74 +584,71 @@ class GameUI {
   previewAlert() {
     const b = this.board;
     const p = b.activePlayer;
-    const t = this.tutorial;
+    const tut = this.tutorial;
     if (this.choosing || !p || b.busy || b.gameOver || !b.myTurn) return null;
     // Nel tutorial, prima della mossa conta il testo della lezione
-    if (t && t.active && (t.state !== "play" || b.phase !== "fire")) return null;
+    if (tut && tut.active && (tut.state !== "play" || b.phase !== "fire")) return null;
     const hits = b.previewHits();
     const ownKing = hits.some((h) => h.effect === "king" && h.piece.player === p);
     const enemyKing = hits.some((h) => h.effect === "king" && h.piece.player !== p);
     if (b.phase === "fire") {
-      if (ownKing) return { kind: "danger", text: "⚠️ Attento: se spari, il raggio colpisce il tuo King e perdi! Premi ↶ Annulla e prova un'altra mossa." };
-      if (enemyKing) return { kind: "good", text: "🎯 Il raggio colpirà il King avversario: premi SPARA e vinci!" };
-      const own = hits.filter((h) => h.piece.player === p).map((h) => `il tuo ${h.piece.type}`);
-      if (own.length) return { kind: "danger", text: `⚠️ Il mirino rosso è su un tuo pezzo: sparando elimini ${own.join(" e ")}. Se non ti va, premi ↶ Annulla.` };
+      if (ownKing) return { kind: "danger", text: t("alert.fire.ownKing") };
+      if (enemyKing) return { kind: "good", text: t("alert.fire.enemyKing") };
+      const own = hits.filter((h) => h.piece.player === p).map((h) => t("piece.yours", { piece: pieceName(h.piece.type) }));
+      if (own.length) return { kind: "danger", text: t("alert.fire.ownPiece", { pieces: listText(own) }) };
       return null;
     }
     if (b.selected && b.selected.piece) return null; // si sta scegliendo cosa fare col pezzo
-    if (ownKing) return { kind: "danger", text: "⚠️ Adesso il tuo raggio colpirebbe il tuo King (mirino rosso): sposta o ruota un pezzo per deviarlo." };
-    if (enemyKing) return { kind: "good", text: "🎯 Il tuo raggio arriva già sul King avversario! Fai una mossa che non lo devia, poi spara." };
+    if (ownKing) return { kind: "danger", text: t("alert.move.ownKing") };
+    if (enemyKing) return { kind: "good", text: t("alert.move.enemyKing") };
     return null;
   }
 
   coachText() {
-    if (this.choosing) return { step: 0, text: "Scegli come giocare nella finestra “Nuova partita”." };
+    if (this.choosing) return { step: 0, text: t("coach.choosing") };
     if (this.tutorial && this.tutorial.active) return this.tutorial.coach();
     const b = this.board;
     const o = this.online;
     const p = b.activePlayer;
-    if (b.gameOver) return { step: 0, text: "Partita finita. Premi “Nuova partita” per giocarne un'altra." };
+    if (b.gameOver) return { step: 0, text: t("coach.gameOver") };
     if (o.active && !o.connected) {
-      let text = "Aspetta il collegamento con l'altro giocatore.";
+      let text = t("coach.waitConnection");
       if (o.state === "lost") {
-        text = o.role === "host"
-          ? "L'altro giocatore si è disconnesso: può rientrare con lo stesso link. La partita resta com'è."
-          : "Connessione persa: mi ricollego da solo, la partita resta com'è.";
+        text = t(o.role === "host" ? "coach.lostHost" : "coach.lostGuest");
       } else if (o.role === "host") {
-        text = "Manda il link al tuo amico (finestra 🌐 Online). La partita parte appena entra.";
+        text = t("coach.sendLink");
       }
       return { step: 0, text };
     }
     if (!p) return { step: 0, text: "" };
-    if (b.busy) return { step: 2, text: "Il raggio viaggia: gli specchi lo deviano, i pezzi colpiti dove non c'è specchio vengono eliminati." };
+    if (b.busy) return { step: 2, text: t("coach.beam") };
 
     // Pezzo avversario appena toccato: si spiega cos'è
     if (this.inspected && this.inspected.until > Date.now() && b.pieces.includes(this.inspected.piece)) {
       const piece = this.inspected.piece;
-      return { step: b.phase === "fire" ? 2 : 1, piece, text: `${piece.type} di ${piece.player.name}: ${PIECE_INFO[piece.type] || ""} Puoi muovere solo i tuoi pezzi.` };
+      return { step: b.phase === "fire" ? 2 : 1, piece, text: t("coach.inspect", { piece: pieceOf(piece), info: pieceInfo(piece.type) }) };
     }
     if (!b.myTurn) {
-      if (b.phase === "fire") return { step: 2, text: `${p.name} ha mosso e sta per sparare: la linea tratteggiata mostra dove andrà il raggio.` };
+      if (b.phase === "fire") return { step: 2, text: t("coach.opponentFiring", { name: p.name }) };
       const ai = this.actions.game.ai;
-      return { step: 1, text: ai ? `${p.name} sta pensando alla sua mossa…` : `Aspetta la mossa di ${p.name}.` };
+      return { step: 1, text: t(ai ? "coach.aiThinking" : "coach.waitMove", { name: p.name }) };
     }
-    const color = p === b.players[0] ? "blu" : "arancioni";
+    const color = t(p === b.players[0] ? "color.bluePieces" : "color.orangePieces");
     if (b.phase === "fire") {
-      const theirs = b.previewHits().filter((h) => h.piece.player !== p).map((h) => `${h.piece.type} di ${h.piece.player.name}`);
-      const aim = theirs.length ? ` Il mirino rosso segna cosa elimini: ${theirs.join(", ")}.` : " La linea tratteggiata mostra dove andrà il raggio.";
-      return { step: 2, text: `Mossa fatta! Premi SPARA (o tocca il tuo Laser).${aim} Se non ti piace, ↶ Annulla.` };
+      const theirs = b.previewHits().filter((h) => h.piece.player !== p).map((h) => pieceOf(h.piece));
+      const aim = theirs.length ? t("coach.aim", { pieces: listText(theirs) }) : t("coach.aimLine");
+      return { step: 2, text: t("coach.moved", { aim }) };
     }
     const piece = b.selected && b.selected.piece;
     if (piece) {
-      const moves = piece.canBeMoved ? "Tocca una casella gialla per spostarlo" : "";
+      const moves = piece.canBeMoved ? t("coach.canMove") : "";
       const n = piece.rotations().length;
-      const rotates = n === 1 ? "con la freccia gialla accanto al pezzo lo giri (ha due posizioni)"
-        : n > 1 ? "con le frecce gialle ↺ ↻ accanto al pezzo lo ruoti" : "";
-      const how = [moves, rotates].filter(Boolean).join(", oppure ");
-      const turn = how ? ` ${how.charAt(0).toUpperCase() + how.slice(1)}: è la tua mossa del turno.` : "";
-      return { step: 1, piece, text: `${piece.type}: ${PIECE_INFO[piece.type] || ""}${turn}` };
+      const rotates = n === 1 ? t("coach.canRotate1") : n > 1 ? t("coach.canRotate2") : "";
+      const how = [moves, rotates].filter(Boolean).join(t("coach.or"));
+      const move = how ? t("coach.yourMove", { how: how.charAt(0).toUpperCase() + how.slice(1) }) : "";
+      return { step: 1, piece, text: t("coach.selected", { piece: pieceName(piece.type), info: pieceInfo(piece.type), move }).trim() };
     }
-    return { step: 1, text: `Tocca uno dei tuoi pezzi ${color}: puoi spostarlo di una casella (anche in diagonale) oppure ruotarlo. La linea tratteggiata mostra dove andrà il tuo raggio.` };
+    return { step: 1, text: t("coach.start", { color }) };
   }
 
   pieceIconFor(piece) {
@@ -642,8 +657,9 @@ class GameUI {
     return this.icons.get(key);
   }
 
-  // Frecce ↺ ↻ sugli angoli in alto della casella del pezzo selezionato (in basso se in alto non
-  // c'è spazio). Un pezzo con una sola rotazione (Laser, Switch...) ha una freccia sola
+  // Frecce ↺ ↻ sugli angoli della casella del pezzo selezionato, dal lato (sopra, sotto, a
+  // sinistra, a destra) dove coprono meno pezzi e meno raggio; a parità, sopra. Un pezzo con una
+  // sola rotazione (Laser, Switch...) ha una freccia sola
   placeRotateHandles() {
     const b = this.board;
     const { el } = this;
@@ -651,15 +667,10 @@ class GameUI {
     let pos = null;
     if (piece) {
       const { x, y, size } = this.actions.cellOnScreen(piece.cell);
-      const d = Math.round(Math.max(40, Math.min(52, size * 0.8)));
-      const w = this.actions.stageSize().w;
-      const top = y - size / 2 - d / 2 >= 0;
-      const cy = top ? y - size / 2 : y + size / 2;
-      // Sugli angoli della casella, ma mai una sopra l'altra (caselle piccole, pezzo sul bordo)
-      const half = Math.max(size / 2, d / 2 + 4);
-      const shift = Math.max(0, d / 2 - (x - half)) - Math.max(0, x + half - (w - d / 2));
-      const single = piece.rotations().length === 1;
-      pos = `${d}|${Math.round(x - half + shift)}|${Math.round(x + half + shift)}|${Math.round(cy)}|${single}`;
+      // Il lato si sceglie una volta per pezzo e disposizione, così le frecce non saltano
+      const key = `${piece.cell.name}|${b.version}|${Math.round(size)}|${this.actions.stageSize().w}`;
+      if (!this.handles || this.handles.key !== key) this.handles = { key, pos: this.handlePlacement(piece, x, y, size) };
+      pos = this.handles.pos;
     }
     if (!this.changed("handles", pos)) return;
     if (!pos) {
@@ -668,35 +679,100 @@ class GameUI {
       b.previewRotation = null;
       return;
     }
-    const [d, left, right, cy, single] = pos.split("|");
-    const place = (btn, cx) => {
+    const [d, x1, y1, x2, y2, single] = pos.split("|");
+    const place = (btn, cx, cy) => {
       btn.style.width = btn.style.height = `${d}px`;
       btn.style.left = `${cx - d / 2}px`;
       btn.style.top = `${cy - d / 2}px`;
     };
-    place(el.ccwBtn, +left);
-    place(el.cwBtn, +right);
+    place(el.ccwBtn, +x1, +y1);
+    place(el.cwBtn, +x2, +y2);
     el.ccwBtn.hidden = single === "true";
     el.cwBtn.hidden = false;
   }
 
-  // Etichette sopra i King finché ognuno non ha fatto la prima mossa (nel tutorial sempre):
-  // "Il tuo King" / "King avversario", o il nome del giocatore in due sullo stesso schermo
+  // Posizione delle frecce: "diametro|x1|y1|x2|y2|una sola freccia"
+  handlePlacement(piece, x, y, size) {
+    const d = Math.round(Math.max(34, Math.min(44, size * 0.75)));
+    const r = d / 2;
+    const { w, h } = this.actions.stageSize();
+    const single = piece.rotations().length === 1;
+    const gap = Math.max(size / 2, r + 3); // le due frecce mai una sopra l'altra
+    const half = size / 2;
+    const sides = [
+      { ok: y - half - r >= 0, pts: [[x - gap, y - half], [x + gap, y - half]] },
+      { ok: y + half + r <= h, pts: [[x - gap, y + half], [x + gap, y + half]] },
+      { ok: x - half - r >= 0, pts: [[x - half, y - gap], [x - half, y + gap]] },
+      { ok: x + half + r <= w, pts: [[x + half, y - gap], [x + half, y + gap]] },
+    ];
+    const beam = this.beamCells();
+    let best = null;
+    for (const { ok, pts } of sides) {
+      if (!ok) continue;
+      // Dentro lo schermo, spostando la coppia insieme
+      const shift = (lo, hi, size) => Math.max(0, r - lo) - Math.max(0, hi - (size - r));
+      const dx = shift(Math.min(pts[0][0], pts[1][0]), Math.max(pts[0][0], pts[1][0]), w);
+      const dy = shift(Math.min(pts[0][1], pts[1][1]), Math.max(pts[0][1], pts[1][1]), h);
+      const placed = pts.map(([px, py]) => [px + dx, py + dy]);
+      const covered = new Set();
+      for (const [px, py] of single ? [placed[1]] : placed) {
+        for (const [ox, oy] of [[0, 0], [-0.7, 0], [0.7, 0], [0, -0.7], [0, 0.7]]) {
+          const cell = this.actions.cellAtScreen(px + ox * r, py + oy * r);
+          if (cell && cell !== piece.cell) covered.add(cell);
+        }
+      }
+      let score = 0;
+      for (const cell of covered) score += (cell.piece ? 3 : 0) + (beam.has(cell) ? 1 : 0);
+      if (!best || score < best.score) best = { score, placed };
+    }
+    if (!best) best = { placed: sides[0].pts }; // board minuscola: sopra comunque
+    return [d, ...best.placed.flat().map(Math.round), single].join("|");
+  }
+
+  // Caselle attraversate dalla linea tratteggiata (da non coprire con frecce ed etichette)
+  beamCells() {
+    const cells = new Set();
+    const beam = this.board.laserPreview();
+    if (!beam) return cells;
+    for (const s of beam.segments) {
+      for (let t = 0; t <= 1; t += 0.25) {
+        const cell = this.board.cellAt({ x: s.a.x + (s.b.x - s.a.x) * t, y: s.a.y + (s.b.y - s.a.y) * t });
+        if (cell) cells.add(cell);
+      }
+    }
+    return cells;
+  }
+
+  // Etichette sui King ("Il tuo King" / "King avversario", o il colore in due sullo stesso schermo):
+  // per qualche secondo da quando si vede la board di una partita nuova (nel tutorial sempre),
+  // nascoste mentre si sceglie una mossa. Sopra o sotto il King, dove coprono meno pezzi
   placeKingTags() {
     const b = this.board;
-    const t = this.tutorial && this.tutorial.active;
-    const show = !this.choosing && !b.gameOver && !b.busy && (t || b.history.length < 2);
+    const tut = this.tutorial && this.tutorial.active;
+    // Con una finestra aperta il tempo non passa: le etichette si vedono dopo averla chiusa
+    if (this.tagsUntil && document.querySelector("dialog[open]")) this.tagsUntil = Math.max(this.tagsUntil, Date.now() + KING_TAG_TIME);
+    const show = !this.choosing && !b.gameOver && !b.busy && !b.selected &&
+      (tut || (b.history.length < 2 && Date.now() < (this.tagsUntil || 0)));
     const tags = [];
     if (show) {
-      const { w } = this.actions.stageSize();
+      const { w, h } = this.actions.stageSize();
       for (const king of b.pieces.filter((p) => p instanceof King)) {
         const i = b.players.indexOf(king.player);
         const mine = b.localIndex === null ? null : i === b.localIndex;
-        const label = t ? (mine ? "Il tuo King" : "🎯 Bersaglio") : mine === null ? `King ${i === 0 ? "blu" : "arancione"}`
-          : mine ? "Il tuo King" : "King avversario";
+        const tag = tut ? (mine ? t("tag.yours") : t("tag.target"))
+          : mine === null ? t("tag.color", { color: colorName(b, king.player) })
+          : t(mine ? "tag.yours" : "tag.enemy");
+        const label = tag.charAt(0).toUpperCase() + tag.slice(1);
         const { x, y, size } = this.actions.cellOnScreen(king.cell);
-        const above = y - size / 2 > 26;
-        tags[i] = `${label}|${Math.round(x)}|${Math.round(above ? y - size / 2 - 2 : y + size / 2 + 2)}|${above}|${w}`;
+        // Pezzi nelle tre caselle sopra (dy = -1) o sotto (dy = 1) il King
+        const crowd = (dy) => [-1, 0, 1].filter((dx) => {
+          const cell = this.actions.cellAtScreen(x + dx * size, y + dy * size);
+          return cell && cell.piece;
+        }).length;
+        const fitsAbove = y - size / 2 > 20;
+        const fitsBelow = y + size / 2 + 20 < h;
+        const above = fitsAbove && (!fitsBelow || crowd(-1) <= crowd(1));
+        tags[i] = `${label}|${Math.round(x)}|${Math.round(above ? y - size / 2 - 1 : y + size / 2 + 1)}|${above}|${w}`;
       }
     }
     if (!this.changed("kingTags", tags.join("#"))) return;
@@ -775,12 +851,13 @@ class GameUI {
     if (name === "needFire") {
       // Mossa già fatta: si deve sparare (o annullare per cambiarla)
       this.nudge(this.el.fireBtn);
-      this.toast("Hai già fatto la tua mossa: premi SPARA, oppure ↶ Annulla per cambiarla.");
+      this.toast(t("toast.alreadyMoved"));
     }
     if (name === "notYourTurn") this.nudge(this.$("status")); // tocca all'altro
     if (name === "deny" && data && data.piece) this.inspected = { piece: data.piece, until: Date.now() + 5000 };
     if (name === "select" || name === "move" || name === "rotate") this.inspected = null;
-    if (name === "deny" && data && data.fixed) this.toast(`Il ${data.piece.type} non si sposta: puoi solo ruotarlo.`);
+    if (name === "deny" && data && data.fixed) this.toast(t("toast.fixed", { piece: pieceName(data.piece.type) }));
+    if (name === "start") this.tagsUntil = Date.now() + KING_TAG_TIME;
     if (name === "fire") this.shot = { player: data.player, destroyed: [] };
     if ((name === "destroy" || name === "king") && this.shot) this.shot.destroyed.push(data.piece);
     if (name === "turn") this.reportShot();
@@ -796,12 +873,12 @@ class GameUI {
     const lines = [];
     if (shot && shot.destroyed.length > 0) {
       const me = b.localPlayer;
-      const name = (piece) => (piece.player === me ? `il tuo ${piece.type}` : `${piece.type} di ${piece.player.name}`);
-      const who = shot.player === me ? "Il tuo raggio" : `Il raggio di ${shot.player.name}`;
-      lines.push(`💥 ${who} ha eliminato: ${shot.destroyed.map(name).join(", ")}`);
+      const name = (piece) => (piece.player === me ? t("piece.yours", { piece: pieceName(piece.type) }) : pieceOf(piece));
+      const who = shot.player === me ? t("shot.yourBeam") : t("shot.beamOf", { name: shot.player.name });
+      lines.push(t("shot.destroyed", { who, pieces: listText(shot.destroyed.map(name)) }));
     }
     const next = b.activePlayer;
-    if (b.localIndex === null && next) lines.push(`Tocca a ${next.name} (${next === b.players[0] ? "blu" : "arancione"}): passagli il telefono.`);
+    if (b.localIndex === null && next) lines.push(t("shot.handOff", { name: next.name, color: colorName(b, next) }));
     if (lines.length) this.toast(lines.join("\n"), 3500);
   }
 
@@ -816,12 +893,12 @@ class GameUI {
     const history = this.board.history;
     this.el.historyCount.textContent = history.length ? `(${history.length})` : "";
     const last = history[history.length - 1];
-    this.$("history-last").textContent = last ? `${last.player.name}: ${last.text}` : "";
+    this.$("history-last").textContent = last ? `${last.player.name}: ${this.moveText(last)}` : "";
     ol.replaceChildren();
     if (history.length === 0) {
       const li = document.createElement("li");
       li.className = "empty";
-      li.textContent = "Ancora nessuna mossa";
+      li.textContent = t("history.empty");
       ol.append(li);
       return;
     }
@@ -835,17 +912,35 @@ class GameUI {
       const who = document.createElement("strong");
       who.textContent = entry.player.name;
       const head = document.createElement("div");
-      head.append(n, " ", who, " ", entry.text);
+      head.append(n, " ", who, " ", this.moveText(entry));
       li.append(head);
       for (const hit of entry.hits) {
         const div = document.createElement("div");
         div.className = "hit";
-        div.textContent = hit;
+        div.textContent = this.hitText(hit);
         li.append(div);
       }
       ol.append(li);
     });
     ol.scrollTop = ol.scrollHeight;
+  }
+
+  // Testo di una mossa dello storico nella lingua scelta (una partita salvata da una versione
+  // precedente ha già il testo, in italiano)
+  moveText(entry) {
+    const m = entry.move;
+    if (!m) return entry.text || "";
+    if (m.type === "rotate") return t("history.rotate", { piece: pieceName(m.piece), at: m.at, from: m.from, to: m.to });
+    if (m.type === "swap") return t("history.swap", { piece: pieceName(m.piece), from: m.from, other: pieceName(m.other), to: m.to });
+    return t("history.move", { piece: pieceName(m.piece), from: m.from, to: m.to });
+  }
+
+  // Pezzo eliminato da una mossa: "💥 Deflector di Mario (h2)"
+  hitText(hit) {
+    if (typeof hit === "string") return hit;
+    const owner = this.board.players[hit.owner];
+    const name = t("piece.of", { piece: pieceName(hit.piece), name: owner ? owner.name : "?" });
+    return `${hit.king ? "👑" : "💥"} ${name} (${hit.cell})`;
   }
 
   renderGameOver() {
@@ -854,16 +949,16 @@ class GameUI {
     this.el.gameover.hidden = !go || !!(this.tutorial && this.tutorial.active);
     if (this.el.gameover.hidden) return;
     const w = go.winner;
-    this.el.goTitle.textContent = w ? `${w.name} vince!` : "Patta!";
+    this.el.goTitle.textContent = w ? t("go.wins", { name: w.name }) : t("go.draw");
     if (go.reason === "repetition") {
-      this.el.goText.textContent = "La stessa posizione si è presentata tre volte.";
+      this.el.goText.textContent = t("go.repetition");
     } else if (w) {
       const loser = this.board.players.find((p) => p !== w);
-      this.el.goText.textContent = `Il laser ha colpito il King di ${loser.name}.`;
+      this.el.goText.textContent = t("go.kingHit", { name: loser.name });
     } else {
-      this.el.goText.textContent = "Lo stesso raggio ha colpito entrambi i King.";
+      this.el.goText.textContent = t("go.bothKings");
     }
-    this.el.goNew.textContent = this.online.role === "guest" ? "Chiedi la rivincita" : "Rivincita";
+    this.el.goNew.textContent = t(this.online.role === "guest" ? "go.askRematch" : "go.rematch");
     this.el.goNew.focus();
   }
 }

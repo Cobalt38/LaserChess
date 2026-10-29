@@ -23,6 +23,8 @@ class Page:
         options = Options()
         options.add_argument("-headless")
         options.enable_bidi = True
+        # Il gioco segue la lingua del browser: i test controllano i testi in italiano
+        options.set_preference("intl.accept_languages", "it-IT, it")
         self.name = name
         self.errors = []
         self.d = webdriver.Firefox(options=options, service=Service(GECKODRIVER))

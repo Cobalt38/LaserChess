@@ -346,11 +346,11 @@ const Engine = {
 };
 
 // Livelli del computer: quanti turni guarda avanti, quanto "sbaglia" apposta e se tiene conto
-// delle minacce del laser nella valutazione
+// delle minacce del laser nella valutazione (il nome è nei testi, level.<chiave>)
 const AI_LEVELS = {
-  easy: { label: "Facile", depth: 1, noise: 120, threats: false, time: 0 },
-  medium: { label: "Medio", depth: 2, noise: 15, threats: true, time: 0 },
-  hard: { label: "Difficile", depth: 3, noise: 2, threats: true, time: 3000 },
+  easy: { depth: 1, noise: 120, threats: false, time: 0 },
+  medium: { depth: 2, noise: 15, threats: true, time: 0 },
+  hard: { depth: 3, noise: 2, threats: true, time: 3000 },
 };
 
 // Ricerca della mossa del computer a pezzi: step() lavora per qualche millisecondo e poi

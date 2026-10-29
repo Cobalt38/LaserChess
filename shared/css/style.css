@@ -248,12 +248,13 @@ html, body {
   position: absolute;
   z-index: 1;
   transform: translate(-50%, -100%);
-  padding: 2px 8px;
+  padding: 0 6px;
   border-radius: 999px;
-  border: 2px solid var(--player, #888);
-  background: rgba(10, 10, 10, 0.9);
+  border: 1.5px solid var(--player, #888);
+  background: rgba(10, 10, 10, 0.85);
   color: var(--text);
-  font-size: 12px;
+  font-size: 11px;
+  line-height: 16px;
   font-weight: 600;
   white-space: nowrap;
   pointer-events: none;
@@ -611,6 +612,11 @@ dialog p {
   accent-color: var(--accent);
 }
 
+/* Lingua, nelle opzioni */
+.lang-field {
+  margin-top: 8px;
+}
+
 kbd {
   font: 12px ui-monospace, monospace;
   border: 1px solid var(--line);
@@ -688,7 +694,7 @@ kbd {
 
 #menu button {
   font-size: 13px;
-  padding: 6px 4px;
+  padding: 6px 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -701,7 +707,7 @@ kbd {
 }
 
 #menu .ico {
-  margin-right: 4px;
+  margin-right: 3px;
 }
 
 #menu .short {

@@ -41,12 +41,12 @@ class UpdateCheck {
     bar.id = "update-banner";
     bar.setAttribute("role", "status");
     const text = document.createElement("span");
-    text.textContent = "C'è una versione nuova del gioco. La partita in corso riprende da dove era.";
+    text.textContent = t("update.banner");
     const reload = document.createElement("button");
     reload.id = "update-reload";
     reload.type = "button";
     reload.className = "accent";
-    reload.textContent = "Aggiorna";
+    reload.textContent = t("update.reload");
     reload.addEventListener("click", () => location.reload());
     bar.append(text, reload);
     document.body.append(bar);

@@ -269,17 +269,64 @@ test("tutorial: all'inizio il raggio non colpisce il King arancione, la soluzion
   for (const lesson of g.LESSONS) {
     board.setup("Tutorial", ["Tu", "Arancione"], [], lesson.pieces);
     board.start();
-    assert.ok(!kings().includes(1), `${lesson.title}: si vince senza muovere`);
+    assert.ok(!kings().includes(1), `${lesson.id}: si vince senza muovere`);
     const { at, to, rot } = lesson.hint;
     const piece = board.cellByName(at).piece;
-    assert.ok(piece && piece.player === board.players[0], `${lesson.title}: in ${at} non c'è un pezzo blu`);
+    assert.ok(piece && piece.player === board.players[0], `${lesson.id}: in ${at} non c'è un pezzo blu`);
     if (to) {
-      assert.ok(board.neighbors(piece.cell).includes(board.cellByName(to)) && piece.canMoveTo(board.cellByName(to)), `${lesson.title}: mossa non valida`);
+      assert.ok(board.neighbors(piece.cell).includes(board.cellByName(to)) && piece.canMoveTo(board.cellByName(to)), `${lesson.id}: mossa non valida`);
       board.movePiece(piece, board.cellByName(to));
     } else {
-      assert.ok(piece.rotations().includes(rot), `${lesson.title}: rotazione non valida`);
+      assert.ok(piece.rotations().includes(rot), `${lesson.id}: rotazione non valida`);
       board.rotatePiece(piece, rot);
     }
-    assert.deepStrictEqual(plain(kings()), [1], `${lesson.title}: la soluzione deve colpire solo il King arancione`);
+    assert.deepStrictEqual(plain(kings()), [1], `${lesson.id}: la soluzione deve colpire solo il King arancione`);
   }
+});
+
+test("lingue: ogni lingua ha tutti i testi, con gli stessi {segnaposto}, e il codice usa solo chiavi che esistono", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const root = path.join(__dirname, "..");
+  const html = fs.readFileSync(path.join(root, "shared", "index.html"), "utf8");
+  const htmlKeys = new Set([...html.matchAll(/data-i18n(?:-[a-z-]+)?="([^"]+)"/g)].map((m) => m[1]));
+  const { STRINGS, LANGUAGES } = g;
+  const it = STRINGS.it;
+  const all = new Set([...Object.keys(it), ...htmlKeys]);
+  const params = (s) => [...String(s).matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().join();
+  for (const lang of Object.keys(LANGUAGES).filter((l) => l !== "it")) {
+    const dict = STRINGS[lang];
+    assert.ok(dict, `manca STRINGS.${lang}`);
+    const missing = [...all].filter((k) => !(k in dict));
+    assert.deepStrictEqual(missing, [], `${lang}: testi mancanti`);
+    const extra = Object.keys(dict).filter((k) => !all.has(k));
+    assert.deepStrictEqual(extra, [], `${lang}: chiavi che non esistono in italiano (refusi?)`);
+    for (const k of Object.keys(it)) assert.strictEqual(params(dict[k]), params(it[k]), `${lang}: segnaposto diversi in ${k}`);
+  }
+  // Chiavi scritte per intero nel codice
+  const files = [];
+  const walk = (dir) => {
+    for (const f of fs.readdirSync(dir, { withFileTypes: true })) {
+      const p = path.join(dir, f.name);
+      if (f.isDirectory()) walk(p);
+      else if (f.name.endsWith(".js") && !p.includes(`${path.sep}i18n${path.sep}`)) files.push(p);
+    }
+  };
+  for (const dir of ["shared/js", "web/js", "app/js"]) walk(path.join(root, dir));
+  for (const file of files) {
+    for (const m of fs.readFileSync(file, "utf8").matchAll(/\bt\("([^"]+)"/g)) {
+      assert.ok(all.has(m[1]), `${path.relative(root, file)}: chiave sconosciuta ${m[1]}`);
+    }
+  }
+  // Chiavi composte dal codice (piece.<tipo>, setup.<nome>...)
+  const dynamic = [
+    ...Object.keys(g.PIECE_TYPES).flatMap((p) => [`piece.${p}`, `info.${p}`]),
+    ...Object.keys(g.SETUPS).map((s) => `setup.${s}`),
+    "setup.option.PRISMA", "setup.option.ACE",
+    ...Object.keys(g.VARIANTS).flatMap((v) => [`variant.${v}.label`, `variant.${v}.desc`]),
+    ...Object.keys(g.AI_LEVELS).map((l) => `level.${l}`),
+    ...g.LESSONS.flatMap((l) => [`lesson.${l.id}.title`, `lesson.${l.id}.text`]),
+    ...["creating", "hosting", "joining", "connected", "lost", "off"].map((s) => `online.btn.${s}`),
+  ];
+  for (const k of dynamic) assert.ok(all.has(k), `chiave sconosciuta ${k}`);
 });
