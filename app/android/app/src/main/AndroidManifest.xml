@@ -32,4 +32,7 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Aggiornamento dell'APK del sito fatto dall'app stessa (ApkUpdaterPlugin). Google Play non lo
+         ammette: per la versione dello store va tolto (vedi README, "Pubblicare su Google Play") -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 </manifest>

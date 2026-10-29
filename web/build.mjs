@@ -33,9 +33,16 @@ fs.rmSync(out, { recursive: true, force: true });
 fs.cpSync(SHARED, out, { recursive: true });
 fs.cpSync(path.join(WEB, "js"), path.join(out, "platform"), { recursive: true });
 fs.copyFileSync(path.join(WEB, "privacy.html"), path.join(out, "privacy.html"));
+// Il gioco installabile come app dal browser: manifest, icone, service worker (scritto più sotto)
+fs.copyFileSync(path.join(WEB, "manifest.webmanifest"), path.join(out, "manifest.webmanifest"));
+fs.cpSync(path.join(WEB, "icons"), path.join(out, "icons"), { recursive: true });
 
-const platform = fs.readdirSync(path.join(WEB, "js")).filter((f) => f.endsWith(".js")).sort()
-  .map((f) => `<script src="platform/${f}?v=dev"></script>`).join("\n    ");
+const platform = [
+  '<link rel="manifest" href="manifest.webmanifest">',
+  '<link rel="apple-touch-icon" href="icons/icon-180.png">',
+  ...fs.readdirSync(path.join(WEB, "js")).filter((f) => f.endsWith(".js")).sort()
+    .map((f) => `<script src="platform/${f}?v=dev"></script>`),
+].join("\n    ");
 const file = path.join(out, "index.html");
 let html = fs.readFileSync(file, "utf8");
 for (const [mark, text] of [["<!-- @libs -->", LIBS], ["<!-- @platform -->", platform]]) {
@@ -48,4 +55,11 @@ html = html.replaceAll('?v=dev"', `?v=${version}"`)
 if (!html.includes(`<meta name="version" content="${version}">`)) throw new Error("<meta name=\"version\"> non trovato");
 fs.writeFileSync(file, html);
 fs.writeFileSync(path.join(out, "version.json"), `{ "version": "${version}" }\n`);
+
+// Service worker: la versione e i file da salvare per giocare senza internet (gli script, lo stile e
+// le icone della pagina, con i loro ?v=..., le librerie dal CDN e la pagina stessa)
+const files = ["index.html", ...new Set([...html.matchAll(/<(?:script|link)\b[^>]*?\b(?:src|href)="([^"]+)"/g)].map((m) => m[1])),
+  "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png"];
+fs.writeFileSync(path.join(out, "sw.js"), fs.readFileSync(path.join(WEB, "sw.js"), "utf8")
+  .replace("__VERSION__", version).replace("__FILES__", JSON.stringify(files, null, 2)));
 console.log(`web/build.mjs: versione ${version} in ${path.relative(process.cwd(), out) || "."}`);

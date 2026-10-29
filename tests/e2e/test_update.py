@@ -49,9 +49,22 @@ def main():
         assert p.js("document.getElementById('app-version').textContent") == "aaa1111"
 
         step("sul sito c'è l'APK: nel benvenuto il link per scaricare l'app per Android")
-        p.wait("!document.querySelector('.welcome [data-app-download]').hidden", 5, "link dell'app")
+        p.wait("!document.querySelector('.welcome a.download-app').hidden", 5, "link dell'app")
         assert p.js("document.querySelector('.welcome a.download-app').getAttribute('href')") == "download/laserchess.apk?v=99"
         assert "4.0 MB" in p.text(".welcome a.download-app"), p.text(".welcome a.download-app")
+        # Firefox non offre l'installazione dal browser: il pulsante resta nascosto
+        assert p.js("document.querySelector('.welcome .install-app').hidden")
+
+        step("installabile come app: manifest e service worker con il gioco salvato per giocare senza rete")
+        assert p.js("document.querySelector('link[rel=manifest]').getAttribute('href')") == "manifest.webmanifest"
+        cached = p.d.execute_async_script("""const done = arguments[0];
+            navigator.serviceWorker.ready
+              .then(() => caches.open('laserchess-aaa1111'))
+              .then((c) => c.keys())
+              .then((keys) => done(keys.map((r) => new URL(r.url).pathname + new URL(r.url).search)))
+              .catch((e) => done(String(e)));""")
+        assert isinstance(cached, list) and any(k.endswith("/js/sketch.js?v=aaa1111") for k in cached), cached
+        assert any(k.endswith("/index.html") for k in cached), cached
 
         step("stessa versione sul server: nessun avviso")
         p.click("#welcome-play")

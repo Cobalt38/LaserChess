@@ -57,6 +57,20 @@ const Platform = {
     this.call("Browser", "open", { url });
   },
 
+  // Aggiornamento dell'APK del sito: lo scarica e lo installa l'app stessa (ApkUpdaterPlugin.java,
+  // registrato in MainActivity), senza lasciare il file in Download. false se non si può
+  async installUpdate(url) {
+    const cap = window.Capacitor;
+    if (!cap || !cap.registerPlugin) return false;
+    try {
+      this.updater = this.updater || cap.registerPlugin("ApkUpdater");
+      await this.updater.install({ url });
+      return true;
+    } catch (e) {
+      return false;
+    }
+  },
+
   canShare() {
     return true;
   },

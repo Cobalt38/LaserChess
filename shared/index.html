@@ -136,9 +136,13 @@
       <button id="welcome-resume" type="button" class="accent big" hidden><span data-i18n="welcome.resume">▶ Riprendi la partita</span> <span class="sub"></span></button>
       <button id="welcome-learn" type="button" class="accent big"><span data-i18n="welcome.learn">🎓 Impara a giocare</span> <span class="sub" data-i18n="welcome.learnSub">2 minuti</span></button>
       <button id="welcome-play" type="button" class="big">▶ Gioca subito</button>
-      <!-- Solo nel browser, se sul sito c'è l'APK (web/js/AppDownload.js) -->
-      <a class="download-app" data-app-download hidden download href="download/laserchess.apk"><span
-          data-i18n="download.app">📱 Scarica l'app per Android</span> <small class="download-size"></small></a>
+      <!-- Solo nel browser: il gioco come app (web/js/AppInstall.js) -->
+      <div class="get-app" data-get-app hidden>
+        <button type="button" class="install-app" hidden data-i18n="install.button">📱 Installa l'app</button>
+        <p class="install-ios muted small" hidden data-i18n="install.ios">Per averlo come app: in Safari tocca Condividi, poi “Aggiungi alla schermata Home”.</p>
+        <a class="download-app" hidden download href="download/laserchess.apk"><span
+            data-i18n="download.app">📱 Scarica l'app per Android</span> <small class="download-size"></small></a>
+      </div>
     </dialog>
 
     <dialog id="dlg-new" aria-labelledby="dlg-new-title">
@@ -313,11 +317,13 @@
             tasto destro sul pezzo per le frecce di rotazione; sopra una freccia, la linea tratteggiata mostra il raggio ruotato.</li>
         </ul>
       </details>
-      <p class="download-box" data-app-download hidden>
-        <a class="download-app" download href="download/laserchess.apk"><span
+      <div class="get-app download-box" data-get-app="all" hidden>
+        <button type="button" class="install-app accent" hidden data-i18n="install.button">📱 Installa l'app</button>
+        <p class="install-ios muted small" hidden data-i18n="install.ios">Per averlo come app: in Safari tocca Condividi, poi “Aggiungi alla schermata Home”.</p>
+        <a class="download-app" hidden download href="download/laserchess.apk"><span
             data-i18n="download.app">📱 Scarica l'app per Android</span> <small class="download-size"></small></a>
-        <span class="muted small" data-i18n="download.note">Android chiederà il permesso di installare app scaricate dal browser.</span>
-      </p>
+        <span class="download-note muted small" hidden data-i18n="download.note">Android chiederà il permesso di installare app scaricate dal browser.</span>
+      </div>
       <p class="fineprint"><span data-i18n="help.credits">Regole e disposizioni iniziali dal manuale di Laser Chess (ThinkFun),
         tranne PRISMA. Versione</span> <span id="app-version"></span>.
         <a id="privacy-link" href="privacy.html" target="_blank" rel="noopener">Privacy</a></p>

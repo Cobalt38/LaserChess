@@ -1,8 +1,9 @@
 // App scaricata dal sito (canale "github", vedi app/build.mjs): all'avvio, e tornando nell'app dopo
 // un po', legge download/latest.json sul sito (lo scrive app/publish-apk.mjs). Se c'è una build più
-// nuova compare una barra con "Scarica": l'APK si apre nel browser, che lo scarica, e lo si installa
-// sopra questa (la partita salvata resta). Le altre app (provate in locale, da Google Play) non
-// controllano: quella di Google Play la aggiorna lo store.
+// nuova compare una barra con "Scarica": l'app scarica l'APK nella sua cache e apre l'installazione
+// sopra questa (la partita salvata resta; l'APK si cancella al prossimo avvio). Se non riesce, l'APK
+// si apre nel browser. Le altre app (provate in locale, da Google Play) non controllano: quella di
+// Google Play la aggiorna lo store.
 const APP_UPDATE_CHECK_EVERY = 60 * 60 * 1000; // ms tra un controllo e l'altro, tornando nell'app
 const SKIPPED_BUILD_KEY = "laserchess.skippedBuild"; // build per cui si è scelto "Più tardi"
 
@@ -47,14 +48,18 @@ class AppUpdateCheck {
       btn.type = "button";
       btn.className = className;
       btn.textContent = label;
-      btn.addEventListener("click", () => {
-        run();
+      btn.addEventListener("click", async () => {
+        await run();
         bar.remove();
       });
       return btn;
     };
-    const download = button(t("update.app.download"), "accent",
-      () => Platform.openExternal(`${PUBLIC_URL}${latest.url}?v=${latest.build}`));
+    const download = button(t("update.app.download"), "accent", async () => {
+      const url = `${PUBLIC_URL}${latest.url}?v=${latest.build}`;
+      text.textContent = t("update.app.downloading");
+      for (const btn of bar.querySelectorAll("button")) btn.hidden = true;
+      if (!(await Platform.installUpdate(url))) Platform.openExternal(url);
+    });
     const later = button(t("update.app.later"), "", () => {
       try {
         localStorage.setItem(SKIPPED_BUILD_KEY, String(latest.build));

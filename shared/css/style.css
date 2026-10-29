@@ -911,8 +911,14 @@ a.download-app small {
   text-align: center;
 }
 
-.download-box .muted {
-  display: block;
+.get-app {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.get-app[hidden], .get-app [hidden] {
+  display: none;
 }
 
 /* Finestra Nuova partita */

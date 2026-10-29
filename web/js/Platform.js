@@ -3,11 +3,11 @@
 const Platform = {
   isApp: false,
 
-  // All'avvio del gioco (setup): controllo delle versioni nuove pubblicate (Updates.js) e link
-  // per scaricare l'app per Android, se sul sito c'è (AppDownload.js)
+  // All'avvio del gioco (setup): controllo delle versioni nuove pubblicate (Updates.js) e il gioco
+  // come app: installazione dal browser o APK per Android (AppInstall.js)
   start() {
     new UpdateCheck();
-    new AppDownload();
+    new AppInstall();
   },
 
   // Gioco pronto sullo schermo

@@ -100,6 +100,8 @@ STRINGS.en = {
   "opt.haptics": "Vibration",
   "opt.lang": "Language · Lingua",
   "help.credits": "Rules and starting layouts from the Laser Chess manual (ThinkFun), except PRISMA. Version",
+  "install.button": "📱 Install the app",
+  "install.ios": "To get it as an app: in Safari tap Share, then “Add to Home Screen”.",
   "download.app": "📱 Download the Android app",
   "download.note": "Android will ask for permission to install apps downloaded from the browser.",
 
@@ -343,6 +345,7 @@ STRINGS.en = {
   "update.app.banner": "A new version of the app is available.",
   "update.app.download": "Download",
   "update.app.later": "Later",
+  "update.app.downloading": "Downloading the update…",
   "update.banner": "A new version of the game is available. Your current game will resume where it was.",
   "update.reload": "Update",
 };

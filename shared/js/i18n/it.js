@@ -252,6 +252,7 @@ STRINGS.it = {
   "update.app.banner": "C'è una versione nuova dell'app.",
   "update.app.download": "Scarica",
   "update.app.later": "Più tardi",
+  "update.app.downloading": "Scarico l'aggiornamento…",
   "update.banner": "C'è una versione nuova del gioco. La partita in corso riprende da dove era.",
   "update.reload": "Aggiorna",
 };

@@ -121,6 +121,16 @@ gioco aperto vede la barra "C'è una versione nuova del gioco" con il pulsante *
 partita riprende da dove era). In `shared/` restano i segnaposto `?v=dev`. Sul sito c'è anche
 `privacy.html` (da `web/`), l'informativa sulla privacy che serve per Google Play.
 
+### Installare il sito come app
+
+Il sito si installa come app dal browser, senza store e senza gli avvisi di Android sugli APK:
+in Chrome ed Edge (Android e computer) il benvenuto e le Regole mostrano **📱 Installa l'app**, che
+la mette tra le app del telefono con la sua icona; su iPhone e iPad spiegano come aggiungerla alla
+schermata Home da Safari. Servono `web/manifest.webmanifest` (nome, colori, icone in `web/icons/`) e
+`web/sw.js`, il service worker che salva il gioco per giocarci anche senza internet (contro il
+computer): `web/build.mjs` ci scrive la versione e l'elenco dei file. Si aggiorna da sola come il
+sito; il service worker si registra solo nella versione pubblicata (non con la versione `dev`).
+
 ## Test
 
 - Regole, configurazioni e computer, senza browser (serve Node.js 18 o più recente):
@@ -171,7 +181,9 @@ web/                    versione per il browser (GitHub Pages)
   build.mjs             shared/ + web/ -> web/dist, con la versione
   js/Platform.js        Platform per il browser
   js/Updates.js         avviso "c'è una versione nuova"
-  js/AppDownload.js     link "Scarica l'app per Android", se sul sito c'è l'APK
+  js/AppInstall.js      "Installa l'app" dal browser, come farlo su iPhone, o l'APK per Android
+  manifest.webmanifest  il sito come app installabile (nome, colori, icone in icons/)
+  sw.js                 service worker: il gioco salvato per giocare senza internet
   privacy.html          informativa sulla privacy (anche per l'app)
 app/                    app per Android e iOS (Capacitor), vedi sotto
 tests/
@@ -237,8 +249,12 @@ iPhone e iPad). Senza la chiave il workflow pubblica solo la versione web e il l
 
 L'APK del sito ha il canale `github` (`APP_CHANNEL`, scritto da `build.mjs` nella pagina): all'avvio,
 e tornando nell'app dopo almeno un'ora, legge `latest.json` sul sito e, se c'è una build più nuova,
-mostra una barra con **Scarica** (l'APK si apre nel browser del telefono; installandolo sopra, la
-partita salvata resta) e **Più tardi** (non lo ripropone fino alla build successiva). Il numero di
+mostra una barra con **Scarica** e **Più tardi** (non lo ripropone fino alla build successiva).
+Con **Scarica** l'app scarica l'APK nella sua cache privata, non in Download, e apre l'installazione
+di Android (`ApkUpdaterPlugin.java`, in `app/android/.../laserchess/`): la prima volta Android chiede
+di permettere a Laser Chess di installare app, poi l'installazione riparte da sola. La partita
+salvata resta e al prossimo avvio l'APK si cancella. Se il download non riesce, l'APK si apre nel
+browser. Solo il primo APK, scaricato dal browser, resta in Download. Il numero di
 build è il numero di commit (`git rev-list --count HEAD`), quindi ogni push fa una build nuova. Le
 app costruite in locale (`app:apk`, canale `local`) e quella di Google Play non controllano.
 
@@ -298,6 +314,10 @@ privacy, nome): [app/store/README.md](app/store/README.md). Qui sotto la parte t
 4. `corepack npm run app:bundle` -> `android/app/build/outputs/bundle/release/app-release.aab`, da
    caricare nella Play Console. Senza `keystore.properties` la build riesce lo stesso ma il file non è
    firmato e Google Play lo rifiuta.
+
+Prima di caricare su Google Play togli dal manifest (`app/android/app/src/main/AndroidManifest.xml`)
+il permesso `REQUEST_INSTALL_PACKAGES`: serve solo all'APK del sito per aggiornarsi da sé, e Google Play
+non lo ammette (lì gli aggiornamenti li fa lo store). Costruisci il bundle con `APP_CHANNEL=play`.
 
 L'app punta ad Android 16 (`targetSdk` 36, quello che Google Play chiede dal 31 agosto 2026) e
 funziona da Android 7 (`minSdk` 24). Niente offuscamento del codice: il gioco è JavaScript.
