@@ -1,9 +1,12 @@
-// Il gioco come app, dal browser (nel benvenuto e nelle Regole, elementi con data-get-app):
-// - Chrome, Edge (Android e computer): "📱 Installa l'app", un tocco e senza avvisi di sicurezza
-//   (manifest.webmanifest e sw.js, che la fa funzionare anche senza internet);
+// Il gioco come app, dal browser (nel benvenuto e in ⚙️ Opzioni, elementi con data-get-app):
+// - Android: "📱 Installa l'app", senza APK e senza avvisi di sicurezza (manifest.webmanifest e sw.js,
+//   che la fa funzionare anche senza internet). Se il browser è pronto (Chrome manda
+//   beforeinstallprompt solo dopo un po' che si usa il sito; Firefox mai) apre la sua finestra di
+//   installazione, altrimenti spiega come farlo dal menu del browser;
+// - computer: lo stesso pulsante, solo se il browser offre l'installazione;
 // - iPhone e iPad: come aggiungerla alla schermata Home da Safari;
-// - altrimenti, se sul sito c'è l'APK (download/latest.json, lo mette il workflow di GitHub Pages
-//   con app/publish-apk.mjs), il link per scaricarlo. Nelle Regole c'è sempre, sotto l'installazione.
+// - nelle Opzioni, su Android, anche l'APK (download/latest.json, lo mette il workflow di GitHub
+//   Pages con app/publish-apk.mjs).
 // Già aperto come app installata: niente.
 
 // Chrome offre l'installazione con un evento che può arrivare prima dell'avvio del gioco
@@ -21,6 +24,8 @@ class AppInstall {
     this.apk = null; // contenuto di download/latest.json, se c'è
     this.installed = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
     this.ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    this.android = /Android/.test(navigator.userAgent);
+    this.howto = false; // pulsante toccato quando il browser non offriva l'installazione
     for (const box of this.boxes) {
       box.querySelector(".install-app").addEventListener("click", () => this.install());
     }
@@ -33,7 +38,7 @@ class AppInstall {
     if ("serviceWorker" in navigator && version && version.content !== "dev") {
       navigator.serviceWorker.register("sw.js").catch(() => { });
     }
-    if (!this.installed && !this.ios) this.loadApk();
+    if (!this.installed && this.android) this.loadApk();
     this.render();
   }
 
@@ -48,7 +53,11 @@ class AppInstall {
   }
 
   async install() {
-    if (!installPrompt) return;
+    if (!installPrompt) {
+      this.howto = true; // come installarla dal menu del browser
+      this.render();
+      return;
+    }
     installPrompt.prompt();
     const { outcome } = await installPrompt.userChoice;
     installPrompt = null; // si può usare una volta sola
@@ -58,14 +67,14 @@ class AppInstall {
 
   render() {
     for (const box of this.boxes) {
-      const canInstall = !this.installed && !!installPrompt;
+      const canInstall = !this.installed && (this.android || !!installPrompt);
       const iosHint = !this.installed && this.ios;
-      // L'APK: dove non si può installare dal browser, e nelle Regole anche come alternativa
-      const apk = !this.installed && !this.ios && !!this.apk && (!canInstall || box.dataset.getApp === "all");
+      const apk = !this.installed && this.android && !!this.apk && box.dataset.getApp === "all";
       box.querySelector(".install-app").hidden = !canInstall;
+      box.querySelector(".install-howto").hidden = !(canInstall && this.howto && !installPrompt);
       box.querySelector(".install-ios").hidden = !iosHint;
       const link = box.querySelector(".download-app");
-      link.hidden = !apk;
+      if (link) link.hidden = !apk;
       const note = box.querySelector(".download-note");
       if (note) note.hidden = !apk;
       if (apk) {

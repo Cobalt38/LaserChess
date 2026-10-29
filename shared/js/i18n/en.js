@@ -105,7 +105,9 @@ STRINGS.en = {
   "help.credits": "Rules and starting layouts from the Laser Chess manual (ThinkFun), except PRISMA. Version",
   "install.button": "📱 Install the app",
   "install.ios": "To get it as an app: in Safari tap Share, then “Add to Home Screen”.",
-  "download.app": "📱 Download the Android app",
+  "install.howto": "Open the browser menu ⋮ and choose “Install” (or “Add to Home screen”).",
+  "settings.app": "App",
+  "download.app": "Or download the Android APK",
   "download.note": "Android will ask for permission to install apps downloaded from the browser.",
 
   // ---------- Code (see it.js) ----------

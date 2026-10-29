@@ -156,9 +156,8 @@
       <!-- Solo nel browser: il gioco come app (web/js/AppInstall.js) -->
       <div class="get-app" data-get-app hidden>
         <button type="button" class="install-app" hidden data-i18n="install.button">📱 Installa l'app</button>
+        <p class="install-howto muted small" hidden data-i18n="install.howto">Apri il menu ⋮ del browser e scegli “Installa” (o “Aggiungi a schermata Home”).</p>
         <p class="install-ios muted small" hidden data-i18n="install.ios">Per averlo come app: in Safari tocca Condividi, poi “Aggiungi alla schermata Home”.</p>
-        <a class="download-app" hidden download href="download/laserchess.apk"><span
-            data-i18n="download.app">📱 Scarica l'app per Android</span> <small class="download-size"></small></a>
       </div>
     </dialog>
 
@@ -334,13 +333,6 @@
             tasto destro sul pezzo per le frecce di rotazione; sopra una freccia, la linea tratteggiata mostra il raggio ruotato.</li>
         </ul>
       </details>
-      <div class="get-app download-box" data-get-app="all" hidden>
-        <button type="button" class="install-app accent" hidden data-i18n="install.button">📱 Installa l'app</button>
-        <p class="install-ios muted small" hidden data-i18n="install.ios">Per averlo come app: in Safari tocca Condividi, poi “Aggiungi alla schermata Home”.</p>
-        <a class="download-app" hidden download href="download/laserchess.apk"><span
-            data-i18n="download.app">📱 Scarica l'app per Android</span> <small class="download-size"></small></a>
-        <span class="download-note muted small" hidden data-i18n="download.note">Android chiederà il permesso di installare app scaricate dal browser.</span>
-      </div>
       <p class="fineprint"><span data-i18n="help.credits">Regole e disposizioni iniziali dal manuale di Laser Chess (ThinkFun),
         tranne PRISMA. Versione</span> <span id="app-version"></span>.
         <a id="privacy-link" href="privacy.html" target="_blank" rel="noopener">Privacy</a></p>
@@ -363,6 +355,16 @@
         <label class="check app-only"><input type="checkbox" id="opt-haptics"> <span data-i18n="opt.haptics">Vibrazione</span></label>
         <label class="check"><input type="checkbox" id="opt-preview"> <span data-i18n="opt.preview">Mostra dove andrà il raggio (linea tratteggiata)</span></label>
         <label class="check"><input type="checkbox" id="opt-coach"> <span data-i18n="opt.coach">Mostra i suggerimenti sotto la board</span></label>
+      </div>
+      <!-- Solo nel browser: il gioco come app (web/js/AppInstall.js) -->
+      <div class="get-app download-box" data-get-app="all" hidden>
+        <h3 data-i18n="settings.app">App</h3>
+        <button type="button" class="install-app accent" hidden data-i18n="install.button">📱 Installa l'app</button>
+        <p class="install-howto muted small" hidden data-i18n="install.howto">Apri il menu ⋮ del browser e scegli “Installa” (o “Aggiungi a schermata Home”).</p>
+        <p class="install-ios muted small" hidden data-i18n="install.ios">Per averlo come app: in Safari tocca Condividi, poi “Aggiungi alla schermata Home”.</p>
+        <a class="download-app" hidden download href="download/laserchess.apk"><span
+            data-i18n="download.app">Oppure scarica l'APK per Android</span> <small class="download-size"></small></a>
+        <span class="download-note muted small" hidden data-i18n="download.note">Android chiederà il permesso di installare app scaricate dal browser.</span>
       </div>
     </dialog>
 

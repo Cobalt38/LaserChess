@@ -934,7 +934,14 @@ a.download-app small {
 
 .download-box {
   margin-top: 16px;
-  text-align: center;
+}
+
+.download-box h3 {
+  margin: 0 0 4px;
+}
+
+.download-box a.download-app {
+  text-align: left;
 }
 
 .get-app {

@@ -19,10 +19,12 @@ SHOTS = os.environ.get("LASERCHESS_SHOTS", os.path.join(os.path.dirname(__file__
 
 
 class Page:
-    def __init__(self, width=1280, height=800, name="page"):
+    def __init__(self, width=1280, height=800, name="page", prefs=None):
         options = Options()
         options.add_argument("-headless")
         options.enable_bidi = True
+        for key, value in (prefs or {}).items():
+            options.set_preference(key, value)
         # Il gioco segue la lingua del browser: i test controllano i testi in italiano
         options.set_preference("intl.accept_languages", "it-IT, it")
         self.name = name

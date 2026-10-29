@@ -123,10 +123,12 @@ partita riprende da dove era). In `shared/` restano i segnaposto `?v=dev`. Sul s
 
 ### Installare il sito come app
 
-Il sito si installa come app dal browser, senza store e senza gli avvisi di Android sugli APK:
-in Chrome ed Edge (Android e computer) il benvenuto e le Regole mostrano **📱 Installa l'app**, che
-la mette tra le app del telefono con la sua icona; su iPhone e iPad spiegano come aggiungerla alla
-schermata Home da Safari. Servono `web/manifest.webmanifest` (nome, colori, icone in `web/icons/`) e
+Il sito si installa come app dal browser, senza store e senza gli avvisi di Android sugli APK.
+Su Android il benvenuto e **⚙️ Opzioni** (sezione App) mostrano **📱 Installa l'app**: in Chrome, quando
+il browser è pronto (dopo un po' che si usa il sito), apre la sua finestra di installazione; negli
+altri casi (Firefox, Chrome appena aperto) spiega come farlo dal menu ⋮ del browser ("Installa" o
+"Aggiungi a schermata Home"). Sul computer il pulsante c'è se il browser offre l'installazione; su
+iPhone e iPad si spiega come aggiungerla alla schermata Home da Safari. Servono `web/manifest.webmanifest` (nome, colori, icone in `web/icons/`) e
 `web/sw.js`, il service worker che salva il gioco per giocarci anche senza internet (contro il
 computer): `web/build.mjs` ci scrive la versione e l'elenco dei file. Si aggiorna da sola come il
 sito; il service worker si registra solo nella versione pubblicata (non con la versione `dev`).
@@ -181,7 +183,7 @@ web/                    versione per il browser (GitHub Pages)
   build.mjs             shared/ + web/ -> web/dist, con la versione
   js/Platform.js        Platform per il browser
   js/Updates.js         avviso "c'è una versione nuova"
-  js/AppInstall.js      "Installa l'app" dal browser, come farlo su iPhone, o l'APK per Android
+  js/AppInstall.js      "Installa l'app" dal browser (o come farlo dal menu, su iPhone), l'APK per Android
   manifest.webmanifest  il sito come app installabile (nome, colori, icone in icons/)
   sw.js                 service worker: il gioco salvato per giocare senza internet
   privacy.html          informativa sulla privacy (anche per l'app)
@@ -244,8 +246,8 @@ su Linux vuole il percorso di Android Studio in `CAPACITOR_ANDROID_STUDIO_PATH`)
 A ogni push su `master`, se nei segreti del repository c'è la chiave di firma, il workflow di GitHub
 Pages costruisce anche l'APK firmato e lo mette sul sito: `download/laserchess.apk`, con
 `download/latest.json` (numero di build, versione, dimensione; li scrive `app/publish-apk.mjs`).
-Nel browser, il benvenuto e le Regole mostrano allora **📱 Scarica l'app per Android** (non su
-iPhone e iPad). Senza la chiave il workflow pubblica solo la versione web e il link non si vede.
+Su Android, in **⚙️ Opzioni** (sezione App), sotto **Installa l'app** c'è allora anche il link
+all'APK. Senza la chiave il workflow pubblica solo la versione web e il link non si vede.
 
 L'APK del sito ha il canale `github` (`APP_CHANNEL`, scritto da `build.mjs` nella pagina): all'avvio,
 e tornando nell'app dopo almeno un'ora, legge `latest.json` sul sito e, se c'è una build più nuova,

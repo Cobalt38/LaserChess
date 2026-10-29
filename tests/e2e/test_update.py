@@ -38,7 +38,9 @@ def main():
     server = http.server.ThreadingHTTPServer(("127.0.0.1", PORT), functools.partial(Quiet, directory=site))
     threading.Thread(target=server.serve_forever, daemon=True).start()
 
-    p = Page(1100, 760, "update")
+    # Come Firefox su Android: niente beforeinstallprompt, quindi le istruzioni dal menu del browser
+    android = "Mozilla/5.0 (Android 14; Mobile; rv:131.0) Gecko/131.0 Firefox/131.0"
+    p = Page(1100, 760, "update", prefs={"general.useragent.override": android})
     try:
         step("la copia pubblicata ha la versione negli indirizzi degli script e nella pagina")
         p.open(f"http://127.0.0.1:{PORT}/index.html")
@@ -48,12 +50,11 @@ def main():
         assert p.js("document.querySelector('link[rel=stylesheet]').getAttribute('href')") == "css/style.css?v=aaa1111"
         assert p.js("document.getElementById('app-version').textContent") == "aaa1111"
 
-        step("sul sito c'è l'APK: nel benvenuto il link per scaricare l'app per Android")
-        p.wait("!document.querySelector('.welcome a.download-app').hidden", 5, "link dell'app")
-        assert p.js("document.querySelector('.welcome a.download-app').getAttribute('href')") == "download/laserchess.apk?v=99"
-        assert "4.0 MB" in p.text(".welcome a.download-app"), p.text(".welcome a.download-app")
-        # Firefox non offre l'installazione dal browser: il pulsante resta nascosto
-        assert p.js("document.querySelector('.welcome .install-app').hidden")
+        step("Android, browser senza beforeinstallprompt: Installa l'app spiega come fare dal menu")
+        p.wait("!document.querySelector('.welcome .install-app').hidden", 5, "pulsante Installa l'app")
+        assert not p.js("document.querySelector('.welcome .download-app')"), "nel benvenuto niente APK"
+        p.click(".welcome .install-app")
+        p.wait("!document.querySelector('.welcome .install-howto').hidden", 3, "istruzioni dal menu")
 
         step("installabile come app: manifest e service worker con il gioco salvato per giocare senza rete")
         assert p.js("document.querySelector('link[rel=manifest]').getAttribute('href')") == "manifest.webmanifest"
@@ -66,9 +67,15 @@ def main():
         assert isinstance(cached, list) and any(k.endswith("/js/sketch.js?v=aaa1111") for k in cached), cached
         assert any(k.endswith("/index.html") for k in cached), cached
 
-        step("stessa versione sul server: nessun avviso")
+        step("stessa versione sul server: nessun avviso; in ⚙️ Opzioni anche l'APK")
         p.click("#welcome-play")
         p.click("#new-start")
+        p.click("[data-open=dlg-settings]")
+        p.wait("!document.querySelector('#dlg-settings .download-app').hidden", 5, "APK nelle Opzioni")
+        assert p.js("document.querySelector('#dlg-settings .download-app').getAttribute('href')") == "download/laserchess.apk?v=99"
+        assert "4.0 MB" in p.text("#dlg-settings .download-app"), p.text("#dlg-settings .download-app")
+        p.shot("opzioni-app")
+        p.js("document.getElementById('dlg-settings').close(); 0")
         time.sleep(4)
         assert not p.visible("#update-banner")
 
