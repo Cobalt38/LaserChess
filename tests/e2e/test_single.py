@@ -1,5 +1,5 @@
-"""Partita contro il computer e in due sullo stesso schermo, finestre, nomi, configurazioni,
-ripresa dopo il ricaricamento, layout su telefono."""
+"""Benvenuto e tutorial, partita contro il computer e in due sullo stesso schermo, avvisi
+dell'anteprima, finestre, nomi, configurazioni, ripresa dopo il ricaricamento, layout su telefono."""
 import sys
 import time
 
@@ -14,10 +14,43 @@ def main():
     p = Page(1280, 800, "desktop")
     try:
         p.open()
-        step("prima visita: si apre la finestra Nuova partita con le istruzioni")
-        assert p.js("document.getElementById('dlg-new').open"), "finestra iniziale chiusa"
-        assert p.visible("#intro"), "istruzioni iniziali nascoste"
+        step("prima visita: benvenuto con l'immagine, tutorial o partita")
+        assert p.js("document.getElementById('dlg-welcome').open"), "finestra di benvenuto chiusa"
+        assert p.js("!!document.getElementById('welcome-art').src"), "immagine del benvenuto mancante"
+        p.shot("00-benvenuto")
+
+        step("tutorial: lezione 1 con l'aiuto, sparo, vinta; Esci porta alla nuova partita")
+        p.click("#welcome-learn")
+        p.wait("game.mode === 'tutorial' && tutorial.state === 'play' && tutorial.index === 0", 3)
+        assert p.visible("#lesson-actions") and p.visible("#king-tag-1"), "comandi della lezione o etichetta del King mancanti"
+        assert "Tutorial" in p.text("#status-text")
+        p.click("#lesson-hint")
+        assert p.js("board.hintCells.map(c => c.name).join()") == "j5"
+        p.tap_cell("j5")
+        p.click("#btn-rot-cw")
+        p.wait("board.phase === 'fire'", 3)
+        p.wait("document.getElementById('hint').classList.contains('good')", 3, "avviso verde: il raggio va sul King")
+        p.click("#btn-fire")
+        p.wait("tutorial.state === 'won'", 10, "lezione vinta")
+        assert p.js("document.getElementById('gameover').hidden"), "nel tutorial niente finestra di fine partita"
+        p.shot("00-tutorial-vinto")
+        p.click("#lesson-next")
+        p.wait("tutorial.index === 1 && tutorial.state === 'play'", 3)
+        step("lezione 2 sbagliata apposta: si spiega e si riprova")
+        p.tap_cell("i6")
+        p.tap_cell("h6")
+        p.click("#btn-fire")
+        p.wait("tutorial.state === 'failed' && !document.getElementById('lesson-retry').hidden", 10)
+        p.click("#lesson-retry")
+        p.wait("tutorial.state === 'play' && board.cellByName('i6').piece", 3)
+        p.click("#lesson-exit")
+        p.wait("!tutorial.active && document.getElementById('dlg-new').open", 3)
+        assert p.js("settings.seenIntro"), "il benvenuto non deve riaprirsi"
+
+        step("finestra Nuova partita: contro il computer, Facile, PRISMA")
         assert p.js("document.querySelector('#new-form').elements.mode.value") == "ai"
+        assert p.js("document.querySelector('#new-form').elements.level.value") == "easy", "per chi inizia il livello è Facile"
+        assert p.visible("#new-start"), "Inizia la partita deve essere in vista senza scorrere"
         assert p.js("!!document.getElementById('setup-preview').src"), "anteprima della disposizione mancante"
         assert p.js("document.getElementById('setup-select').value") == "PRISMA", "PRISMA deve essere la predefinita"
         assert p.js("[...document.querySelectorAll('[name=variant]')].every(i => i.disabled && i.checked)"), \
@@ -27,7 +60,7 @@ def main():
         assert max(p.pixel("e1")) < 40, f"la board deve essere vuota, al posto del King c'è {p.pixel('e1')}"
         p.shot("01-benvenuto")
 
-        step("contro il computer (medio), si gioca col blu")
+        step("contro il computer, si gioca col blu; etichette sui King all'inizio")
         p.click("#new-start")
         p.wait("!document.getElementById('dlg-new').open")
         assert p.js("game.mode") == "ai" and p.js("board.localIndex") == 0
@@ -36,6 +69,11 @@ def main():
         p.wait("Math.max(...(" + "(() => { const c = board.cellByName('e1').center; const q = boardToScreen(c.x, c.y), d = pixelDensity(); return [...drawingContext.getImageData(Math.round(q.x * d), Math.round(q.y * d), 1, 1).data].slice(0, 3); })()" + ")) > 60", 3, "pezzi visibili dopo l'inizio")
         assert p.js("game.ai.side") == 1
         p.wait("document.getElementById('hint').textContent.includes('Tocca uno dei tuoi pezzi blu')", 3)
+        assert p.text("#king-tag-0") == "Il tuo King" and p.text("#king-tag-1") == "King avversario"
+
+        step("SPARA prima di muovere: spiega cosa fare")
+        p.d.find_element("css selector", "#btn-fire").click()
+        p.wait("!document.getElementById('toast').hidden && document.getElementById('toast').textContent.includes('Prima sposta')", 3)
 
         step("tocco un pezzo avversario: il suggerimento spiega cos'è")
         p.tap_cell("h5")  # Deflector arancione in ACE
@@ -67,7 +105,7 @@ def main():
         p.tap_cell("h3")
         p.wait("board.phase === 'fire'", 3)
         assert p.js("board.cellByName('h3').piece && board.cellByName('h3').piece.type") == "Deflector"
-        p.wait("!document.getElementById('btn-fire').disabled", 3)
+        p.wait("document.getElementById('btn-fire').getAttribute('aria-disabled') === 'false'", 3)
         p.wait("document.getElementById('step-fire').classList.contains('active')", 3)
         assert p.js("board.laserPreview().segments.length") > 0
         time.sleep(0.4)
@@ -108,6 +146,20 @@ def main():
         p.click("#go-new")
         p.wait("!board.gameOver && board.history.length === 0 && board.pieces.length === SETUPS[board.setupName].length + 2", 5)
         assert p.js("game.mode") == "ai" and p.js("!!game.ai")
+
+        step("il raggio colpirebbe il mio King: avviso rosso, conferma prima di sparare, Annulla la mossa")
+        p.js("""board.restore({ setup: 'ACE', players: board.players.map(p => p.baseName), turn: 0, phase: 'move',
+            history: [], lastMove: null, positions: [], drawClaimable: false, gameOver: null,
+            pieces: [['Laser', 0, 10, 1, 'N'], ['Laser', 1, 1, 8, 'S'], ['King', 0, 5, 1, 'N'], ['King', 1, 5, 8, 'S']] }); 0""")
+        p.tap_cell("j1")
+        p.click("#btn-rot-cw")
+        p.wait("board.phase === 'fire'", 3)
+        p.wait("document.getElementById('hint').classList.contains('danger')", 3, "avviso rosso sul proprio King")
+        p.click("#btn-fire")
+        p.wait("document.getElementById('dlg-ask').open", 3, "conferma prima di colpire il proprio King")
+        p.shot("06b-conferma-proprio-king")
+        p.click("#ask-no")
+        p.wait("board.phase === 'move' && board.cellByName('j1').piece.rot === 'N' && !board.gameOver", 3)
         p.js(f"board.restore({__import__('json').dumps(snap)}); 0")
 
         step("nomi: uguale a Computer non va, poi salvo Mario")
@@ -136,7 +188,7 @@ def main():
         step("nuova partita in due: nomi uguali rifiutati, poi GRAIL")
         p.click("#btn-new")
         p.wait("document.getElementById('dlg-new').open", 3)
-        assert not p.visible("#intro"), "le istruzioni iniziali si vedono solo la prima volta"
+        assert p.visible("#new-tutorial"), "manca il collegamento al tutorial"
         p.click("input[name=mode][value=local] + span")
         p.fill("input[name=name0]", "Anna")
         p.fill("input[name=name1]", "anna ")
@@ -197,6 +249,7 @@ def main():
         m = Page(w, h, f"telefono-{label}")
         try:
             m.open()
+            m.click("#welcome-play")
             m.click("#new-start")
             m.wait("!document.getElementById('dlg-new').open")
             m.tap_cell("h2")

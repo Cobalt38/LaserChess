@@ -1,0 +1,5 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <!-- app_name, title_activity_main, package_name e custom_url_scheme li scrive app/build.gradle
+         leggendo capacitor.config.json (appName e appId): si cambiano solo lì -->
+</resources>

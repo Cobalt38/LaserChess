@@ -1,10 +1,10 @@
 // Carica gli script del gioco in Node, senza browser: le funzioni di disegno di p5 non fanno nulla.
-// Gli script vengono letti da index.html, nello stesso ordine del browser.
+// Gli script vengono letti da shared/index.html, nello stesso ordine del browser.
 const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
 
-const ROOT = path.join(__dirname, "..");
+const ROOT = path.join(__dirname, "..", "shared");
 // Interfaccia, rete, audio e avvio di p5 servono solo nel browser
 const SKIP = /^js\/(sketch\.js|ui\/|net\/|fx\/Sound\.js)/;
 

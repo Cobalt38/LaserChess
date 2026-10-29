@@ -52,7 +52,8 @@ class Page:
 
     def click(self, css):
         # I pulsanti si attivano al frame successivo a quello in cui cambia lo stato: si aspetta
-        self.wait(f"(e => !e.disabled && !e.hidden)(document.querySelector({json.dumps(css)}))", 5, f"{css} attivo")
+        # (SPARA non è mai disabled, così toccandolo spiega perché non si può ancora: aria-disabled)
+        self.wait(f"(e => !e.disabled && !e.hidden && e.getAttribute('aria-disabled') !== 'true')(document.querySelector({json.dumps(css)}))", 5, f"{css} attivo")
         self.d.find_element(By.CSS_SELECTOR, css).click()
 
     def visible(self, css):

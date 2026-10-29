@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Laser Chess · Privacy</title>
+    <link rel="icon" href="assets/icon.ico">
+    <!-- Informativa sulla privacy, per il sito e per la scheda dell'app su Google Play -->
+    <style>
+      :root { color-scheme: dark; }
+      body {
+        margin: 0;
+        padding: 24px 16px 48px;
+        background: #0a0a0a;
+        color: #f3eee4;
+        font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      }
+      main { max-width: 680px; margin: 0 auto; }
+      h1 { font-size: 26px; margin: 0 0 4px; }
+      h2 { font-size: 18px; margin: 28px 0 6px; }
+      p, li { color: #d8d2c6; }
+      .muted { color: #9a958c; font-size: 14px; }
+      a { color: #d9b23c; }
+      hr { border: 0; border-top: 1px solid #2a2a2a; margin: 40px 0; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Laser Chess: privacy</h1>
+      <p class="muted">Ultimo aggiornamento: 29 ottobre 2026. Vale per il gioco nel browser e per l'app
+        per Android e iOS.</p>
+
+      <h2>In breve</h2>
+      <p>Il gioco non ha account, pubblicità, statistiche d'uso o tracciamento. Non raccogliamo dati
+        personali e non li vendiamo né li condividiamo.</p>
+
+      <h2>Cosa resta sul tuo dispositivo</h2>
+      <p>Le impostazioni (nomi dei giocatori, livello, opzioni) e la partita in corso sono salvate solo
+        sul tuo dispositivo, nella memoria del browser o dell'app, per riprendere da dove eri.
+        Non vengono mandate a nessuno. Le cancelli cancellando i dati del sito o disinstallando l'app.</p>
+
+      <h2>Partite online</h2>
+      <p>Solo se scegli di giocare online con un amico, i due dispositivi si collegano direttamente
+        (WebRTC, connessione cifrata) e si scambiano il nome che hai scelto e le mosse. Per trovarsi
+        tramite il codice della partita usano il server pubblico di
+        <a href="https://peerjs.com">PeerJS</a>, un progetto open source; se il collegamento diretto
+        non riesce, i dati cifrati possono passare da un server ponte (TURN). Questi server vedono
+        l'indirizzo IP del tuo dispositivo, come succede con qualunque collegamento a internet.
+        Come in ogni gioco con collegamento diretto, anche l'altro giocatore può vedere il tuo indirizzo
+        IP: gioca online solo con chi conosci.</p>
+
+      <h2>Versione nel browser</h2>
+      <p>La pagina è pubblicata su GitHub Pages e scarica due librerie (p5.js e PeerJS) da jsDelivr:
+        come ogni sito, questi servizi ricevono l'indirizzo IP di chi apre la pagina (vedi le
+        informative di <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement">GitHub</a>
+        e <a href="https://www.jsdelivr.com/terms/privacy-policy-jsdelivr-net">jsDelivr</a>). L'app ha
+        queste librerie al suo interno.</p>
+
+      <h2>Permessi dell'app</h2>
+      <p>Internet (solo per le partite online) e vibrazione (si spegne nelle Regole, sotto Opzioni).</p>
+
+      <h2>Bambini</h2>
+      <p>Il gioco non raccoglie dati di nessuno, bambini compresi.</p>
+
+      <h2>Contatti</h2>
+      <p>Per domande su questa informativa apri una segnalazione su
+        <a href="https://github.com/Cobalt38/LaserChess/issues">github.com/Cobalt38/LaserChess</a>.
+        Se l'informativa cambia, la nuova versione sarà pubblicata su questa pagina.</p>
+
+      <hr>
+
+      <h1 lang="en">Privacy (English)</h1>
+      <div lang="en">
+        <p class="muted">Last updated: 29 October 2026. Applies to the browser game and to the Android and iOS app.</p>
+        <p><strong>In short:</strong> no accounts, no ads, no analytics, no tracking. We do not collect,
+          sell or share personal data.</p>
+        <p><strong>On your device:</strong> settings (player names, level, options) and the game in
+          progress are stored only on your device so you can resume. They are never sent anywhere.</p>
+        <p><strong>Online games:</strong> only if you choose to play online, the two devices connect
+          directly (WebRTC, encrypted) and exchange your chosen name and the moves. To find each other
+          by game code they use the public <a href="https://peerjs.com">PeerJS</a> server (open source);
+          if a direct connection fails, the encrypted data may pass through a relay (TURN) server.
+          These servers see your device's IP address, and so does the other player: play online only
+          with people you know.</p>
+        <p><strong>Browser version:</strong> hosted on GitHub Pages; it loads p5.js and PeerJS from
+          jsDelivr, which receive your IP address like any website. The app bundles these libraries.</p>
+        <p><strong>App permissions:</strong> internet (online games only) and vibration (can be turned
+          off in Regole → Opzioni).</p>
+        <p><strong>Children:</strong> the game collects no data from anyone, including children.</p>
+        <p><strong>Contact:</strong> open an issue at
+          <a href="https://github.com/Cobalt38/LaserChess/issues">github.com/Cobalt38/LaserChess</a>.</p>
+      </div>
+    </main>
+  </body>
+</html>

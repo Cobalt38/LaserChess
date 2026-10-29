@@ -1,0 +1,8 @@
+# Dipendenze (Capacitor, plugin, p5 e PeerJS da copiare nell'app)
+node_modules/
+# Copia del gioco per l'app, generata da build.mjs
+www/
+# Firma per Google Play: mai nel repository (vedi README, sezione App)
+android/keystore.properties
+*.jks
+*.keystore

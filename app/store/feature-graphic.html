@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<!-- Immagine in evidenza per Google Play (1024x500), disegnata con il codice del gioco: l'ultima
+     lezione del tutorial risolta, col raggio che aggira lo scudo e colpisce il King.
+     Si apre con un server locale dalla cartella principale del repository, es.
+     python3 -m http.server 8000 e http://localhost:8000/app/store/feature-graphic.html
+     (?title=...&tagline=... per cambiare le scritte), poi si salva il canvas come PNG. -->
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <title>Immagine in evidenza</title>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.11.5/lib/p5.min.js"></script>
+    <script src="../../shared/js/config/constants.js"></script>
+    <script src="../../shared/js/core/Player.js"></script>
+    <script src="../../shared/js/core/Cell.js"></script>
+    <script src="../../shared/js/pieces/Piece.js"></script>
+    <script src="../../shared/js/pieces/Laser.js"></script>
+    <script src="../../shared/js/pieces/King.js"></script>
+    <script src="../../shared/js/pieces/Defender.js"></script>
+    <script src="../../shared/js/pieces/Deflector.js"></script>
+    <script src="../../shared/js/pieces/Switch.js"></script>
+    <script src="../../shared/js/pieces/variants/Prism.js"></script>
+    <script src="../../shared/js/pieces/variants/HalfMirror.js"></script>
+    <script src="../../shared/js/config/setups.js"></script>
+    <script src="../../shared/js/config/lessons.js"></script>
+    <script src="../../shared/js/core/LaserBeam.js"></script>
+    <script src="../../shared/js/ui/ActionMenu.js"></script>
+    <script src="../../shared/js/core/Board.js"></script>
+    <style>body { margin: 0; background: #222; }</style>
+  </head>
+  <body>
+    <script>
+      const q = new URLSearchParams(location.search);
+      const TITLE = q.get("title") || "Laser Chess";
+      const TAGLINE = q.get("tagline") || "Specchi, laser e strategia";
+
+      function setup() {
+        pixelDensity(1);
+        createCanvas(1024, 500);
+        strokeJoin(ROUND);
+        noLoop();
+      }
+
+      function draw() {
+        background(10);
+        const lesson = LESSONS[LESSONS.length - 1];
+        const board = new Board();
+        board.setup("", ["", ""], [], lesson.pieces);
+        const { at, to } = lesson.hint;
+        const piece = board.cellByName(at).piece;
+        piece.move(board.cellByName(to));
+        board.beam = new LaserBeam(board, board.players[0].laser);
+        board.beam.progress = board.beam.duration;
+        const k = 1.06;
+        push();
+        translate(28, (height - board.height * k) / 2);
+        scale(k);
+        board.setRenderScale(k);
+        board.show();
+        pop();
+
+        // Scritte a destra
+        const x = 28 + board.width * k + 40;
+        noStroke();
+        fill(243, 238, 228);
+        textFont("sans-serif");
+        textStyle(BOLD);
+        textSize(58);
+        textAlign(LEFT, BASELINE);
+        text(TITLE, x, 228);
+        textStyle(NORMAL);
+        textSize(26);
+        fill(217, 178, 60);
+        text(TAGLINE, x, 272);
+      }
+    </script>
+  </body>
+</html>

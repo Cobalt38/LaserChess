@@ -1,0 +1,119 @@
+<!doctype html>
+<!-- Icona e schermata di avvio dell'app, disegnate con il codice dei pezzi del gioco (il Deflector
+     blu colpito dal laser). Da aprire con un server locale dalla cartella principale del repository, es.
+     python3 -m http.server 8000  ->  http://localhost:8000/app/resources/icon.html?mode=icon
+     mode: icon (1024, completa), foreground e background (1024, i due livelli dell'icona adattiva
+     di Android), splash (2732, sfondo scuro con l'icona al centro). Il pulsante salva il PNG.
+     I PNG salvati vanno in app/resources con i nomi icon-only.png, icon-foreground.png,
+     icon-background.png, splash.png e splash-dark.png, poi npm run app:icons (vedi README). -->
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <title>Icona Laser Chess</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.11.5/lib/p5.min.js"
+    integrity="sha384-HAhlNq60Pt8FPArO94dBFXW3Fa/5li0eyAdkD/eDtP0kwiBDXRvoz7RG9yfQemgj"
+    crossorigin="anonymous"></script>
+  <script src="../../shared/js/config/constants.js"></script>
+  <script src="../../shared/js/core/Player.js"></script>
+  <script src="../../shared/js/core/Cell.js"></script>
+  <script src="../../shared/js/pieces/Piece.js"></script>
+  <script src="../../shared/js/pieces/Deflector.js"></script>
+  <style>
+    body { margin: 0; background: #333; color: #eee; font: 14px system-ui, sans-serif; }
+    canvas { display: block; width: min(90vw, 90vh) !important; height: auto !important; margin: 10px auto; }
+    p { text-align: center; }
+  </style>
+</head>
+<body>
+  <p><button id="save">Salva PNG</button></p>
+  <script>
+    const MODE = new URLSearchParams(location.search).get("mode") || "icon";
+    const SIZE = MODE === "splash" ? 2732 : 1024;
+    // Zoom rispetto all'icona completa. Nell'icona adattiva le maschere rotonde di Android tagliano gli
+    // angoli (capacitor-assets la ritaglia già sulla parte visibile): un po' più piccola. Nella splash
+    // l'icona è piccola al centro
+    const ZOOM = { icon: 1, foreground: 0.88, background: 0.88, splash: 0.2 }[MODE];
+    const CELL = 0.78 * ZOOM * SIZE;
+    // Il pezzo un po' in alto a destra: il raggio arriva da sinistra e dal basso
+    const SHIFT = 0.07 * ZOOM * SIZE;
+    const BG = "#0a0a0a";
+
+    function setup() {
+      pixelDensity(1);
+      createCanvas(SIZE, SIZE);
+      strokeJoin(ROUND);
+      noLoop();
+      // Nomi che si aspetta capacitor-assets (npm run app:icons)
+      const file = { icon: "icon-only", foreground: "icon-foreground", background: "icon-background", splash: "splash" }[MODE];
+      document.getElementById("save").onclick = () => saveCanvas(file, "png");
+    }
+
+    function draw() {
+      clear();
+      const k = CELL / CELL_SIZE; // da unità board (casella di 50) a pixel
+      push();
+      translate(width / 2 + SHIFT, height / 2 - SHIFT);
+      scale(k);
+      translate(-CELL_SIZE / 2, -CELL_SIZE / 2); // casella (0,0) al centro
+      if (MODE !== "foreground") {
+        push();
+        resetMatrix();
+        background(BG);
+        pop();
+        grid(k);
+      }
+      if (MODE !== "background") {
+        const cell = new Cell(0, CELL_SIZE);
+        const piece = new Deflector(new Player("", PLAYER_SLOTS[0].color));
+        piece.cell = cell;
+        piece.board = {};
+        piece.rot = "SW"; // il raggio che sale viene riflesso a sinistra
+        piece.draw();
+        beam(cell, k);
+      }
+      pop();
+    }
+
+    // Griglia della board, come Cell.drawBackground ma attenuata verso i bordi
+    function grid(k) {
+      const n = Math.ceil(SIZE / CELL / 2) + 2;
+      for (let i = -n; i <= n; i++) {
+        for (let j = -n; j <= n; j++) {
+          const d = Math.hypot(i, j);
+          stroke(255, Math.max(0, 70 - d * 22));
+          strokeWeight(0.6);
+          noFill();
+          rect(i * CELL_SIZE, j * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+        }
+      }
+    }
+
+    // Raggio che entra dal basso, arriva al centro del Deflector e prosegue verso sinistra,
+    // disegnato come LaserBeam.show (bordo con alone, poi nucleo)
+    function beam(cell, k) {
+      const c = cell.center;
+      const far = SIZE / k;
+      const segs = [[c.x, c.y + far, c.x, c.y], [c.x, c.y, c.x - far, c.y]];
+      push();
+      noFill();
+      strokeCap(ROUND);
+      drawingContext.shadowColor = "rgba(255, 40, 40, 0.8)";
+      drawingContext.shadowBlur = 12 * k;
+      stroke(...LASER_COLOR.outer);
+      strokeWeight(5);
+      for (const s of segs) line(...s);
+      drawingContext.shadowBlur = 0;
+      stroke(...LASER_COLOR.inner);
+      strokeWeight(2);
+      for (const s of segs) line(...s);
+      // scintilla nel punto del riflesso, come la testa del raggio in LaserBeam.show
+      noStroke();
+      fill(...LASER_COLOR.outer, 90);
+      ellipse(c.x, c.y, 11);
+      fill(255, 255, 220);
+      ellipse(c.x, c.y, 4);
+      pop();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Lo stesso colore di sfondo del gioco (variabile bg in style.css) -->
+    <color name="app_background">#0A0A0A</color>
+</resources>

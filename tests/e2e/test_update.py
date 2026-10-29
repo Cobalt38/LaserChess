@@ -1,4 +1,4 @@
-"""Versione pubblicata: indirizzi di JS e CSS con la versione (tools/stamp-version.sh) e avviso
+"""Versione pubblicata: indirizzi di JS e CSS con la versione (web/build.mjs) e avviso
 quando ne esce una nuova. Prepara una copia del sito come fa il deploy, la serve su una porta
 sua e simula una nuova pubblicazione cambiando version.json."""
 import functools
@@ -28,10 +28,7 @@ def step(msg):
 
 def main():
     site = tempfile.mkdtemp(prefix="laserchess-site-")
-    for name in ["index.html", "css", "js", "assets", "tools"]:
-        src = os.path.join(ROOT, name)
-        (shutil.copytree if os.path.isdir(src) else shutil.copy)(src, os.path.join(site, name))
-    subprocess.run(["sh", "tools/stamp-version.sh", "aaa1111"], cwd=site, check=True)
+    subprocess.run(["node", os.path.join(ROOT, "web", "build.mjs"), "aaa1111", site], check=True)
     server = http.server.ThreadingHTTPServer(("127.0.0.1", PORT), functools.partial(Quiet, directory=site))
     threading.Thread(target=server.serve_forever, daemon=True).start()
 
@@ -46,6 +43,7 @@ def main():
         assert p.js("document.getElementById('app-version').textContent") == "aaa1111"
 
         step("stessa versione sul server: nessun avviso")
+        p.click("#welcome-play")
         p.click("#new-start")
         time.sleep(4)
         assert not p.visible("#update-banner")
@@ -60,12 +58,12 @@ def main():
         with open(os.path.join(site, "version.json"), "w") as f:
             f.write('{ "version": "bbb2222" }\n')
         p.js("document.dispatchEvent(new Event('visibilitychange')); 0")
-        p.wait("!document.getElementById('update-banner').hidden", 5, "avviso della versione nuova")
+        p.wait("document.getElementById('update-banner')", 5, "avviso della versione nuova")
         p.shot("avviso")
 
         step("Aggiorna ricarica la pagina e la partita riprende da dove era")
         p.click("#update-reload")
-        p.wait("typeof board === 'object' && board.players.length === 2 && document.getElementById('update-banner').hidden", 20)
+        p.wait("typeof board === 'object' && board.players.length === 2 && !document.getElementById('update-banner')", 20)
         assert p.js("board.positionKey() + board.phase") == key, "partita diversa dopo l'aggiornamento"
         p.check_no_errors()
         print("OK: test_update")

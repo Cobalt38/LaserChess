@@ -51,6 +51,7 @@ def main():
     try:
         step("A: dalla finestra iniziale sceglie Online e crea il link")
         a.open()
+        a.click("#welcome-play")
         a.click("input[name=mode][value=online] + span")
         a.click("#new-start")
         a.wait("document.getElementById('dlg-online').open", 5)
@@ -65,6 +66,7 @@ def main():
 
         step("B, mentre gioca contro il computer, prova un codice sbagliato: errore e torna alla sua partita")
         b.open()
+        b.click("#welcome-play")
         b.click("#new-start")
         b.wait("game.mode === 'ai' && !document.getElementById('dlg-new').open", 5)
         b.click("#btn-online")

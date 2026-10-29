@@ -1,0 +1,34 @@
+{
+  "appId": "io.github.cobalt38.laserchess",
+  "appName": "Laser Chess",
+  "webDir": "www",
+  "backgroundColor": "#0a0a0a",
+  "android": {
+    "backgroundColor": "#0a0a0a"
+  },
+  "ios": {
+    "backgroundColor": "#0a0a0a",
+    "contentInset": "never"
+  },
+  "plugins": {
+    "SystemBars": {
+      "style": "DARK",
+      "insetsHandling": "css",
+      "initialViewportFitValueHint": "cover"
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#0a0a0a"
+    },
+    "SplashScreen": {
+      "launchShowDuration": 600,
+      "launchAutoHide": true,
+      "launchFadeOutDuration": 200,
+      "backgroundColor": "#0a0a0a",
+      "showSpinner": false,
+      "androidScaleType": "CENTER_CROP",
+      "splashFullScreen": false,
+      "splashImmersive": false
+    }
+  }
+}

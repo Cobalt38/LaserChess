@@ -33,15 +33,16 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup Pages
         uses: actions/configure-pages@v5
-      - name: Stamp version
-        # Il commit negli indirizzi di JS e CSS e in version.json: dopo ogni pubblicazione il
-        # browser scarica i file nuovi invece di usare quelli in cache (vedi tools/stamp-version.sh)
-        run: sh tools/stamp-version.sh "${GITHUB_SHA::7}"
+      - name: Build
+        # Unisce shared/ e web/ in web/dist, con il commit negli indirizzi di JS e CSS e in
+        # version.json: dopo ogni pubblicazione il browser scarica i file nuovi invece di usare
+        # quelli in cache (vedi web/build.mjs). Node c'è già sulle macchine di GitHub
+        run: node web/build.mjs "${GITHUB_SHA::7}"
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload entire repository
-          path: '.'
+          # Solo la versione web: l'app (app/) non serve sul sito
+          path: 'web/dist'
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

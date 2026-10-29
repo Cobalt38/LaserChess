@@ -1,0 +1,33 @@
+{
+  "name": "laserchess",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Laser Chess per Android e iOS (Capacitor): il gioco \u00e8 in ../shared, lo stesso della versione web",
+  "packageManager": "npm@10.9.2",
+  "scripts": {
+    "app:www": "node build.mjs",
+    "app:sync": "node build.mjs && cap sync",
+    "app:android": "node build.mjs && cap sync android && cap open android",
+    "app:ios": "node build.mjs && cap sync ios && cap open ios",
+    "app:apk": "node build.mjs && cap sync android && cd android && ./gradlew assembleDebug",
+    "app:bundle": "node build.mjs && cap sync android && cd android && ./gradlew bundleRelease",
+    "app:icons": "capacitor-assets generate --assetPath resources --android --ios --iconBackgroundColor #0a0a0a --iconBackgroundColorDark #0a0a0a --splashBackgroundColor #0a0a0a --splashBackgroundColorDark #0a0a0a"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.6.0",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/clipboard": "8.0.1",
+    "@capacitor/core": "8.6.0",
+    "@capacitor/haptics": "8.0.2",
+    "@capacitor/ios": "8.6.0",
+    "@capacitor/share": "8.0.3",
+    "@capacitor/splash-screen": "8.0.2",
+    "@capacitor/status-bar": "8.0.4",
+    "p5": "1.11.5",
+    "peerjs": "1.5.4"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "3.0.5",
+    "@capacitor/cli": "8.6.0"
+  }
+}

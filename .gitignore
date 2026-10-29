@@ -7,7 +7,10 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Dipendenze locali (p5 si carica dal CDN in index.html)
+# Versione web generata da web/build.mjs (la pubblica il workflow di GitHub Pages)
+web/dist/
+
+# Dipendenze dell'app (app/node_modules; la versione web carica p5 dal CDN)
 node_modules/
 p5*.js
 

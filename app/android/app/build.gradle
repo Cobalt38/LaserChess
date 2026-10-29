@@ -1,0 +1,96 @@
+apply plugin: 'com.android.application'
+
+// Nome e id dell'app: solo in capacitor.config.json (appName, appId).
+// L'id (applicationId) su Google Play non si può più cambiare dopo il primo caricamento.
+def capConfig = new groovy.json.JsonSlurper().parse(rootProject.file('../capacitor.config.json'))
+
+// Versione: solo in package.json ("version": "1.2.3"). versionName è "1.2.3" e versionCode
+// (il numero che Google Play vuole sempre più grande) è 1*10000 + 2*100 + 3 = 10203: basta
+// aumentare la versione in package.json prima di ogni caricamento. Minor e patch restano sotto 100.
+def appVersion = new groovy.json.JsonSlurper().parse(rootProject.file('../package.json')).version
+def (vMajor, vMinor, vPatch) = appVersion.tokenize('.-')[0..2].collect { it as int }
+assert vMinor < 100 && vPatch < 100 : "package.json: minor e patch devono essere sotto 100 ($appVersion)"
+
+// Firma per Google Play: android/keystore.properties (fuori da git, vedi README).
+// Se manca, la build release si fa lo stesso ma non è firmata; la debug non cambia.
+def keystorePropertiesFile = rootProject.file('keystore.properties')
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
+}
+
+android {
+    namespace = "io.github.cobalt38.laserchess"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId capConfig.appId
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode vMajor * 10000 + vMinor * 100 + vPatch
+        versionName appVersion
+        resValue "string", "app_name", capConfig.appName
+        resValue "string", "title_activity_main", capConfig.appName
+        resValue "string", "package_name", capConfig.appId
+        resValue "string", "custom_url_scheme", capConfig.appId
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    signingConfigs {
+        if (keystorePropertiesFile.exists()) {
+            release {
+                // storeFile è relativo alla cartella android/
+                storeFile rootProject.file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
+    buildFeatures {
+        resValues = true
+    }
+    buildTypes {
+        release {
+            if (keystorePropertiesFile.exists()) {
+                signingConfig signingConfigs.release
+            }
+            // Niente offuscamento: il gioco è JavaScript, il codice nativo è solo quello di Capacitor
+            minifyEnabled false
+            shrinkResources false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

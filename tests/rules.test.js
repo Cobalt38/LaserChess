@@ -261,3 +261,25 @@ test("anteprima mentre si trascina: il mirino è nella casella sotto il dito, no
   assert.deepStrictEqual(hits, ["h1"]);
   assert.strictEqual(board.cellByName("h2").piece.type, "Defender", "durante il trascinamento il pezzo resta in h2");
 });
+
+test("tutorial: all'inizio il raggio non colpisce il King arancione, la soluzione dell'Aiuto sì", () => {
+  const board = new Board();
+  const kings = () => new g.LaserBeam(board, board.players[0].laser).events
+    .filter((e) => e.effect === "king").map((e) => board.players.indexOf(e.piece.player));
+  for (const lesson of g.LESSONS) {
+    board.setup("Tutorial", ["Tu", "Arancione"], [], lesson.pieces);
+    board.start();
+    assert.ok(!kings().includes(1), `${lesson.title}: si vince senza muovere`);
+    const { at, to, rot } = lesson.hint;
+    const piece = board.cellByName(at).piece;
+    assert.ok(piece && piece.player === board.players[0], `${lesson.title}: in ${at} non c'è un pezzo blu`);
+    if (to) {
+      assert.ok(board.neighbors(piece.cell).includes(board.cellByName(to)) && piece.canMoveTo(board.cellByName(to)), `${lesson.title}: mossa non valida`);
+      board.movePiece(piece, board.cellByName(to));
+    } else {
+      assert.ok(piece.rotations().includes(rot), `${lesson.title}: rotazione non valida`);
+      board.rotatePiece(piece, rot);
+    }
+    assert.deepStrictEqual(plain(kings()), [1], `${lesson.title}: la soluzione deve colpire solo il King arancione`);
+  }
+});

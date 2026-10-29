@@ -8,9 +8,10 @@ Servono Firefox, geckodriver e Selenium:
 
 ```
 python3 -m venv .venv && .venv/bin/pip install selenium
-python3 -m http.server 8765 --bind 127.0.0.1     # dalla cartella principale del gioco
+node web/build.mjs                                  # dalla cartella principale: versione web in web/dist
+python3 -m http.server 8765 --bind 127.0.0.1 --directory web/dist
 cd tests/e2e
-../../.venv/bin/python test_single.py   # computer, in due, nomi, configurazioni, telefono
+../../.venv/bin/python test_single.py   # benvenuto, tutorial, computer, avvisi, in due, nomi, configurazioni, telefono
 ../../.venv/bin/python test_online.py   # due browser online
 ../../.venv/bin/python test_update.py   # versione negli indirizzi e avviso "versione nuova" (porta 8766)
 ```
