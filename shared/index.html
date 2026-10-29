@@ -121,13 +121,15 @@
     <div id="toast" role="status" aria-live="polite" hidden></div>
 
     <!-- Finestre -->
-    <!-- Prima apertura: obiettivo in due righe e la scelta tra tutorial e partita -->
+    <!-- Scheda nuova o app appena aperta: obiettivo in due righe, la partita salvata da riprendere
+         e la scelta tra tutorial e partita nuova -->
     <dialog id="dlg-welcome" class="welcome" aria-labelledby="welcome-title">
       <h2 id="welcome-title">Benvenuto in Laser Chess!</h2>
       <img id="welcome-art" class="welcome-art" alt="" hidden>
       <p class="lead">Ognuno ha un <strong>laser</strong>. Vince chi colpisce per primo il
         <strong>King</strong> avversario.</p>
       <p class="muted">A ogni turno sposti o ruoti un tuo pezzo, poi spari. Gli specchi verdi deviano il raggio.</p>
+      <button id="welcome-resume" type="button" class="accent big" hidden>▶ Riprendi la partita <span class="sub"></span></button>
       <button id="welcome-learn" type="button" class="accent big">🎓 Impara a giocare <span class="sub">2 minuti</span></button>
       <button id="welcome-play" type="button" class="big">▶ Gioca subito</button>
     </dialog>

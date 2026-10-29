@@ -73,7 +73,16 @@ const Platform = {
     this.call("App", "minimizeApp");
   },
 
-  // Partita in corso: deve sopravvivere alla chiusura dell'app
+  // Impostazioni (audio, vibrazione, nomi...): l'app le ricorda
+  settingsStorage() {
+    try {
+      return window.localStorage;
+    } catch (e) {
+      return null;
+    }
+  },
+
+  // Partita in corso: resta anche chiudendo l'app, per "Riprendi la partita" nel benvenuto
   gameStorage() {
     try {
       return window.localStorage;

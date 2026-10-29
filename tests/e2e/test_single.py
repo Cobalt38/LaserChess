@@ -17,6 +17,7 @@ def main():
         step("prima visita: benvenuto con l'immagine, tutorial o partita")
         assert p.js("document.getElementById('dlg-welcome').open"), "finestra di benvenuto chiusa"
         assert p.js("!!document.getElementById('welcome-art').src"), "immagine del benvenuto mancante"
+        assert not p.visible("#welcome-resume"), "alla prima visita non c'è niente da riprendere"
         p.shot("00-benvenuto")
 
         step("tutorial: lezione 1 con l'aiuto, sparo, vinta; Esci porta alla nuova partita")
@@ -45,7 +46,6 @@ def main():
         p.wait("tutorial.state === 'play' && board.cellByName('i6').piece", 3)
         p.click("#lesson-exit")
         p.wait("!tutorial.active && document.getElementById('dlg-new').open", 3)
-        assert p.js("settings.seenIntro"), "il benvenuto non deve riaprirsi"
 
         step("finestra Nuova partita: contro il computer, Facile, PRISMA")
         assert p.js("document.querySelector('#new-form').elements.mode.value") == "ai"
@@ -184,6 +184,20 @@ def main():
         assert p.js("board.history.length") == 2
         assert p.js("game.mode") == "ai" and p.js("!!game.ai")
         assert not p.js("document.getElementById('dlg-new').open"), "la finestra iniziale non deve riaprirsi"
+        assert not p.js("document.getElementById('dlg-welcome').open"), "ricaricando non si riparte dal benvenuto"
+
+        step("chiudo la scheda e la riapro: impostazioni dimenticate, benvenuto con Riprendi la partita")
+        p.js("sessionStorage.clear(); 0")  # come una scheda nuova: la partita salvata resta in localStorage
+        p.d.refresh()
+        p.wait("typeof board === 'object' && board.players.length === 2 && document.getElementById('dlg-welcome').open", 20)
+        assert p.visible("#welcome-resume") and "2 mosse" in p.text("#welcome-resume"), p.text("#welcome-resume")
+        assert p.js("settings.myName") == "", "nel browser il nome non resta tra una scheda e l'altra"
+        assert p.js("localStorage.getItem('laserchess.settings')") is None
+        p.shot("05a-riprendi")
+        p.click("#welcome-resume")
+        p.wait("!document.getElementById('dlg-welcome').open", 3)
+        assert p.js(state) == key, "Riprendi deve rimettere la stessa partita"
+        assert p.js("board.players[0].name") == "Mario"
 
         step("nuova partita in due: nomi uguali rifiutati, poi GRAIL")
         p.click("#btn-new")
@@ -231,6 +245,21 @@ def main():
         p.wait("board.history.length === 1 && board.turn === 1 && !board.busy", 20, "prima mossa del computer")
         p.wait("document.getElementById('status-text').textContent.includes('Tocca a te')", 3)
         p.shot("08-inizia-il-computer")
+
+        step("scheda nuova: scelgo il tutorial invece di Riprendi, la partita salvata non c'è più")
+        p.js("sessionStorage.clear(); 0")
+        p.d.refresh()
+        p.wait("typeof board === 'object' && document.getElementById('dlg-welcome').open", 20)
+        assert p.visible("#welcome-resume")
+        p.click("#welcome-learn")
+        p.wait("tutorial.active", 3)
+        p.js("sessionStorage.clear(); 0")
+        p.d.refresh()
+        p.wait("typeof board === 'object' && document.getElementById('dlg-welcome').open", 20)
+        assert not p.visible("#welcome-resume"), "dopo il tutorial la partita di prima non si riprende più"
+        p.click("#welcome-play")
+        p.wait("document.getElementById('dlg-new').open", 3)
+        p.js("document.getElementById('dlg-new').close(); 0")
 
         step("tutte le configurazioni si avviano, con e senza varianti")
         for name in p.js("Object.keys(SETUPS)"):

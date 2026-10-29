@@ -84,7 +84,7 @@ def main():
         b.fill("#my-name", "anna")
         b.d.find_element("css selector", "#join-form button").click()
         connected(a, b)
-        assert b.js("board.localIndex") == 1 and b.js("view.turns") in (2, 3), "il guest deve vedere la board girata"
+        assert b.js("board.localIndex") == 1 and b.js("view.turns") == 2, "il guest deve vedere la board girata"
         names = ["Anna", "anna (2)"]
         b.wait("board.players.map(p => p.name).join() === 'Anna,anna (2)'", 5, "nomi deduplicati sul guest")
         a.wait("board.players.map(p => p.name).join() === 'Anna,anna (2)'", 5, "nomi deduplicati sull'host")

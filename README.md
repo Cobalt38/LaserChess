@@ -27,7 +27,7 @@ All'inizio della partita due etichette indicano i King ("Il tuo King", "King avv
 ogni colpo un messaggio dice quali pezzi sono stati eliminati. SPARA toccato prima di muovere
 spiega cosa fare.
 
-Alla prima visita una finestra di **benvenuto** propone il **tutorial**: quattro lezioni sulla
+A ogni scheda nuova (o avvio dell'app) una finestra di **benvenuto** propone il **tutorial**: quattro lezioni sulla
 board vera (ruotare uno specchio, spostare un pezzo, non colpire il proprio King, aggirare uno
 scudo), ognuna vinta con una mossa, con il pulsante **💡 Aiuto** che mostra la soluzione. Si
 riapre da **Regole** o da **Nuova partita**.
@@ -43,9 +43,14 @@ La finestra **Nuova partita** sceglie:
   in caselle scelte in modo che alla prima mossa nessuno possa eliminare un pezzo avversario
   (le disposizioni del manuale sono già così).
 
-Ricaricando la pagina (o riaprendo l'app) la partita in corso riprende da dove era.
+Ricaricando la pagina la partita in corso riprende da dove era. Chiudendo la scheda (o l'app) e
+riaprendola si riparte dal benvenuto, che ha il pulsante **Riprendi la partita** se ce n'era una in
+corso; scegliendo il tutorial o una partita nuova, quella salvata viene sostituita. Nel browser le
+impostazioni (nomi, livello, opzioni) valgono finché la scheda resta aperta; l'app le ricorda.
 
-Funziona anche da telefono: in verticale la board gira di 90° quando così è più grande.
+Funziona anche da telefono, in verticale e in orizzontale. La board non gira mai di lato: il laser
+blu spara sempre verso l'alto dello schermo (per chi gioca con l'arancione la board è girata di
+180°, così ognuno ha i suoi pezzi in basso).
 
 ## Giocare online
 

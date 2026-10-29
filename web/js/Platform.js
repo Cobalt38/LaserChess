@@ -52,10 +52,20 @@ const Platform = {
 
   leave() { },
 
-  // Partita in corso: vale per la scheda, ricaricando si riprende
-  gameStorage() {
+  // Impostazioni (nomi, livello, opzioni): valgono finché la scheda resta aperta, una scheda nuova
+  // riparte da capo
+  settingsStorage() {
     try {
       return window.sessionStorage;
+    } catch (e) {
+      return null;
+    }
+  },
+
+  // Partita in corso: resta anche chiudendo la scheda, per "Riprendi la partita" nel benvenuto
+  gameStorage() {
+    try {
+      return window.localStorage;
     } catch (e) {
       return null;
     }

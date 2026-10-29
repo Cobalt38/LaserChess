@@ -1,13 +1,13 @@
 // Lezioni del tutorial (js/ui/Tutorial.js). Si gioca col blu, l'arancione non muove: ogni lezione
-// si vince con una sola mossa che manda il raggio sul King arancione. Nei testi niente "in alto" o
-// "a destra": sui telefoni in verticale la board può essere girata.
+// si vince con una sola mossa che manda il raggio sul King arancione. Il blu vede la board dritta
+// (vedi view in sketch.js), quindi il suo laser spara sempre verso l'alto.
 // pieces: come in SETUPS (i Laser li aggiunge la board, nei soliti angoli).
 // hint: la soluzione, mostrata da "Aiuto": il pezzo in "at", da ruotare verso "rot" o spostare in "to".
 // tests/rules.test.js controlla che all'inizio il raggio non vinca e che la soluzione vinca.
 const LESSONS = [
   {
     title: "Ruota uno specchio",
-    text: "Il raggio parte dal tuo Laser e gli specchi verdi lo deviano. Tocca il tuo Deflector e ruotalo con le frecce gialle finché la linea tratteggiata arriva al King arancione. Poi premi SPARA.",
+    text: "Il tuo Laser, in basso a destra, spara verso l'alto e gli specchi verdi deviano il raggio. Tocca il tuo Deflector e ruotalo con le frecce gialle finché la linea tratteggiata arriva al King arancione. Poi premi SPARA.",
     pieces: [
       [Deflector, 0, 10, 5, "SE"],
       [King, 0, 6, 1, "N"],
@@ -38,7 +38,7 @@ const LESSONS = [
   },
   {
     title: "Aggira lo scudo",
-    text: "Il Defender ferma il raggio con lo scudo (se lo colpisci di lato o da dietro, invece, viene eliminato). Il King arancione è dietro lo scudo: sposta uno dei tuoi Deflector sulla strada del raggio per aggirarlo.",
+    text: "Il Defender ferma il raggio con lo scudo (se lo colpisci di lato o da dietro, invece, viene eliminato). Il King arancione è dietro lo scudo: sposta uno dei tuoi Deflector sulla strada del raggio per arrivarci da sopra.",
     pieces: [
       [Deflector, 0, 10, 4, "SW"],
       [Deflector, 0, 8, 3, "NE"],

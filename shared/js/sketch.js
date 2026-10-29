@@ -3,18 +3,22 @@ let board, sfx, ui, online, onlinePanel, tutorial;
 // "tutorial" (le lezioni di js/ui/Tutorial.js)
 const game = { mode: "local", ai: null };
 
-// Come la board finisce nel canvas: spostamento, zoom e quarti di giro in senso orario.
-// Si gira di 90° sui telefoni in verticale e di 180° per chi gioca con l'arancione (online o
-// contro il computer), così ognuno vede i propri pezzi in basso.
+// Come la board finisce nel canvas: spostamento, zoom e quarti di giro in senso orario (0 o 2).
+// Si gira di 180° per chi gioca con l'arancione (online o contro il computer), così ognuno vede i
+// propri pezzi in basso. Di 90° mai, neanche sui telefoni in verticale: il laser blu spara sempre
+// verso l'alto dello schermo, come sulla board vera.
 const view = { x: 0, y: 0, scale: 1, turns: 0 };
 // Deve combaciare con la media query del layout "a colonna" in style.css
 const STACKED_QUERY = "(max-width: 760px) and (orientation: portrait)";
-const SETTINGS_KEY = "laserchess.settings";
+const SETTINGS_KEY = "laserchess.settings"; // dove: Platform.settingsStorage()
 // Da aumentare quando cambia un'impostazione predefinita da applicare anche a chi le ha già salvate
 // (2: la disposizione predefinita diventa PRISMA)
 const SETTINGS_VERSION = 2;
-const GAME_KEY = "laserchess.game"; // partita in corso (non online), per riprenderla ricaricando o riaprendo l'app
+const GAME_KEY = "laserchess.game"; // partita in corso (non online), in Platform.gameStorage()
+const RUN_KEY = "laserchess.run"; // in sessionStorage: questa scheda (o avvio dell'app) è già partita
 const settings = loadSettings();
+// Scheda nuova o app appena avviata (non una pagina ricaricata): si parte dal benvenuto
+const firstRun = startRun();
 let activePointer = null; // un solo dito/puntatore alla volta sulla board
 let savedVersion = -1; // board.version dell'ultima partita salvata
 const previews = new Map(); // immagini delle disposizioni iniziali
@@ -32,11 +36,13 @@ function loadSettings() {
     preview: true, // linea tratteggiata del laser
     coach: true, // suggerimenti sotto la board
     haptics: true, // vibrazione (solo nell'app)
-    seenIntro: false, // la finestra di benvenuto è già stata vista
     version: SETTINGS_VERSION,
   };
   try {
-    const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {};
+    const storage = Platform.settingsStorage();
+    // Nel browser le impostazioni non restano più tra una scheda e l'altra: via quelle vecchie
+    if (storage !== window.localStorage) localStorage.removeItem(SETTINGS_KEY);
+    const saved = JSON.parse(storage.getItem(SETTINGS_KEY)) || {};
     const s = { ...defaults, ...saved, variants: { ...defaults.variants, ...saved.variants } };
     if (!(saved.version >= 2)) s.setup = defaults.setup;
     s.version = SETTINGS_VERSION;
@@ -53,9 +59,19 @@ function loadSettings() {
 
 function saveSettings() {
   try {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    Platform.settingsStorage().setItem(SETTINGS_KEY, JSON.stringify(settings));
   } catch (e) {
     // storage non disponibile (navigazione privata...): le impostazioni valgono solo per questa sessione
+  }
+}
+
+function startRun() {
+  try {
+    const first = !sessionStorage.getItem(RUN_KEY);
+    sessionStorage.setItem(RUN_KEY, "1");
+    return first;
+  } catch (e) {
+    return true;
   }
 }
 
@@ -163,6 +179,7 @@ function setup() {
     begin() {
       game.mode = "tutorial";
       game.ai = null;
+      forgetLocalGame(); // la partita di prima non si riprende più
       for (const dlg of document.querySelectorAll("dialog[open]")) dlg.close();
     },
     end(play) {
@@ -181,15 +198,18 @@ function setup() {
   Platform.start();
   Platform.onBack(onBack);
 
-  // Si riprende la partita di prima (pagina ricaricata), altrimenti se ne prepara una nuova.
+  // Si riprende la partita di prima, altrimenti se ne prepara una nuova. Pagina ricaricata: si
+  // continua e basta. Scheda nuova o app appena aperta: benvenuto, con "Riprendi la partita" se
+  // ce n'era una (scegliendo altro, la nuova partita prende il suo posto).
   // Aperto da un link d'invito (?partita=CODICE): si propone di entrare, a meno che questa
   // scheda non fosse già in quella partita
-  if (!restoreLocalGame()) newGame();
+  const resumable = restoreLocalGame();
+  if (!resumable) newGame();
   const code = new URLSearchParams(location.search).get("partita");
   const saved = online.savedSession();
   if (saved && (!code || normalizeCode(code) === saved.code)) online.resume();
   else if (code) onlinePanel.openInvite(code);
-  else if (!settings.seenIntro) ui.openWelcome();
+  else if (firstRun) ui.openWelcome(resumable);
   fitCanvas();
   Platform.ready();
 }
@@ -317,10 +337,19 @@ function saveLocalGame() {
   }
 }
 
+function forgetLocalGame() {
+  try {
+    Platform.gameStorage().removeItem(GAME_KEY);
+  } catch (e) {
+    // storage non disponibile: non c'è niente da dimenticare
+  }
+}
+
+// Partita salvata da riprendere: solo se è iniziata e non è finita
 function restoreLocalGame() {
   try {
     const saved = JSON.parse(Platform.gameStorage().getItem(GAME_KEY));
-    if (!saved || !saved.snapshot) return false;
+    if (!saved || !saved.snapshot || saved.snapshot.gameOver || saved.snapshot.history.length === 0) return false;
     board.restore(saved.snapshot);
     if (saved.mode === "ai" && saved.ai) {
       game.mode = "ai";
@@ -432,19 +461,14 @@ function toBoard(px, py) {
   const v = (py - view.y) / view.scale;
   const W = board.width;
   const H = board.height;
-  switch (view.turns) {
-    case 1: return { x: v, y: H - u };
-    case 2: return { x: W - u, y: H - v };
-    case 3: return { x: W - v, y: u };
-    default: return { x: u, y: v };
-  }
+  return view.turns === 2 ? { x: W - u, y: H - v } : { x: u, y: v };
 }
 
 // Da coordinate board a pixel del canvas
 function boardToScreen(bx, by) {
   const W = board.width;
   const H = board.height;
-  const [u, v] = [[bx, by], [H - by, bx], [W - bx, H - by], [by, W - bx]][view.turns];
+  const [u, v] = view.turns === 2 ? [W - bx, H - by] : [bx, by];
   return { x: view.x + u * view.scale, y: view.y + v * view.scale };
 }
 
@@ -459,16 +483,9 @@ function fitCanvas() {
   const css = getComputedStyle(app);
   const screenH = app.clientHeight - parseFloat(css.paddingTop) - parseFloat(css.paddingBottom);
   const w = stage.clientWidth;
-  const size = (sideways) => sideways
-    ? { w: board.height, h: board.width }
-    : { w: board.width, h: board.height };
-  const fit = (W, H, sideways) => {
-    const s = size(sideways);
-    return Math.min((W - 2 * pad) / s.w, (H - 2 * pad) / s.h);
-  };
+  const fit = (W, H) => Math.min((W - 2 * pad) / board.width, (H - 2 * pad) / board.height);
 
   let h;
-  let sideways = false;
   if (stacked) {
     // Lascia spazio a stato, suggerimenti, comandi, menu e almeno la riga "Mosse" (lo storico
     // prende lo spazio che avanza, quindi conta solo la sua intestazione)
@@ -477,25 +494,20 @@ function fitCanvas() {
       .reduce((sum, id) => sum + document.getElementById(id).offsetHeight, 0) +
       document.querySelector("#history-box summary").offsetHeight + 16 +
       (document.getElementById("history-box").open ? 120 : 0);
-    const maxH = Math.max(200, screenH - reserved);
-    const normal = fit(w, maxH, false);
-    const turned = fit(w, maxH, true);
-    sideways = turned > normal * 1.08; // in verticale di solito la board ci sta meglio girata
-    view.scale = Math.max(0.3, sideways ? turned : normal);
-    h = Math.ceil(size(sideways).h * view.scale + 2 * pad);
+    view.scale = Math.max(0.3, fit(w, Math.max(200, screenH - reserved)));
+    h = Math.ceil(board.height * view.scale + 2 * pad);
     stage.style.height = h + "px";
   } else {
     stage.style.height = "";
     h = Math.min(stage.clientHeight, screenH); // se la barra laterale non ci sta, la board resta nello schermo
-    view.scale = Math.max(0.3, Math.min(2, fit(w, h, false)));
+    view.scale = Math.max(0.3, Math.min(2, fit(w, h)));
   }
   view.side = board.localIndex;
-  view.turns = ((sideways ? 1 : 0) + (board.localIndex === 1 ? 2 : 0)) % 4;
+  view.turns = board.localIndex === 1 ? 2 : 0;
 
   resizeCanvas(w, h);
-  const s = size(sideways);
-  view.x = Math.floor((w - s.w * view.scale) / 2);
-  view.y = Math.floor((h - s.h * view.scale) / 2);
+  view.x = Math.floor((w - board.width * view.scale) / 2);
+  view.y = Math.floor((h - board.height * view.scale) / 2);
   board.setRenderScale(view.scale);
 }
 
@@ -509,22 +521,17 @@ function draw() {
   // Mentre si sceglie la nuova partita la board è vuota e il computer aspetta
   const choosing = document.getElementById("dlg-new").open;
   board.update(dt);
-  if (game.ai && !choosing) game.ai.update(dt);
+  // Il computer aspetta anche dietro il benvenuto (la partita ripresa resta com'era)
+  if (game.ai && !choosing && !document.getElementById("dlg-welcome").open) game.ai.update(dt);
   online.update();
   ui.update();
   if (!online.active && !board.busy && board.version !== savedVersion) saveLocalGame();
   background(10);
   translate(view.x, view.y);
   scale(view.scale);
-  if (view.turns === 1) {
-    translate(board.height, 0);
-    rotate(HALF_PI);
-  } else if (view.turns === 2) {
+  if (view.turns === 2) {
     translate(board.width, board.height);
     rotate(PI);
-  } else if (view.turns === 3) {
-    translate(0, board.width);
-    rotate(-HALF_PI);
   }
   if (choosing) board.showEmpty();
   else board.show();

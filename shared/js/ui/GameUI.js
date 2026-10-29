@@ -69,14 +69,16 @@ class GameUI {
       btn.addEventListener("pointerleave", () => (board.previewRotation = null));
     });
     el.newBtn.addEventListener("click", () => this.openNewGame());
+    // Benvenuto: "Riprendi" lascia la partita salvata com'è; le altre scelte la sostituiscono
+    $("welcome-resume").addEventListener("click", () => $("dlg-welcome").close());
     $("welcome-learn").addEventListener("click", () => {
-      this.seeIntro();
       $("dlg-welcome").close();
+      if (this.resumable) actions.newGame();
       actions.startTutorial();
     });
     $("welcome-play").addEventListener("click", () => {
-      this.seeIntro();
       $("dlg-welcome").close();
+      if (this.resumable) actions.newGame();
       this.openNewGame();
     });
     $("new-tutorial").addEventListener("click", () => {
@@ -116,18 +118,24 @@ class GameUI {
     return this.online.active ? "online" : this.actions.game.mode;
   }
 
-  // Prima apertura: obiettivo e scelta tra tutorial e partita
-  openWelcome() {
+  // Scheda nuova o app appena aperta: obiettivo e scelta tra tutorial e partita, più "Riprendi la
+  // partita" se ce n'è una salvata (resumable). Al posto dell'immagine, la partita da riprendere
+  // si vede già sulla board dietro la finestra
+  openWelcome(resumable) {
+    this.resumable = resumable;
     const art = this.$("welcome-art");
-    const src = this.actions.welcomeArt();
+    const src = resumable ? null : this.actions.welcomeArt();
     if (src) art.src = src;
     art.hidden = !src;
+    const resume = this.$("welcome-resume");
+    resume.hidden = !resumable;
+    this.$("welcome-learn").classList.toggle("accent", !resumable);
+    this.$("welcome-play").textContent = resumable ? "➕ Nuova partita" : "▶ Gioca subito";
+    if (resumable) {
+      const n = this.board.history.length;
+      resume.querySelector(".sub").textContent = `${this.subText()} · ${n} ${n === 1 ? "mossa" : "mosse"}`;
+    }
     this.openDialog("dlg-welcome");
-  }
-
-  seeIntro() {
-    this.actions.settings.seenIntro = true;
-    this.actions.saveSettings();
   }
 
   // Sparo chiesto da qui (pulsante, Spazio, tocco sul Laser). Se ancora non si può, spiega perché;
@@ -293,7 +301,6 @@ class GameUI {
     error.hidden = true;
     settings.setup = f.setup.value;
     settings.variants = { ...this.variantChoice };
-    settings.seenIntro = true;
     if (!this.online.active) {
       settings.mode = mode === "online" ? settings.mode : mode;
       settings.aiLevel = f.level.value;
