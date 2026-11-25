@@ -5,6 +5,10 @@ on:
   # Runs on pushes targeting the default branch
   push:
     branches: ["master"]
+    # Solo documentazione: niente nuova pubblicazione (e niente APK nuovo da proporre a chi ha l'app)
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
