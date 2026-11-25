@@ -396,3 +396,8 @@ personale e non ufficiale, senza legami con ThinkFun. Le disposizioni ACE, CURIO
 e SOPHIE vengono dal manuale originale; PRISMA, il Prism e lo specchio semitrasparente sono
 inventati per questo gioco. Librerie: [p5.js](https://p5js.org), [PeerJS](https://peerjs.com),
 [Capacitor](https://capacitorjs.com).
+
+## Licenza
+
+Il codice è distribuito con licenza [MIT](LICENSE.md). La licenza riguarda questo codice, non il
+nome né il gioco originale Laser Chess, che restano di ThinkFun.
