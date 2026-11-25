@@ -1,10 +1,42 @@
-![CatWifGIF](https://github.com/user-attachments/assets/16b9ae3a-4783-4c88-88ce-ea28a65f8430)
+# Laser Chess
 
+Il gioco da tavolo di strategia con i laser, nel browser e sul telefono: contro il computer, in due
+sullo stesso schermo oppure online con un amico.
 
-ISTRUZIONI BELLISSIMEEEEE 🚀🤖:
-https://legacy.thinkfun.com/wp-content/uploads/2017/10/LaserCh-1034-Instructions.pdf
+**[▶ Gioca ora su cobalt38.github.io/LaserChess](https://cobalt38.github.io/LaserChess/)** — niente
+da installare; dal sito si può anche installare come app (anche offline) o scaricare l'APK per Android.
+
+![Una partita contro il computer: il raggio blu rimbalza sugli specchi](docs/screenshot.png)
+
+> **English.** A browser and mobile version of the laser strategy board game. Play against a
+> computer opponent (negamax search with alpha-beta pruning, three difficulty levels), with a friend
+> on the same screen, or online peer-to-peer over WebRTC. It is an installable PWA that also works
+> offline, and the same code ships as an Android app through Capacitor. Plain JavaScript and p5.js,
+> no framework. The game is in English and Italian; the documentation below is in Italian.
+
+## In breve
+
+- **Avversario artificiale**: negamax con potatura alfa-beta su una board compatta (un array di 80
+  numeri, decine di migliaia di mosse provate al secondo), con approfondimento iterativo e tre livelli.
+  Le regole il motore le legge dalle classi dei pezzi, quindi un pezzo nuovo funziona subito anche
+  contro il computer.
+- **Online senza server di gioco**: i due browser si collegano direttamente con WebRTC (PeerJS);
+  basta un link o un codice di 6 lettere, e se la connessione cade la partita riprende da sola.
+- **Ovunque**: browser, app web installabile che funziona anche senza internet, app per Android
+  (e progetto iOS) costruita dallo stesso codice con Capacitor.
+- **Per chi inizia**: tutorial in quattro lezioni, anteprima del raggio prima di sparare,
+  suggerimenti passo per passo.
+- **Varianti**: sei disposizioni iniziali (le cinque del manuale più PRISMA) e due pezzi inventati,
+  il Prism e lo specchio semitrasparente.
+- **Qualità**: test delle regole, del motore e del tutorial in Node, test end-to-end nel browser con
+  Selenium; GitHub Actions pubblica il sito e l'APK firmato a ogni push.
+
+**Tecnologie**: JavaScript (senza framework né bundler), p5.js, PeerJS / WebRTC, Service Worker e
+Web App Manifest, Capacitor 8, GitHub Actions, `node:test`, Selenium.
 
 ## Come si gioca
+
+Regole originali: [manuale di ThinkFun (PDF)](https://legacy.thinkfun.com/wp-content/uploads/2017/10/LaserCh-1034-Instructions.pdf).
 
 Vince chi colpisce per primo il King avversario con il proprio laser. A ogni turno si sposta
 un proprio pezzo di una casella (anche in diagonale) **oppure** lo si ruota, poi si spara.
@@ -232,7 +264,7 @@ JDK 25 di Android Studio) e l'SDK di Android con le licenze accettate. Le piatta
 scarica Gradle da solo. Da riga di comando:
 
 ```
-export JAVA_HOME=~/Desktop/android-studio-quail3-linux.tar./android-studio/jbr   # il JDK di Android Studio
+export JAVA_HOME=/percorso/di/android-studio/jbr   # il JDK incluso in Android Studio
 echo "sdk.dir=$HOME/Android/Sdk" > android/local.properties                       # una volta
 corepack npm run app:apk     # -> android/app/build/outputs/apk/debug/app-debug.apk
 adb install -r android/app/build/outputs/apk/debug/app-debug.apk
@@ -295,7 +327,7 @@ privacy, nome): [app/store/README.md](app/store/README.md). Qui sotto la parte t
 
    ```
    cd app/android
-   ~/Desktop/android-studio-quail3-linux.tar./android-studio/jbr/bin/keytool -genkeypair -v \
+   "$JAVA_HOME/bin/keytool" -genkeypair -v \
      -keystore upload-key.jks -alias upload -keyalg RSA -keysize 2048 -validity 10000
    ```
 
@@ -356,3 +388,11 @@ app/
   resources/           sorgenti di icona e schermata di avvio
   android/  ios/       progetti nativi (generati da Capacitor, poi adattati)
 ```
+
+## Crediti
+
+Laser Chess è un gioco da tavolo di [ThinkFun](https://www.thinkfun.com); questo è un progetto
+personale e non ufficiale, senza legami con ThinkFun. Le disposizioni ACE, CURIOSITY, GRAIL, MERCURY
+e SOPHIE vengono dal manuale originale; PRISMA, il Prism e lo specchio semitrasparente sono
+inventati per questo gioco. Librerie: [p5.js](https://p5js.org), [PeerJS](https://peerjs.com),
+[Capacitor](https://capacitorjs.com).
